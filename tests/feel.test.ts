@@ -6,40 +6,53 @@ import { play } from '../scripts/sim';
 import { STRATEGIES } from '../scripts/strategies';
 
 /**
- * 手触りの目安（docs/SPEC.md 5章）。ボットで遊んで確かめる。
+ * 手触りの目安（docs/SPEC.md 5章）。ボットで遊んで確かめる（種は `npm run sim -- <stage> all 30` と同じ30個）。
  * - 何もしない世界は、どのステージでも滅びる
- * - でたらめに書き換えても、ほとんど勝てない（対照群）
- * - 解き方は1つではない（各ステージで、2つ以上の作戦がほぼ確実に勝てる）
+ * - でたらめに書き換えても勝てない（対照群）
+ * - 一手だけの作戦（意味を変える書き換えが1つ）は、どれも勝ちきれない（クリア率 40% 以下）
+ * - 考えた作戦（最初の危機への手と、その副作用・あとから来る危機への手を組み合わせる）なら、どのステージも解ける（55% 以上）
  * - 企画書の「そうなるの！？」が起きる（食事を減らす → 作物の病気で再び食料危機、温室効果を消す → 氷期、
  *   戦争を消す → 制裁とテロの冷たい戦争、石油の限りを消す → 産油国の崩壊）
  * - 極小世界は、短く言い換えるだけでも、消すだけでも越えられない
  */
 
-const SEEDS = Array.from({ length: 20 }, (_, i) => 5000 + i);
-const STAGES: StageId[] = ['food', 'plague', 'climate', 'war', 'energy', 'tiny'];
+const SEEDS = Array.from({ length: 30 }, (_, i) => 1000 + i);
+const STAGES: StageId[] = ['food', 'plague', 'climate', 'war', 'energy', 'tiny', 'loop'];
 const strategy = (stage: StageId, name: string) => STRATEGIES[stage].find((s) => s.name === name)!;
 
+/** 同じ作戦を何度も測らないよう、クリア率を覚えておく */
+const rates = new Map<string, number>();
 function clearRate(stage: StageId, name: string): number {
+  const key = `${stage}/${name}`;
+  const known = rates.get(key);
+  if (known !== undefined) return known;
   let n = 0;
   for (const seed of SEEDS) if (play(gameData, stage, strategy(stage, name), seed).status === 'cleared') n += 1;
-  return n / SEEDS.length;
+  const rate = n / SEEDS.length;
+  rates.set(key, rate);
+  return rate;
 }
 
 describe('手触りの目安', () => {
   for (const stage of STAGES) {
-    it(`${stage}：何もしないと、ほぼ確実に滅びる（クリア率 10% 以下）`, () => {
-      expect(clearRate(stage, 'baseline')).toBeLessThanOrEqual(0.1);
+    it(`${stage}：何もしないと滅びる（クリア 0%）`, () => {
+      expect(clearRate(stage, 'baseline')).toBe(0);
     });
 
-    it(`${stage}：でたらめな書き換えでは、ほとんど勝てない（クリア率 20% 以下）`, () => {
+    it(`${stage}：でたらめな書き換えでは勝てない（クリア 0%）`, () => {
       let n = 0;
       for (const seed of SEEDS) if (playRandom(gameData, stage, seed).status === 'cleared') n += 1;
-      expect(n / SEEDS.length).toBeLessThanOrEqual(0.2);
+      expect(n).toBe(0);
     });
 
-    it(`${stage}：勝てる作戦が2つ以上ある（クリア率 80% 以上）`, () => {
-      const winners = STRATEGIES[stage].filter((s) => s.name !== 'baseline' && clearRate(stage, s.name) >= 0.8);
-      expect(winners.length).toBeGreaterThanOrEqual(2);
+    it(`${stage}：一手だけの作戦は、どれも勝ちきれない（クリア率 40% 以下）`, () => {
+      for (const s of STRATEGIES[stage].filter((x) => x.role === 'one')) expect(clearRate(stage, s.name), s.name).toBeLessThanOrEqual(0.4);
+    });
+
+    it(`${stage}：考えた作戦なら解ける（クリア率 55% 以上の作戦がある）`, () => {
+      const plans = STRATEGIES[stage].filter((s) => s.role === 'plan');
+      expect(plans.length).toBeGreaterThanOrEqual(1);
+      expect(plans.some((s) => clearRate(stage, s.name) >= 0.55)).toBe(true);
     });
   }
 
@@ -77,7 +90,7 @@ describe('手触りの目安', () => {
   });
 
   it('極小世界：短く言い換えるだけでも、消すだけでも越えられない', () => {
-    expect(clearRate('tiny', 'compress_only')).toBeLessThanOrEqual(0.1);
-    expect(clearRate('tiny', 'cut_only')).toBeLessThanOrEqual(0.1);
+    expect(clearRate('tiny', 'compress_only')).toBe(0);
+    expect(clearRate('tiny', 'cut_only')).toBe(0);
   });
 });

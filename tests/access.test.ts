@@ -93,6 +93,20 @@ describe('筆の位（救った世界の数で、書き換えられる範囲が�
     expect(addLine(world('food', ranks[last]!.clears), gameData, '宇宙は消える。').block).toBeNull();
   });
 
+  it('行の新しい読み取り（消したときの意味も）も、書き足す概念と同じ重さの尺度で止める', () => {
+    const low = world('food', 0);
+    // 食事の行を消す＝「食事が要らない」世界（無理の大きさ 28）は、はじめの筆では重すぎる
+    const del = rewriteLaw(low, gameData, 'human_food', '');
+    expect(del.block).toBe('heavy');
+    expect(del.heavy?.name).toBe(gameData.optionOf.get('human_food')!.get('delete')!.label);
+    expect(low.texts.human_food).not.toBe('');
+    // 軽い読み取り（数日に一度）は書ける
+    expect(rewriteLaw(low, gameData, 'human_food', '人間は数日に一度食事を必要とする。').block).toBeNull();
+    // 位が上がれば書ける
+    const high = world('food', ranks[del.heavy!.rank]!.clears);
+    expect(rewriteLaw(high, gameData, 'human_food', '').block).toBeNull();
+  });
+
   it('無限の世界では、知らされた危機を防ぐ行の封が、そのあいだだけ解ける', () => {
     const g = world('endless', 1);
     expect(isSealed(g, gameData, 'war')).toBe(true);
@@ -113,12 +127,12 @@ describe('筆の位（救った世界の数で、書き換えられる範囲が�
     }
   });
 
-  it('どのステージの作戦も、はじめて遊べる位で、封じられた行・余白・重さに止められない', async () => {
+  it('どのステージの作戦も、はじめて遊べる位（作戦に書いた位）で、封じられた行・余白・重さに止められない', async () => {
     const { STRATEGIES } = await import('../scripts/strategies');
     const stopped: string[] = [];
     for (const st of gameData.stages) {
       for (const strat of STRATEGIES[st.id] ?? []) {
-        const g = createGame(gameData, st.id, 1000, accessFor(gameData, st.id, st.unlock ?? 0));
+        const g = createGame(gameData, st.id, 1000, accessFor(gameData, st.id, strat.clears ?? st.unlock ?? 0));
         let steps = 0;
         while (g.status === 'playing' && g.year < st.goalYears && steps++ < 600) {
           for (const e of strat.edits) {

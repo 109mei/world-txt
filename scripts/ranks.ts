@@ -21,7 +21,7 @@ for (const st of [...gameData.stages].sort((a, b) => a.order - b.order)) {
     let wins = 0;
     let block: string | null = null;
     for (let i = 0; i < seeds && !block; i += 1) {
-      const g = createGame(gameData, st.id as StageId, 1000 + i, accessFor(gameData, st.id as StageId, clears));
+      const g = createGame(gameData, st.id as StageId, 1000 + i, accessFor(gameData, st.id as StageId, strat.clears ?? clears));
       let steps = 0;
       while (g.status === 'playing' && g.year < st.goalYears && steps++ < 600 && !block) {
         for (const e of strat.edits) {
@@ -33,11 +33,12 @@ for (const st of [...gameData.stages].sort((a, b) => a.order - b.order)) {
       }
       if (g.status === 'cleared') wins += 1;
     }
+    const later = strat.clears !== undefined && strat.clears > clears ? `（救った世界 ${strat.clears} から）` : '';
     if (block) rows.push(`   ✕ ${strat.name.padEnd(22)} 筆の位で止まる（${block}）`);
     else {
       usable += 1;
       if (wins > 0) clearedStrats += 1;
-      rows.push(`   ${wins > 0 ? '○' : '・'} ${strat.name.padEnd(22)} ${wins}/${seeds}`);
+      rows.push(`   ${wins > 0 ? '○' : '・'} ${strat.name.padEnd(22)} ${wins}/${seeds}${later}`);
     }
   }
   const rank = gameData.access.ranks[accessFor(gameData, st.id as StageId, clears).rank]!.name;

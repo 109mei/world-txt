@@ -34,8 +34,23 @@ export const SCENARIOS: Scenario[] = [
   { name: 'aliens_war', stage: 'war', edits: [{ text: '宇宙人が地球に来る。' }], expect: ['conquered'] },
   { name: 'aliens_peace', stage: 'climate', edits: [...PEACE, { text: '宇宙人が地球に来る。' }], expect: ['star_friends'] },
   { name: 'aliens_endless', stage: 'endless', edits: [...PEACE, { text: '宇宙人が地球に来る。' }] },
-  { name: 'colonize', stage: 'food', edits: [{ law: 'human_food', text: '人間は数日に一度食事を必要とする。' }, { text: '人類は他の星に住める。' }], expect: ['star_voyage'] },
-  { name: 'utopia', stage: 'food', edits: [{ law: 'human_food', text: '人間は数日に一度食事を必要とする。' }, { law: 'food_rot', text: '食べ物は蔵の中では腐らない。' }] },
+  // 星々への旅立ちには、文明・科学・エネルギーを8年保つ下地が要る：病を人から断ち、増える人口の食べ物は食事を減らして賄う
+  {
+    name: 'colonize',
+    stage: 'plague',
+    edits: [{ law: 'pathogen_infect', text: '病原体は生き物に感染する。ただし人間には感染しない。' }, { law: 'human_food', text: '人間は数日に一度食事を必要とする。' }, { text: '人類は他の星に住める。' }],
+    expect: ['star_voyage'],
+  },
+  // 食事を減らし、蔵をつくり、植物を少しの水で育てる（よく作り込んだ食料危機の世界は、楽園にたどり着くことがある）
+  {
+    name: 'utopia',
+    stage: 'food',
+    edits: [
+      { law: 'human_food', text: '人間は数日に一度食事を必要とする。' },
+      { law: 'food_rot', text: '食べ物は時間がたつと腐る。ただし蔵の中では腐らない。' },
+      { law: 'plant_grow', text: '植物は少しの水と光と二酸化炭素で育つ。' },
+    ],
+  },
   { name: 'colonize_weak', stage: 'food', edits: [{ text: '人類は他の星に住める。' }] },
   { name: 'two_suns', stage: 'climate', edits: [{ text: '太陽が二つある。' }] },
   { name: 'eternal_night', stage: 'food', edits: [{ text: '世界はずっと夜のままだ。' }] },
@@ -48,7 +63,8 @@ export const SCENARIOS: Scenario[] = [
   // 不老不死：死なず老いず、人が増え続ける
   { name: 'eternal', stage: 'climate', edits: [{ text: '人は不老不死である。' }], expect: ['undying'] },
   // 誰も死なず、誰も生まれない
-  { name: 'closed', stage: 'tiny', edits: [{ text: '人は死なない。' }, { text: '人は子を産まない。' }], expect: ['closed_eternity'] },
+  // 誰も死なず、誰も生まれない（極小世界は水が乏しいので、雨を増やして10年を保つ）
+  { name: 'closed', stage: 'tiny', edits: [{ text: '人は死なない。' }, { text: '人は子を産まない。' }, { law: 'water_rain', text: '雨は多く降る。' }], expect: ['closed_eternity'] },
   { name: 'eternal_plague', stage: 'plague', edits: [{ text: '人は不老不死である。' }] },
   // 時間の文は、書いたら特別な結末（くり返したり戻ったりして、世界が終わらなくなることはない）
   { name: 'time_stop', stage: 'food', edits: [{ text: '時間が止まる。' }], expect: ['eternal_instant'] },
@@ -72,8 +88,9 @@ export const SCENARIOS: Scenario[] = [
   { name: 'weak_force', stage: 'climate', edits: [{ text: '弱い力は存在しない。' }] },
   { name: 'no_light', stage: 'climate', edits: [{ text: '光は存在しない。' }], expect: ['sunless'] },
   // 心と値打ち
-  { name: 'button', stage: 'energy', edits: [{ text: '5億年ボタンを押すと100万円もらえる。' }] },
-  { name: 'button_memory', stage: 'energy', edits: [{ text: '5億年ボタンを押すと100万円もらえる。' }, { text: '人は何も忘れない。' }] },
+  // 5億年ボタン：物価が千倍を超えるまで世界が保つよう、ふつうの世界（無限の世界）で試す
+  { name: 'button', stage: 'endless', edits: [{ text: '5億年ボタンを押すと100万円もらえる。' }] },
+  { name: 'button_memory', stage: 'endless', edits: [{ text: '5億年ボタンを押すと100万円もらえる。' }, { text: '人は何も忘れない。' }] },
   { name: 'no_emotion', stage: 'war', edits: [{ text: '人は感情を持たない。' }] },
   // 人が死を望む：生きる力が尽き、数年のうちに人が絶える（心の尽きた星）
   { name: 'death_wish', stage: 'food', edits: [{ text: '人は死を望む。' }], expect: ['mind_collapse'] },

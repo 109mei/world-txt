@@ -61,8 +61,9 @@ describe('いろいろな世界への変化と、その結末', () => {
     const g = createGame(gameData, 'plague', 7);
     g.sim.capacityMax += 40 * 6;
     g.edits.left = 5;
-    // 病の広がらない、争いのない世界に宇宙人が来る
+    // 病の広がらない、食べ物の足りる、争いのない世界に宇宙人が来る（病で人が減らない世界は、食べ物が足りなくなると緊張が高まる）
     addLine(g, gameData, '病原体は人に感染しない。');
+    addLine(g, gameData, '人間は数日に一度食事を必要とする。');
     addLine(g, gameData, '争いは話し合いになりうる。');
     addLine(g, gameData, '宇宙人が地球に来る。');
     while (g.status === 'playing') advance(g, gameData, 5);
@@ -79,7 +80,7 @@ describe('いろいろな世界への変化と、その結末', () => {
   });
 
   it('よく作り込んだ世界は「楽園」にたどり着くことがある', () => {
-    const st = STRATEGIES.food.find((s) => s.name === 'few_days_storage')!;
+    const st = STRATEGIES.food.find((s) => s.name === 'few_store_water_harvest')!;
     const endings = [1000, 1001, 1002, 1003, 1004].map((seed) => play(gameData, 'food', st, seed).ending);
     expect(endings).toContain('utopia');
   });

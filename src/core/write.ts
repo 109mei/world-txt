@@ -331,9 +331,13 @@ function guard(g: GameState, data: GameData, plan: Plan, text: string): Plan {
   }
   if (plan.added && a.margin !== null && g.extras.length >= a.margin) return blockPlan(g, 'margin');
   if (a.depth !== null) {
+    // 書く意味の重さ：書き足す概念も、行の新しい読み取り（消したときの意味も）も、同じ尺度（無理の大きさ）で測る
     for (const d of plan.discoveries) {
       const p = d.startsWith('p:') ? data.phraseById.get(d.slice(2)) : undefined;
       if (p && p.incoherence > a.depth) return blockPlan(g, 'heavy', { heavy: { name: phraseName(p.name, sentence(text)), rank: rankForDepth(data, p.incoherence) } });
+      const r = d.startsWith('r:') ? /^r:(\w+)\.(.+)$/u.exec(d) : null;
+      const o = r ? data.optionOf.get(r[1]!)?.get(r[2]!) : undefined;
+      if (o && o.incoherence > a.depth) return blockPlan(g, 'heavy', { heavy: { name: o.label, rank: rankForDepth(data, o.incoherence) } });
     }
   }
   return plan;

@@ -129,14 +129,19 @@ describe('無限の世界', () => {
 });
 
 describe('無限の世界の手触り（docs/SPEC.md 5章）', () => {
-  const seeds = Array.from({ length: 12 }, (_, i) => 7000 + i);
-  const years = (name: string) => spread(seeds.map((s) => ENDLESS_POLICIES.find((p) => p.name === name)!.play(gameData, s).year));
+  // 種は `npm run sim -- endless all 30` と同じ30個
+  const seeds = Array.from({ length: 30 }, (_, i) => 1000 + i);
+  const cache = new Map<string, ReturnType<typeof spread>>();
+  const years = (name: string) => {
+    if (!cache.has(name)) cache.set(name, spread(seeds.map((s) => ENDLESS_POLICIES.find((p) => p.name === name)!.play(gameData, s).year)));
+    return cache.get(name)!;
+  };
 
-  it('何もしなくても、すぐには滅びない（中央値 25〜90年）。でたらめに書き換えると早く滅びる（中央値 30年未満）', () => {
+  it('何もしないと、数十年で滅びる（中央値 20〜40年）。でたらめに書き換えると早く滅びる（中央値 15年未満）', () => {
     const nothing = years('nothing');
-    expect(nothing.median).toBeGreaterThanOrEqual(25);
-    expect(nothing.median).toBeLessThanOrEqual(90);
-    expect(years('random').median).toBeLessThan(30);
+    expect(nothing.median).toBeGreaterThanOrEqual(20);
+    expect(nothing.median).toBeLessThanOrEqual(40);
+    expect(years('random').median).toBeLessThan(15);
   });
 
   it('危機の知らせを読んで防ぐと、何もしない世界の2倍以上続く', () => {

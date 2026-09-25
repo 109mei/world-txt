@@ -40,7 +40,8 @@
     },
     "mods": {
       "waterSupply": 0.8,
-      "agriMax": 0.78
+      "agriMax": 0.75,
+      "tension": 6
     },
     "capacity": 636,
     "edits": {
@@ -49,7 +50,7 @@
       "max": 5
     },
     "fail": {
-      "pop": 60,
+      "pop": 68,
       "civ": 25
     }
   },
@@ -92,6 +93,10 @@
       "tension": 32,
       "unemployment": 0.06
     },
+    "mods": {
+      "agriMax": 0.8,
+      "waterSupply": 0.8
+    },
     "capacity": 576,
     "edits": {
       "start": 3,
@@ -99,7 +104,7 @@
       "max": 5
     },
     "fail": {
-      "pop": 60,
+      "pop": 66,
       "civ": 25
     }
   },
@@ -127,12 +132,12 @@
       "industry": 1,
       "energyCap": 1.04,
       "renewShare": 0.18,
-      "oilReserve": 45,
+      "oilReserve": 36,
       "infra": 0.88,
       "science": 1,
       "eco": 50,
-      "co2": 455,
-      "temp": 1.5,
+      "co2": 470,
+      "temp": 1.8,
       "pathogen": 2.5,
       "immunity": 0.39,
       "strainR": 1,
@@ -144,10 +149,11 @@
     },
     "mods": {
       "emissions": 1.3,
-      "renewGrowth": 0.5
+      "renewGrowth": 0.5,
+      "misfortune": 1.5
     },
     "capacity": 612,
-    "capacityDecay": 1.5,
+    "capacityDecay": 1.8,
     "edits": {
       "start": 3,
       "every": 5,
@@ -198,9 +204,9 @@
       "unemployment": 0.06
     },
     "mods": {
-      "war": 1.5,
+      "war": 1.7,
       "warHarm": 1.5,
-      "tension": 24
+      "tension": 40
     },
     "capacity": 612,
     "edits": {
@@ -209,7 +215,7 @@
       "max": 5
     },
     "fail": {
-      "pop": 62,
+      "pop": 68,
       "civ": 25
     },
     "unlock": 1
@@ -238,7 +244,7 @@
       "industry": 1,
       "energyCap": 1.04,
       "renewShare": 0.2,
-      "oilReserve": 10,
+      "oilReserve": 8,
       "infra": 0.88,
       "science": 1,
       "eco": 52,
@@ -255,16 +261,17 @@
     },
     "mods": {
       "renewGrowth": 0.55,
-      "fossilDepletion": 1.25
+      "fossilDepletion": 1.25,
+      "tension": 16
     },
-    "capacity": 612,
+    "capacity": 590,
     "edits": {
       "start": 3,
       "every": 5,
       "max": 5
     },
     "fail": {
-      "pop": 60,
+      "pop": 66,
       "civ": 25
     },
     "unlock": 1
@@ -308,9 +315,12 @@
       "tension": 38,
       "unemployment": 0.06
     },
-    "mods": {},
+    "mods": {
+      "waterSupply": 0.88,
+      "tension": 4
+    },
     "capacity": 516,
-    "capacityDecay": 1.8,
+    "capacityDecay": 2.3,
     "edits": {
       "start": 4,
       "every": 3,
@@ -363,7 +373,11 @@
       "tension": 48,
       "unemployment": 0.06
     },
-    "mods": {},
+    "mods": {
+      "waterSupply": 0.9,
+      "agriMax": 0.9,
+      "tension": 15
+    },
     "capacity": 612,
     "capacityDecay": 0,
     "edits": {
@@ -429,6 +443,10 @@
       "happiness": 55,
       "tension": 36,
       "unemployment": 0.06
+    },
+    "mods": {
+      "waterSupply": 0.85,
+      "agriMax": 0.9
     },
     "capacity": 624,
     "capacityDecay": 0.3,

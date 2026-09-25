@@ -131,16 +131,12 @@ test('主な画面', async ({ page }) => {
   await quiet(page);
   await page.screenshot({ path: shot('19_endless_result') });
 
-  // 特別な結末（よく作り込んだ世界 → 楽園）と、実績
-  await debug(page, "start('food')");
+  // 特別な結末（病を人から断ち、食事を減らし、星々へ移り住む → 星々への旅立ち）と、筆の位が上がった知らせ、実績
+  await debug(page, "start('plague')");
+  await debug(page, 'boost()');
+  await debug(page, "rewrite('pathogen_infect', '病原体は生き物に感染する。ただし人間には感染しない。')");
   await debug(page, "rewrite('human_food', '人間は数日に一度食事を必要とする。')");
-  await debug(page, "rewrite('food_rot', '食べ物は時間がたつと腐る。ただし蔵の中では腐らない。')");
-  for (let i = 0; i < 12; i++) {
-    const st = await debug<{ year: number }>(page, 'state()');
-    if (st.year >= 10) break;
-    await debug(page, `advance(${10 - st.year})`);
-  }
-  await debug(page, "rewrite('plant_grow', '植物は少しの水と光と二酸化炭素で育つ。')");
+  await debug(page, "add('人類は他の星に住める。')");
   for (let i = 0; i < 20; i++) {
     const st = await debug<{ status: string }>(page, 'state()');
     if (st.status !== 'playing') break;

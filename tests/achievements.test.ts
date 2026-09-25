@@ -56,10 +56,16 @@ describe('実績', () => {
   });
 
   it('1回だけの書き換えで救うと「一文で救う」', () => {
-    const g = createGame(gameData, 'food', 1);
-    rewriteLaw(g, gameData, 'human_food', '人間は数日に一度食事を必要とする。');
-    advance(g, gameData, 40);
-    while (g.status === 'playing') advance(g, gameData, 5);
+    // 一手だけで救える世界は多くない（docs/SPEC.md 5章）ので、食事を減らす一手で救えた世界を探して確かめる
+    const once = (seed: number) => {
+      const g = createGame(gameData, 'food', seed);
+      rewriteLaw(g, gameData, 'human_food', '人間は数日に一度食事を必要とする。');
+      advance(g, gameData, 40);
+      while (g.status === 'playing') advance(g, gameData, 5);
+      return g;
+    };
+    let g = once(1);
+    for (let seed = 2; seed <= 40 && g.status !== 'cleared'; seed += 1) g = once(seed);
     expect(g.status).toBe('cleared');
     const got = newAchievements(gameData, g, fresh());
     expect(got).toContain('minimalist');
