@@ -247,4 +247,21 @@ test.describe('390×844 のスマホ縦画面', () => {
     await expect(page.getByTestId('ending')).toContainText('無');
     await expect(page.getByTestId('ending')).toContainText('なぜ？');
   });
+
+  test('ホーム画面に追加したときのアイコンと名前がある（iPhone と Android）', async ({ page, request }) => {
+    await page.goto('./');
+    await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', 'WORLD.txt');
+    const here = page.url();
+    const apple = await page.locator('link[rel="apple-touch-icon"]').getAttribute('href');
+    const icon = await request.get(new URL(apple!, here).href);
+    expect(icon.ok()).toBe(true);
+    expect(icon.headers()['content-type']).toContain('image/png');
+    const manifestUrl = new URL((await page.locator('link[rel="manifest"]').getAttribute('href'))!, here).href;
+    const manifest = (await (await request.get(manifestUrl)).json()) as { short_name: string; display: string; icons: { src: string; purpose?: string }[] };
+    expect(manifest.short_name).toBe('WORLD.txt');
+    // ホーム画面から開いてもブラウザで開く（iPhone でセーブが Safari と分かれないように）
+    expect(manifest.display).toBe('browser');
+    expect(manifest.icons.some((i) => i.purpose === 'maskable')).toBe(true);
+    for (const i of manifest.icons) expect((await request.get(new URL(i.src, manifestUrl).href)).ok(), i.src).toBe(true);
+  });
 });

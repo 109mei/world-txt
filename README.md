@@ -47,6 +47,7 @@ npm run build     # 公開用ビルド（dist/）
 ## 素材
 
 - BGM：The Unfolded Manuscript（`public/audio/bgm.mp3`）
-- 共有用画像（OGP）：`public/og.jpg` に置く（1731×909）
+- 共有用画像（OGP）：`public/og.jpg`（1731×909）
+- ホーム画面のアイコン：`public/apple-touch-icon.png`・`icon-192.png`・`icon-512.png`・`icon-maskable-512.png`（円の紋章から作る）と `public/manifest.webmanifest`
 - 書体：Cormorant Garamond、しっぽり明朝（Google Fonts）
 - アイコン：lucide

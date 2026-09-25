@@ -348,11 +348,12 @@
 - アイコンは lucide（画面）／絵文字（共有テキスト）
 - BGM：The Unfolded Manuscript（`public/audio/bgm.mp3`、最初のタップで流す、ループ、ON/OFF と音量。iPhone でも音量が効くよう WebAudio の音量つまみを通す）
 - 効果音：素材を使わずその場で合成する（書き換え＝ペンの音、時が流れる＝ページをめくる音、観測記録に加わる＝小さな鈴、重大な出来事＝低い音）。メニューで ON/OFF、音量は BGM と共通
-- OGP：`public/og.jpg`（LINE・SNS 共有用。画像はユーザー提供のものを置く）。リザルトの共有画像はその場で描く（1200×630、`src/ui/shareImage.ts`）
+- OGP：`public/og.jpg`（1731×909。LINE・SNS 共有用。ユーザー提供の絵）。リザルトの共有画像はその場で描く（1200×630、`src/ui/shareImage.ts`）
+- ホーム画面のアイコン：ユーザー提供の円の紋章から作る。iPhone は `public/apple-touch-icon.png`（180px）、Android は `public/manifest.webmanifest` の 192px・512px と、丸く切り抜かれても欠けない maskable 512px。名前は「WORLD.txt」。ホーム画面から開いてもブラウザで開く（`display: browser`。iPhone でセーブが Safari と分かれないように）
 
 ## 9. 完了の条件
 
-- `npm test`（Vitest 728本）と `npm run e2e`（Playwright 15本、390×844）が通る
+- `npm test`（Vitest 728本）と `npm run e2e`（Playwright 16本、390×844）が通る
 - `npm run screens` のスクリーンショットで崩れがない
 - `npm run fuzz` で例外・数値の破綻・怪しい読み取りが 0
 - `npm run build` が通る
