@@ -2,28 +2,57 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import type { CauseRef, NewsItem } from '../core';
 import type { Tone } from '../data/schema';
-import type { LawLine } from '../store/view';
+import type { LawLine, LimitView } from '../store/view';
 import { Icon, TrendArrow } from './icons';
 import type { Trend } from '../core';
 
+/**
+ * 世界の終わりまでの1行：終わりの線つきの帯と、線までの近さの言葉。
+ * 帯の左の斜線が「終わり」、赤い線を越えると世界が終わる。onClick があればボタンになる
+ */
+export function LimitRow({ limit: l, onClick, testId }: { limit: LimitView; onClick?: () => void; testId?: string }) {
+  const body = (
+    <>
+      <span className="limit-label">
+        <Icon name={l.icon} size={14} /> {l.label}
+      </span>
+      <span className="limit-track" aria-hidden>
+        <span className="limit-zone" style={{ width: `${l.line * 100}%` }} />
+        <span className={`limit-fill tone-bg-${l.tone}`} style={{ width: `${l.pos * 100}%` }} />
+        <span className="limit-line" style={{ left: `${l.line * 100}%` }} />
+      </span>
+      <span className={`limit-word tone-${l.tone}`}>
+        {l.word}
+        <TrendArrow trend={l.trend} />
+      </span>
+      <span className="limit-foot">
+        <span className="limit-note">{l.note}</span>
+        {l.countdown !== null ? (
+          <span className="limit-when tone-critical" data-testid="limit-countdown">
+            あと{l.countdown}年で終わる
+          </span>
+        ) : l.eta !== null ? (
+          <span className="limit-when tone-warn" data-testid="limit-eta">
+            このままなら約{l.eta}年
+          </span>
+        ) : null}
+      </span>
+    </>
+  );
+  const cls = `limit limit-${l.tone}`;
+  return onClick ? (
+    <button className={cls} onClick={onClick} data-testid={testId} data-word={l.word}>
+      {body}
+    </button>
+  ) : (
+    <div className={cls} data-testid={testId} data-word={l.word}>
+      {body}
+    </div>
+  );
+}
+
 /** 両端に言葉のあるメーター（例：余裕 ━━━╸━━ 限界）。pos は 0〜1 */
-export function Meter({
-  ends,
-  pos,
-  word,
-  tone,
-  trend,
-  label,
-  testId,
-}: {
-  ends: [string, string];
-  pos: number;
-  word: string;
-  tone: Tone;
-  trend?: Trend;
-  label?: ReactNode;
-  testId?: string;
-}) {
+export function Meter({ ends, pos, word, tone, trend, label, testId }: { ends: [string, string]; pos: number; word: string; tone: Tone; trend?: Trend; label?: ReactNode; testId?: string }) {
   return (
     <div className="meter" data-testid={testId}>
       {label && <div className="meter-label">{label}</div>}

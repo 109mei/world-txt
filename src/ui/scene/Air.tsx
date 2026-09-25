@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { SceneView } from '../../store/scene';
-import { BAD, dur, delay, H, HORIZON, INK, m, Motif, PAPER, rnd, SILVER_DIM, strokeOf, W, WARN } from './common';
+import { BAD, dur, delay, Ghost, H, HORIZON, INK, m, Motif, PAPER, rnd, SILVER_DIM, strokeOf, W, WARN } from './common';
 import { Person } from './People';
 
 /** 雲の形（左上を基準にした雲の輪郭） */
@@ -15,26 +15,27 @@ export function Clouds({ v }: { v: SceneView }) {
   const count = Math.max(0, Math.round((3 + 5 * m(v, 'clouds') + 3 * m(v, 'storm') + 2 * m(v, 'rain') - 3 * none) * (none > 0.8 ? 0 : 1)));
   const dark = m(v, 'storm') > 0.3 || m(v, 'acidRain') > 0.3;
   const id = m(v, 'storm') > 0 ? 'storm' : 'clouds';
+  const cloud = (i: number, stroke: string) => {
+    const w = 40 + rnd(v.seed, 100 + i) * 50;
+    const y = 16 + rnd(v.seed, 120 + i) * 70;
+    const x = rnd(v.seed, 140 + i) * W;
+    return (
+      <g key={i} transform={`translate(${x} ${y})`}>
+        <g className="sc-drift" style={{ ...dur(60 + (i % 4) * 14), ...delay(i * 9) }}>
+          <path d={cloudPath(w)} fill={dark ? '#15161b' : '#1c1d24'} stroke={stroke} strokeWidth={0.7} opacity={0.9} />
+        </g>
+      </g>
+    );
+  };
   return (
     <Motif v={v} id={id}>
-      {Array.from({ length: count }, (_, i) => {
-        const w = 40 + rnd(v.seed, 100 + i) * 50;
-        const y = 16 + rnd(v.seed, 120 + i) * 70;
-        const x = rnd(v.seed, 140 + i) * W;
-        return (
-          <g key={i} transform={`translate(${x} ${y})`}>
-            <g className="sc-drift" style={{ ...dur(60 + (i % 4) * 14), ...delay(i * 9) }}>
-              <path
-                d={cloudPath(w)}
-                fill={dark ? '#15161b' : '#1c1d24'}
-                stroke={i < 2 && (v.inked.includes('clouds') || v.inked.includes('storm')) ? INK : SILVER_DIM}
-                strokeWidth={0.7}
-                opacity={0.9}
-              />
-            </g>
-          </g>
-        );
-      })}
+      {Array.from({ length: count }, (_, i) => cloud(i, i < 2 && (v.inked.includes('clouds') || v.inked.includes('storm')) ? INK : SILVER_DIM))}
+      {/* 雲が消えた年は、空の雲がほどけて消えていく */}
+      {none > 0.8 && (
+        <Ghost v={v} when="noClouds" kind="fade">
+          {Array.from({ length: 3 }, (_, i) => cloud(i, SILVER_DIM))}
+        </Ghost>
+      )}
       {m(v, 'storm') > 0.3 &&
         [70, 250].map((x, k) => (
           <path

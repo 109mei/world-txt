@@ -716,11 +716,11 @@ textarea:focus-visible {
 .ind {
   display: grid;
   grid-template-columns: 22px 1fr auto;
-  grid-template-rows: auto auto;
+  grid-template-rows: auto auto auto;
   column-gap: 6px;
   align-items: center;
   min-height: 54px;
-  padding: 7px 8px 7px 9px;
+  padding: 7px 8px 6px 9px;
   border: 1px solid var(--line);
   background: var(--panel);
   text-align: left;
@@ -755,6 +755,138 @@ textarea:focus-visible {
   width: 100%;
   text-align: left;
   margin-top: 8px;
+}
+/* 項目の水準の帯（細い線と、ここより下は悪い状態になる目盛り） */
+.ind-bar {
+  grid-column: 1 / 4;
+  grid-row: 3;
+  position: relative;
+  height: 2px;
+  margin-top: 6px;
+  background: rgba(255, 255, 255, 0.1);
+}
+.ind-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  opacity: 0.75;
+  transition: width 0.6s ease-out;
+}
+.ind-bar-danger {
+  position: absolute;
+  top: -2px;
+  width: 1px;
+  height: 6px;
+  background: rgba(255, 110, 97, 0.7);
+}
+
+/* 世界の終わりまで（終わりの線つきの帯） */
+.limits {
+  margin: 10px 0 2px;
+  padding: 6px 10px 2px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.limits .section-title {
+  margin: 0 0 2px;
+}
+.limits-sheet {
+  margin: 10px 0;
+}
+.limit {
+  display: grid;
+  grid-template-columns: 5.9em 1fr 4.7em;
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  align-items: center;
+  width: 100%;
+  min-height: 46px;
+  padding: 6px 0 5px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+.limits .section-title + .limit {
+  border-top: 0;
+}
+.limit-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--dim);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.limit-track {
+  position: relative;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+}
+/* 線の先は、世界が終わる所（斜線） */
+.limit-zone {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(135deg, rgba(255, 110, 97, 0.38) 0 1.5px, transparent 1.5px 4.5px);
+}
+.limit-fill {
+  position: absolute;
+  left: 0;
+  top: 1px;
+  bottom: 1px;
+  opacity: 0.8;
+  transition: width 0.8s ease-out;
+}
+.limit-line {
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--critical);
+  box-shadow: 0 0 6px rgba(255, 110, 97, 0.55);
+}
+.limit-word {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.limit-word .trend {
+  font-size: 14px;
+}
+.limit-foot {
+  grid-column: 2 / 4;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  column-gap: 8px;
+  margin-top: 4px;
+  font-size: 10.5px;
+  line-height: 1.4;
+}
+.limit-note {
+  color: var(--dim);
+}
+.limit-when {
+  font-weight: 700;
+  white-space: nowrap;
+}
+/* 目前・越えた：線が脈打つ */
+.limit-bad .limit-line,
+.limit-critical .limit-line {
+  animation: limit-pulse 1.4s ease-in-out infinite;
+}
+@keyframes limit-pulse {
+  50% {
+    box-shadow: 0 0 12px rgba(255, 110, 97, 0.95);
+    opacity: 0.7;
+  }
 }
 .meter {
   border: 1px solid var(--line);
@@ -1760,6 +1892,64 @@ mark.ink {
   color: var(--ink);
   border-color: rgba(166, 205, 255, 0.5);
 }
+.add-left {
+  margin-left: 4px;
+  font-size: 12px;
+  color: var(--dim);
+}
+.add-line[data-full] {
+  color: var(--dim);
+  border-color: var(--line);
+}
+
+/* 筆の位：書き換えられる範囲（封じられた行・書き足せる行の数・書ける物） */
+.pen-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 8px 0 0;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 12px;
+  color: var(--dim);
+}
+.pen-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text);
+  letter-spacing: 0.08em;
+}
+.pen-item b {
+  font-family: var(--latin);
+  font-size: 14px;
+  color: var(--text);
+}
+.pen-crisis {
+  flex-basis: 100%;
+  color: var(--warn);
+}
+/* 封じられた行：薄く、封の印を添える（タップすると、どの位で開くかを知らせる） */
+.line-sealed .law-text,
+.line-sealed .ln {
+  color: var(--faint);
+}
+.seal-tag {
+  flex: none;
+  align-self: center;
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid rgba(242, 163, 147, 0.45);
+  border-radius: 3px;
+  color: rgba(242, 163, 147, 0.8);
+  font-size: 11px;
+  line-height: 1;
+  transform: rotate(-6deg);
+}
 
 /* ---------------------------------------------------------------- 原因（出来事がどの行から来たか） */
 
@@ -2632,8 +2822,465 @@ mark.ink {
 }
 
 /* この年に新しく描かれたものは、インクがにじむように現れる */
-.sc-appear {
+.sc-appear,
+.sc-in-ink {
   animation: sc-appear 2.2s ease-out both;
+}
+
+/*
+ * 要素ごとの現れ方と消え方（時間を進めた年に、世界の変わりようを見せる）。
+ * 枠の大きさを基準に動かす（transform-box: fill-box）。去年の絵から塗り替わるときは、塗り替えが通り過ぎてから動く
+ */
+.sc-fresh {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.scene-transit .sc-fresh {
+  animation-delay: 0.75s;
+}
+.sc-in-swell {
+  animation: sc-in-swell 2.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.sc-in-shrink {
+  animation: sc-in-shrink 2.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.sc-in-grow {
+  animation: sc-in-grow 1.8s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+.sc-in-spiral {
+  animation: sc-in-spiral 2.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.sc-in-open {
+  animation: sc-in-open 1.6s cubic-bezier(0.3, 0.8, 0.3, 1) both;
+}
+.sc-in-burst {
+  animation: sc-in-burst 1.6s ease-out both;
+}
+.sc-in-rise {
+  animation: sc-in-rise 2.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.sc-in-descend {
+  animation: sc-in-descend 2.2s cubic-bezier(0.2, 0.7, 0.25, 1) both;
+}
+.sc-in-fall {
+  animation: sc-in-fall 1.4s cubic-bezier(0.5, 0, 0.8, 0.6) both;
+}
+.sc-in-drop {
+  animation: sc-in-drop 1.5s both;
+}
+.sc-in-tide {
+  animation: sc-in-tide 2.6s ease-in-out both;
+}
+.sc-in-sprout,
+.sc-in-erupt {
+  transform-origin: center bottom;
+}
+.sc-in-sprout {
+  animation: sc-in-sprout 2s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.sc-in-erupt {
+  animation: sc-in-erupt 1.6s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+}
+.sc-in-sweep {
+  animation: sc-in-sweep 2.2s ease-in-out both;
+}
+.sc-in-sweepBack {
+  animation: sc-in-sweep-back 2.4s ease-in-out both;
+}
+.sc-in-walk {
+  animation: sc-in-walk 2.4s cubic-bezier(0.25, 0.6, 0.3, 1) both;
+}
+.sc-in-surface {
+  animation: sc-in-surface 2.4s cubic-bezier(0.25, 0.6, 0.3, 1) both;
+}
+.sc-in-lift {
+  animation: sc-in-lift 2s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+.sc-in-flicker {
+  animation: sc-in-flicker 1.6s steps(1) both;
+}
+@keyframes sc-in-swell {
+  0% {
+    opacity: 0.5;
+    transform: scale(0.55);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sc-in-shrink {
+  0% {
+    opacity: 0.6;
+    transform: scale(1.8);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sc-in-grow {
+  0% {
+    opacity: 0;
+    transform: scale(0.1);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sc-in-spiral {
+  0% {
+    opacity: 0;
+    transform: scale(0.05) rotate(-200deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sc-in-open {
+  0% {
+    opacity: 0.2;
+    transform: scaleY(0.02);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sc-in-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sc-in-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(46px);
+  }
+  30% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sc-in-descend {
+  0% {
+    opacity: 0;
+    transform: translateY(-70px);
+  }
+  30% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sc-in-fall {
+  0% {
+    opacity: 0;
+    transform: translate(60px, -90px);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sc-in-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-60px);
+    animation-timing-function: cubic-bezier(0.5, 0, 1, 0.6);
+  }
+  55% {
+    opacity: 1;
+    transform: none;
+    animation-timing-function: cubic-bezier(0, 0.4, 0.5, 1);
+  }
+  72% {
+    transform: translateY(-9px);
+    animation-timing-function: cubic-bezier(0.5, 0, 1, 0.6);
+  }
+  86% {
+    transform: none;
+  }
+  93% {
+    transform: translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sc-in-tide {
+  0% {
+    transform: translateY(14px);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes sc-in-sprout {
+  0% {
+    opacity: 0.3;
+    transform: scaleY(0.02);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sc-in-erupt {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.05);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sc-in-sweep {
+  0% {
+    opacity: 0.3;
+    clip-path: inset(-20% 100% -20% 0);
+  }
+  100% {
+    opacity: 1;
+    clip-path: inset(-20% 0 -20% 0);
+  }
+}
+@keyframes sc-in-sweep-back {
+  0% {
+    opacity: 0.3;
+    clip-path: inset(-20% 0 -20% 100%);
+  }
+  100% {
+    opacity: 1;
+    clip-path: inset(-20% 0 -20% 0);
+  }
+}
+@keyframes sc-in-walk {
+  0% {
+    opacity: 0;
+    transform: translateX(-70px);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sc-in-surface {
+  0% {
+    opacity: 0;
+    transform: translate(40px, 18px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sc-in-lift {
+  0% {
+    opacity: 0;
+    transform: translateY(34px) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sc-in-flicker {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  20% {
+    opacity: 0.1;
+  }
+  34% {
+    opacity: 0.9;
+  }
+  42% {
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  68% {
+    opacity: 0.3;
+  }
+  80%,
+  100% {
+    opacity: 1;
+  }
+}
+/* 消えていくもの（前の姿を残してから消す。消え終わったら見えないまま） */
+.sc-out-fade {
+  animation: sc-out-fade 2s ease-in both;
+}
+.sc-out-wane {
+  animation: sc-out-wane 2.4s ease-in both;
+}
+.sc-out-set {
+  animation: sc-out-set 2.6s cubic-bezier(0.5, 0, 0.7, 0.4) both;
+}
+.sc-out-collapse {
+  animation: sc-out-collapse 2.2s cubic-bezier(0.6, 0, 0.9, 0.5) both;
+}
+.sc-out-drain {
+  animation: sc-out-drain 2.6s ease-in-out both;
+}
+.sc-out-sink {
+  transform-origin: center bottom;
+  animation: sc-out-sink 2s cubic-bezier(0.5, 0, 0.8, 0.5) both;
+}
+.sc-out-flickerOut {
+  animation: sc-out-flicker 1.6s steps(1) both;
+}
+@keyframes sc-out-fade {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes sc-out-wane {
+  to {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+}
+@keyframes sc-out-set {
+  to {
+    opacity: 0;
+    transform: translateY(120px);
+  }
+}
+@keyframes sc-out-collapse {
+  to {
+    opacity: 0;
+    transform: scale(0) rotate(160deg);
+  }
+}
+@keyframes sc-out-drain {
+  to {
+    clip-path: inset(100% -5% -5% -5%);
+  }
+}
+@keyframes sc-out-sink {
+  to {
+    opacity: 0;
+    transform: scaleY(0.05);
+  }
+}
+@keyframes sc-out-flicker {
+  0% {
+    opacity: 1;
+  }
+  15% {
+    opacity: 0.1;
+  }
+  28% {
+    opacity: 0.9;
+  }
+  40% {
+    opacity: 0;
+  }
+  52% {
+    opacity: 0.7;
+  }
+  64%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* 去年の絵を、インクの縁が左から右へ塗り替えていく（世界が書き換わる） */
+.scene-from,
+.scene-wash {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  aspect-ratio: 390 / 220;
+  pointer-events: none;
+}
+.scene .scene-from {
+  -webkit-mask-image: linear-gradient(100deg, transparent 44%, #000 56%);
+  mask-image: linear-gradient(100deg, transparent 44%, #000 56%);
+  -webkit-mask-size: 260% 100%;
+  mask-size: 260% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  animation: scene-wash 1.7s cubic-bezier(0.45, 0.05, 0.4, 1) 0.3s both;
+}
+.scene-from * {
+  animation-play-state: paused !important;
+}
+.scene-wash {
+  background: linear-gradient(100deg, transparent 41%, rgba(166, 205, 255, 0.2) 50%, transparent 59%) no-repeat;
+  background-size: 260% 100%;
+  animation: scene-wash-edge 1.7s cubic-bezier(0.45, 0.05, 0.4, 1) 0.3s both;
+}
+@keyframes scene-wash {
+  from {
+    -webkit-mask-position: 100% 0;
+    mask-position: 100% 0;
+  }
+  to {
+    -webkit-mask-position: 0% 0;
+    mask-position: 0% 0;
+  }
+}
+@keyframes scene-wash-edge {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-from,
+  .scene-wash {
+    display: none;
+  }
+}
+.motion-off .scene-from,
+.motion-off .scene-wash {
+  display: none;
+}
+/* 動きを止めているとき・動きを減らす設定のときは、現れ方を見せずに今年の姿を描き、消えていくものは描かない */
+.motion-off .sc-fresh {
+  animation: none !important;
+}
+.motion-off .sc-ghost {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc-ghost {
+    display: none;
+  }
 }
 @keyframes sc-appear {
   0% {
@@ -3576,4 +4223,328 @@ mark.ink {
     opacity: 0;
     transform: translate(-50%, 8px);
   }
+}
+
+/* ---------------------------------------------------------------- 筆の位（書き換えられる範囲） */
+
+.pen-panel {
+  margin: 4px 0 14px;
+  padding: 10px 14px 11px;
+  border: 1px solid rgba(166, 205, 255, 0.28);
+  background: rgba(166, 205, 255, 0.04);
+}
+.pen-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pen-head .mini-label {
+  margin: 0;
+}
+.pen-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+}
+.pen-steps {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 3px;
+}
+.pen-steps span {
+  width: 14px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.14);
+}
+.pen-steps span.on {
+  background: var(--ink);
+  box-shadow: 0 0 6px rgba(166, 205, 255, 0.5);
+}
+.pen-now {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--dim);
+}
+.pen-next {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text);
+}
+.pen-next b {
+  font-family: var(--latin);
+  font-size: 15px;
+  color: var(--ink);
+  margin: 0 1px;
+}
+/* 結果の画面：筆の位が上がった */
+.rank-up {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(166, 205, 255, 0.55);
+  background: rgba(166, 205, 255, 0.06);
+  text-align: center;
+  animation: rank-up 1.4s ease-out both;
+}
+.rank-up-label {
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  color: var(--dim);
+}
+.rank-up-name {
+  display: block;
+  margin: 4px 0 6px;
+  font-size: 19px;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  text-shadow: 0 0 14px rgba(166, 205, 255, 0.45);
+}
+.rank-up ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  line-height: 1.8;
+}
+@keyframes rank-up {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+    box-shadow: 0 0 0 rgba(166, 205, 255, 0);
+  }
+  40% {
+    opacity: 1;
+    box-shadow: 0 0 26px rgba(166, 205, 255, 0.35);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+    box-shadow: 0 0 0 rgba(166, 205, 255, 0);
+  }
+}
+
+/* ---------------------------------------------------------------- あそびかた（タイトルから開く、5枚のチュートリアル） */
+
+.tut-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.tutorial {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(16px + var(--safe-t, 0px)) 16px calc(16px + var(--safe-b, 0px));
+  background: rgba(0, 0, 0, 0.82);
+  animation: fade 0.2s ease-out;
+}
+.tut-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 12px 16px 16px;
+  border: 1px solid var(--line-strong);
+  background: linear-gradient(180deg, #15161c, #0d0e12);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  animation: tut-in 0.28s ease-out;
+}
+@keyframes tut-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.tut-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tut-count {
+  font-family: var(--latin);
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  color: var(--dim);
+}
+.tut-title {
+  margin: 2px 0 12px;
+  font-size: 19px;
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+.tut-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 118px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: #0b0c10;
+}
+.tut-text {
+  margin: 12px 2px 10px;
+  font-size: 14px;
+  line-height: 1.85;
+}
+.tut-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.tut-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+}
+.tut-dots span.on {
+  background: var(--silver);
+}
+.tut-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 8px;
+}
+.tut-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 46px;
+}
+.tut-actions .btn:disabled {
+  opacity: 0.35;
+}
+/* 見本：WORLD.txt の行 */
+.tut-file {
+  width: 100%;
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+.tut-comment {
+  color: var(--dim);
+  font-size: 12px;
+}
+.tut-line {
+  padding: 2px 0 6px;
+}
+.tut-no {
+  display: inline-block;
+  width: 22px;
+  font-family: var(--latin);
+  color: var(--faint);
+}
+.tut-strike {
+  color: var(--faint);
+  text-decoration-color: rgba(242, 163, 147, 0.8);
+}
+.tut-ink {
+  color: var(--ink);
+  text-shadow: 0 0 10px rgba(166, 205, 255, 0.4);
+}
+.tut-added {
+  border-top: 1px dashed rgba(166, 205, 255, 0.3);
+  padding-top: 6px;
+}
+/* 見本：兆し（項目と、終わりの線までの帯） */
+.tut-signs {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+}
+.tut-tile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  font-size: 13px;
+}
+.tut-tile-label {
+  color: var(--dim);
+}
+.tut-tile b {
+  font-size: 15px;
+}
+.tut-tile .trend {
+  margin-left: auto;
+}
+.tut-limit {
+  display: grid;
+  grid-template-columns: 3em 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--dim);
+}
+/* 見本：時間を進める */
+.tut-time {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+.tut-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 22px;
+  border: 1px solid var(--line-strong);
+  font-family: var(--latin);
+  font-size: 16px;
+}
+.tut-year {
+  font-family: var(--latin);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  color: var(--dim);
+}
+.tut-year b {
+  font-size: 18px;
+  color: var(--text);
+}
+.tut-news {
+  margin: 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--ink);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+/* 見本：筆の位 */
+.tut-pen {
+  width: 100%;
+  display: grid;
+  gap: 5px;
+}
+.tut-rank {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--faint);
+}
+.tut-rank-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+}
+.tut-rank.on {
+  color: var(--ink);
+}
+.tut-rank.on .tut-rank-bar {
+  background: var(--ink);
+  box-shadow: 0 0 6px rgba(166, 205, 255, 0.5);
 }

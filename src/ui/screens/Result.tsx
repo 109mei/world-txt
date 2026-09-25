@@ -3,6 +3,7 @@ import { gameData } from '../../data';
 import { getRuntime, goStages, openRecords, readHistory, retryStage, showToast, useGame } from '../../store/game';
 import { civLevel } from '../../core';
 import { chronicle, populationText } from '../../store/view';
+import { gainsOf } from '../../store/pen';
 import { rankOf, rankTitle } from '../../store/ranking';
 import { Curve } from '../Curve';
 import { EMOJI, Icon } from '../icons';
@@ -15,6 +16,7 @@ export function Result() {
   const view = useGame((s) => s.view);
   const runs = useGame((s) => s.progress.endless);
   const ranking = useGame((s) => s.progress.ranking);
+  const rankUp = useGame((s) => s.rankUp);
   const g = getRuntime().state;
   if (!view || !g) return null;
   const sum = view.summary;
@@ -112,6 +114,18 @@ export function Result() {
       <div className={cleared ? 'result-status good' : 'result-status bad'}>{cleared ? 'MISSION COMPLETE' : endless ? 'THE END OF THE WORLD' : 'WORLD COLLAPSED'}</div>
       {/* 世界の最後の姿（結末の情景） */}
       <WorldScene scene={view.scene} compact testId="result-scene" />
+      {/* 世界を救って筆の位が上がった：書き換えられる範囲が広がる */}
+      {cleared && rankUp !== null && gameData.access.ranks[rankUp] && (
+        <section className="rank-up" data-testid="rank-up">
+          <div className="rank-up-label">筆の位が上がった</div>
+          <b className="rank-up-name">{gameData.access.ranks[rankUp]!.name}</b>
+          <ul>
+            {gainsOf(gameData, rankUp).map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+        </section>
+      )}
       {view.ending && (
         <section className={`ending ending-${view.ending.kind}`} data-testid="ending">
           <div className="ending-label">結末</div>
@@ -177,14 +191,7 @@ export function Result() {
 
       {g.trace.pop.length > 1 && (
         <section className="curves" data-testid="curves">
-          <Curve
-            label="人口"
-            values={g.trace.pop}
-            marks={editYears}
-            from={populationText(g.trace.pop[0]!)}
-            to={populationText(g.trace.pop[g.trace.pop.length - 1]!)}
-            danger={stage.fail.pop}
-          />
+          <Curve label="人口" values={g.trace.pop} marks={editYears} from={populationText(g.trace.pop[0]!)} to={populationText(g.trace.pop[g.trace.pop.length - 1]!)} danger={stage.fail.pop} />
           <Curve
             label="文明"
             values={g.trace.civ}
@@ -197,7 +204,8 @@ export function Result() {
           />
           <p className="curve-note">
             <span className="curve-note-mark" />
-            書き換えた年　<span className="curve-note-danger" />
+            書き換えた年　
+            <span className="curve-note-danger" />
             ここを割ると世界が終わる
           </p>
         </section>

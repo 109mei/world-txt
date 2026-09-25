@@ -28,6 +28,22 @@ export function SceneGallery() {
     ),
     { key: 'steles', label: 'steles', v: { ...base, steles: (['energy', 'science', 'temperature', 'dna'] as const).map((icon, i) => ({ key: `s${i}`, icon, fresh: false })) } },
   ];
+  // mix=1：書き換え・副作用・状態をでたらめに重ねた世界を並べる（組み合わせの崩れや、埋もれるものを目で確かめる）
+  if (params.get('mix')) {
+    const worlds = Array.from({ length: per }, (_, k) => mixWorld(start + k + 1));
+    return (
+      <div className="gallery">
+        {worlds.map((w) => (
+          <div key={w.seed} className="gallery-tile">
+            <WorldScene scene={w.v} compact testId={`gallery-mix-${w.seed}`} viewBox={viewBox} />
+            <div className="gallery-label">
+              {w.seed}: {w.label}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
   return (
     <div className={focus ? 'gallery gallery-focus' : 'gallery'} data-focus={focus ?? undefined}>
       {tiles.slice(start, start + per).map((t) => (
@@ -38,4 +54,28 @@ export function SceneGallery() {
       ))}
     </div>
   );
+}
+
+/** 同じ番号なら同じ並びになる乱数 */
+function rng(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+/** 書き換え（言い回し・法則の読み取り）と副作用をでたらめに重ねた世界 */
+function mixWorld(seed: number): { seed: number; v: SceneView; label: string } {
+  const r = rng(seed * 7919);
+  const g = createGame(gameData, 'food', seed);
+  const keys = [...gameData.phrases.map((p) => `p:${p.id}`), ...gameData.laws.flatMap((l) => l.options.filter((o) => o.scene).map((o) => `o:${l.id}.${o.id}`))];
+  g.inEffect = Array.from({ length: 2 + Math.floor(r() * 6) }, () => keys[Math.floor(r() * keys.length)]!);
+  const twists = Object.keys(gameData.scene.twists);
+  for (let i = Math.floor(r() * 3); i > 0; i -= 1) g.twists[twists[Math.floor(r() * twists.length)]!] = 0.3 + r() * 0.7;
+  for (const id of Object.keys(g.scores) as (keyof typeof g.scores)[]) g.scores[id] = 20 + Math.floor(r() * 70);
+  const label = g.inEffect
+    .map((k) => (k.startsWith('p:') ? (gameData.phraseById.get(k.slice(2))?.name ?? k) : (gameData.optionOf.get(k.slice(2).split('.')[0]!)?.get(k.split('.')[1]!)?.label ?? k)))
+    .join(' / ');
+  return { seed, v: sceneView(g, gameData), label };
 }

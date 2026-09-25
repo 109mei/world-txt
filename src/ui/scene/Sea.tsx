@@ -1,13 +1,14 @@
 import type { SceneView } from '../../store/scene';
-import { DARK, dur, delay, GROUND, H, HORIZON, m, Motif, PAPER, SHORE, SILVER, SILVER_DIM, strokeOf, W } from './common';
+import { DARK, dur, delay, Ghost, GROUND, H, HORIZON, m, Motif, PAPER, SHORE, SILVER, SILVER_DIM, strokeOf, W } from './common';
 import { Person } from './People';
 
 /** 海：波・船・氷・塩の浜・泡・海底の町・海の上の畑。海面が上がれば町の端が沈み、海が消えれば海底が現れる */
 export function Sea({ v }: { v: SceneView }) {
   const gone = m(v, 'noSea');
   const high = m(v, 'seaHigh');
-  const level = HORIZON + 4 - 10 * high;
-  const shoreTop = SHORE - 14 * high;
+  // 海が干上がり始めた世界では、水面が下がり、岸が沖へ退く
+  const level = HORIZON + 4 - 10 * high + 16 * gone;
+  const shoreTop = SHORE - 14 * high + 12 * gone;
   const land = m(v, 'moreLand');
   const ice = m(v, 'ice');
   const fresh = m(v, 'freshSea');
@@ -23,6 +24,13 @@ export function Sea({ v }: { v: SceneView }) {
         <g transform="translate(338 196) rotate(-12)">
           <path d="M-12 0 L12 0 L8 5 L-8 5 Z M0 0 L0 -12 M0 -12 L7 -4" fill={DARK} stroke={strokeOf(v, 'noSea')} strokeWidth={0.8} />
         </g>
+        {/* 海が干上がった年は、水が引いていき、海の底が現れる */}
+        <Ghost v={v} when="noSea" kind="drain">
+          <path d={`M${SHORE - 6} ${GROUND} L${W} ${HORIZON + 4} L${W} ${H} L${SHORE + 8} ${H} Z`} fill="#141820" stroke={SILVER_DIM} strokeWidth={0.8} />
+          {[0, 1, 2].map((k) => (
+            <path key={k} d={`M${SHORE + 14 + k * 6} ${HORIZON + 16 + k * 14} q 6 -2.4 12 0 t 12 0 t 12 0 t 12 0 t 12 0`} fill="none" stroke={PAPER} strokeWidth={0.6} opacity={0.28} />
+          ))}
+        </Ghost>
       </Motif>
     );
   }

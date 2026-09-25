@@ -28,7 +28,8 @@
 6. 見つけたもの（読み取り・副作用・出来事・結末など）は core が GameState.found に残し、runtime が観測記録（progress.discovered）へ移す。新しい内容を足したら、観測記録にも自動で並ぶ
 7. 数値をコードに直接書かない。balance.json などのデータに置く
 8. セーブには版番号を入れ、古い版から新しい版へ変換する関数（src/save/migrations.ts）を用意する。GameState に項目を足したら、古い形を補う処理（core の upgradeState）も足す
-9. 概念（phrases.json）や法則の読み取り（laws.json の options）を足したら、効き始めた年の知らせ（onset）と情景での描き方（scene）も書く。書いた一文は、時間を進めた最初の年に「世界が書き換わった」と知らせ、情景にそのとおりに描く（書いただけでは見せない）。描く要素（SCENE_MOTIFS）を足したら、src/ui/scene に絵を描く（データの検査と tests/scene.test.ts が確かめる）
+9. 概念（phrases.json）や法則の読み取り（laws.json の options）を足したら、効き始めた年の知らせ（onset）と情景での描き方（scene）も書く。書いた一文は、時間を進めた最初の年に「世界が書き換わった」と知らせ、情景にそのとおりに描く（書いただけでは見せない）。描く要素（SCENE_MOTIFS）を足したら、src/ui/scene に絵を描き、現れ方（common.tsx の ENTER）を選ぶ。両立しない描き方は scene.json の exclusive・hides に足す（データの検査と tests/scene.test.ts・scene-render.test.ts が確かめる）
+10. 書き換えられる範囲（筆の位）は core の access.ts と access.json が決め、core の書き換え命令が確かめる（封じられた行・書き足せる行の数・書ける概念の重さ）。概念（concepts.json）を足したら access.json のどれかの分野に、ステージを足したら access.json の stages に、その世界の危機に関わる概念を足す（npm run ranks と tests/access.test.ts で、どのステージの作戦もはじめて遊べる位で止まらないことを確かめる）
 
 ## 安全の決まり
 
@@ -49,12 +50,12 @@
 
 - src/core：ルール本体（状態・進行・命令・読み取り・乱数）
 - src/data：JSON と Zod のスキーマ（情景を動かすものは scene.json）
-- src/store：Zustand と写し（view）、世界の情景の写し（scene）、観測記録の写し（records）、無限の世界の記録簿（ranking）
-- src/ui：React の部品と CSS、タイトルの絵、世界の情景（WorldScene と scene/ の層：空・天気・大地・海・町・人々・全体の効果。開発用の一覧は ?gallery=1）、BGM、共有画像（shareImage）、入力の補助（wording）
+- src/store：Zustand と写し（view。世界の終わりまでの近さ limits を含む）、世界の情景の写し（scene。両立しない描き方の片づけを含む）、筆の位の写し（pen）、観測記録の写し（records）、無限の世界の記録簿（ranking）
+- src/ui：React の部品と CSS、タイトルの絵、世界の情景（WorldScene と scene/ の層：空・天気・大地・海・町・人々・全体の効果。開発用の一覧は ?gallery=1）、BGM、共有画像（shareImage）、入力の補助（wording）、あそびかた（Tutorial）、筆の位（PenPanel）
 - src/save：SaveStore
-- tests：Vitest（決定性・セーブと記録簿（控え・空き不足・読み込みの安全）・読み取り・無茶な書き換え（wild）・総当たり（fuzz）・ルール・無限の世界（endless）・くり返す十年（loop）・結末（endings）・実績（achievements）・入力の補助（wording）・世界の情景（scene）・手触りの目安）
+- tests：Vitest（決定性・セーブと記録簿（控え・空き不足・読み込みの安全）・読み取り・無茶な書き換え（wild）・総当たり（fuzz）・ルール・無限の世界（endless）・くり返す十年（loop）・結末（endings）・実績（achievements）・入力の補助（wording）・世界の情景（scene・いろいろな組み合わせで描く scene-render）・世界の終わりまで（limits）・筆の位（access）・手触りの目安）
 - e2e：Playwright
-- scripts：シミュレーター（npm run sim）と作戦・ボット（無限の世界のボットは endless.ts）、結末の筋書き（worlds.ts）、読み取りの総当たり（fuzz.ts）
+- scripts：シミュレーター（npm run sim）と作戦・ボット（無限の世界のボットは endless.ts）、結末の筋書き（worlds.ts）、読み取りの総当たり（fuzz.ts）、筆の位で遊べるかの確かめ（ranks.ts）
 - docs：SPEC.md、PLAN.md（企画書）、screens/（スクリーンショット）
 
 ## コマンド
@@ -69,6 +70,7 @@
 - npm run worlds：宇宙・重力・宇宙人・不死などの書き換えの筋書きを遊んで、どの結末になるかを数える（npm run worlds -- gravity 1 で年表）
 - npm run fuzz：いろいろな単語をいろいろな位置に入れた約2万文の読み取りの総当たり（例外・数値の破綻・怪しい読み取りを数える。読み取りを変えたら 0 を保つ）
 - npm run sim -- food few_days_only 1：年表を見る
+- npm run ranks：どのステージも、はじめて遊べる筆の位で作戦が止まらず、クリアできる作戦があるか（npm run ranks -- 30 で種30個）
 
 ## 作業の進め方
 

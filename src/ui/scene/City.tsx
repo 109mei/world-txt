@@ -1,8 +1,9 @@
 import type { SceneView } from '../../store/scene';
-import { BAD, DARK, dur, delay, GOOD, GROUND, INK, m, Motif, PAPER, PLAZA, ROAD, rnd, SHORE, SILVER, SILVER_DIM, SILVER_FAINT, strokeOf, WARN } from './common';
+import { BAD, DARK, dur, delay, Ghost, GOOD, GROUND, INK, m, Motif, PAPER, PLAZA, ROAD, rnd, SHORE, SILVER, SILVER_DIM, SILVER_FAINT, strokeOf, WARN } from './common';
 
 /** 町の塔（左の端・幅・高さ・尖塔） */
-const TOWERS: { x: number; w: number; h: number; spire: boolean }[] = [
+type Tower = { x: number; w: number; h: number; spire: boolean };
+const TOWERS: Tower[] = [
   { x: 130, w: 12, h: 30, spire: false },
   { x: 144, w: 12, h: 42, spire: true },
   { x: 158, w: 14, h: 54, spire: false },
@@ -53,14 +54,38 @@ export function City({ v }: { v: SceneView }) {
   if (m(v, 'sleepless') > 0.3) light = Math.max(light, 0.95 * (1 - dark));
   const lift = m(v, 'float') > 0.5 ? -6 : 0;
   const color = (i: number) => (m(v, 'megacity') > 0 && i >= TOWERS.length ? strokeOf(v, 'megacity') : m(v, 'heavy') > 0 ? strokeOf(v, 'heavy') : SILVER);
-  const windows: { x: number; y: number; key: string }[] = [];
+  const windows: { x: number; y: number; key: string; mega: boolean }[] = [];
   towers.forEach((t, ti) => {
     const top = GROUND - t.h * s;
     const cols = t.w >= 14 ? [t.x + 3, t.x + t.w - 5] : [t.x + t.w / 2 - 1];
-    for (let y = GROUND - 9; y > top + 5; y -= 7) for (const x of cols) windows.push({ x, y, key: `${ti}-${x}-${y}` });
+    for (let y = GROUND - 9; y > top + 5; y -= 7) for (const x of cols) windows.push({ x, y, key: `${ti}-${x}-${y}`, mega: ti >= TOWERS.length });
   });
   const order = windows.map((w, i) => ({ w, o: rnd(v.seed, 2000 + i) })).sort((a, b) => a.o - b.o);
   const lit = Math.round(order.length * light);
+  const tower = (t: Tower, i: number) => {
+    const top = GROUND - t.h * s;
+    const roof = ruined
+      ? `L${t.x + t.w} ${top + 4} L${t.x + t.w * 0.7} ${top} L${t.x + t.w * 0.45} ${top + 6} L${t.x + t.w * 0.2} ${top + 1} L${t.x} ${top + 5}`
+      : t.spire
+        ? `L${t.x + t.w} ${top} L${t.x + t.w / 2} ${top - t.w * 0.9} L${t.x} ${top}`
+        : `L${t.x + t.w} ${top} L${t.x} ${top}`;
+    return <path key={i} d={`M${t.x} ${GROUND} L${t.x + t.w} ${GROUND} ${roof} Z`} fill="#121318" stroke={ruined && m(v, 'ruins') > 0 ? strokeOf(v, 'ruins') : color(i)} strokeWidth={0.8} />;
+  };
+  const windowRects = (mega: boolean) =>
+    order.map(({ w }, i) =>
+      w.mega !== mega ? null : (
+        <rect
+          key={w.key}
+          x={w.x}
+          y={w.y}
+          width={2}
+          height={3}
+          fill={i < lit ? '#f4f1e6' : '#23252b'}
+          opacity={i < lit ? 0.9 : 1}
+          className={i < lit && m(v, 'sleepless') > 0.3 && i % 7 === 0 ? 'sc-twinkle' : undefined}
+        />
+      ),
+    );
   return (
     <g transform={`translate(0 ${lift})`}>
       <Plant v={v} />
@@ -74,35 +99,44 @@ export function City({ v }: { v: SceneView }) {
           ))}
         </Motif>
       ) : (
-        <Motif v={v} id={m(v, 'megacity') > 0 ? 'megacity' : m(v, 'heavy') > 0 ? 'heavy' : 'ruins'}>
-          {towers.map((t, i) => {
-            const top = GROUND - t.h * s;
-            const roof = ruined
-              ? `L${t.x + t.w} ${top + 4} L${t.x + t.w * 0.7} ${top} L${t.x + t.w * 0.45} ${top + 6} L${t.x + t.w * 0.2} ${top + 1} L${t.x} ${top + 5}`
-              : t.spire
-                ? `L${t.x + t.w} ${top} L${t.x + t.w / 2} ${top - t.w * 0.9} L${t.x} ${top}`
-                : `L${t.x + t.w} ${top} L${t.x} ${top}`;
-            return <path key={i} d={`M${t.x} ${GROUND} L${t.x + t.w} ${GROUND} ${roof} Z`} fill="#121318" stroke={ruined && m(v, 'ruins') > 0 ? strokeOf(v, 'ruins') : color(i)} strokeWidth={0.8} />;
-          })}
-          {order.map(({ w }, i) => (
-            <rect
-              key={w.key}
-              x={w.x}
-              y={w.y}
-              width={2}
-              height={3}
-              fill={i < lit ? '#f4f1e6' : '#23252b'}
-              opacity={i < lit ? 0.9 : 1}
-              className={i < lit && m(v, 'sleepless') > 0.3 && i % 7 === 0 ? 'sc-twinkle' : undefined}
-            />
-          ))}
-          {m(v, 'ruins') > 0 &&
-            towers.slice(0, 6).map((t, i) => <path key={`v${i}`} d={`M${t.x + 1} ${GROUND} q 3 -8 -1 -16 q 4 -6 1 -12`} fill="none" stroke={GOOD} strokeWidth={0.6} opacity={0.6 * m(v, 'ruins')} />)}
-        </Motif>
+        <>
+          {/* 巨大な塔は、もとの町とは別に描く（書き換えた年に、巨大な塔だけが地面から伸びていく） */}
+          {towers.length > TOWERS.length && (
+            <Motif v={v} id="megacity">
+              {towers.slice(TOWERS.length).map((t, i) => tower(t, TOWERS.length + i))}
+              {windowRects(true)}
+            </Motif>
+          )}
+          <Motif v={v} id={m(v, 'heavy') > 0 ? 'heavy' : 'ruins'}>
+            {towers.slice(0, TOWERS.length).map((t, i) => tower(t, i))}
+            {windowRects(false)}
+            {m(v, 'ruins') > 0 &&
+              towers.slice(0, 6).map((t, i) => <path key={`v${i}`} d={`M${t.x + 1} ${GROUND} q 3 -8 -1 -16 q 4 -6 1 -12`} fill="none" stroke={GOOD} strokeWidth={0.6} opacity={0.6 * m(v, 'ruins')} />)}
+          </Motif>
+          {/* 電気が消えた年は、灯っていた窓が明滅して消えていく */}
+          {dark > 0.5 && (
+            <Ghost v={v} when="noPower" kind="flickerOut">
+              {order.slice(0, Math.round(order.length * 0.6)).map(({ w }) => (
+                <rect key={w.key} x={w.x} y={w.y} width={2} height={3} fill="#f4f1e6" opacity={0.9} />
+              ))}
+            </Ghost>
+          )}
+        </>
       )}
       {m(v, 'noPower') > 0 && (
         <Motif v={v} id="noPower">
           <path d="M118 150 L118 164 M112 152 L124 152" stroke={strokeOf(v, 'noPower', SILVER_DIM)} strokeWidth={0.7} />
+        </Motif>
+      )}
+      {/* 村に戻り始めた世界では、町のはずれに小屋が建つ */}
+      {!villages && m(v, 'villages') > 0 && (
+        <Motif v={v} id="villages">
+          {[118, 276].map((x) => (
+            <g key={x} transform={`translate(${x} ${GROUND})`}>
+              <path d="M-6 0 L-6 -6 L0 -11 L6 -6 L6 0 Z" fill={DARK} stroke={strokeOf(v, 'villages')} strokeWidth={0.8} />
+              <rect x={-1.5} y={-4.5} width={3} height={4.5} fill={light > 0.2 ? '#f4f1e6' : '#23252b'} opacity={0.8} />
+            </g>
+          ))}
         </Motif>
       )}
       <Landmarks v={v} s={s} villages={villages} />
@@ -187,7 +221,8 @@ function Plant({ v }: { v: SceneView }) {
           </g>
         </Motif>
       ) : (
-        <g stroke={m(v, 'noPower') > 0.5 ? SILVER_FAINT : SILVER_DIM} strokeWidth={0.6} fill="none">
+        // 導線のない送電が広まり始めた世界では、送電線が途切れがちになる
+        <g stroke={m(v, 'noPower') > 0.5 ? SILVER_FAINT : SILVER_DIM} strokeWidth={0.6} fill="none" strokeDasharray={m(v, 'wireless') > 0 ? '3 2' : undefined}>
           <path d={`M110 ${GROUND - 20} L120 ${GROUND - 20} M115 ${GROUND - 20} L118 ${GROUND} M115 ${GROUND - 20} L112 ${GROUND}`} />
           <path d={`M110 ${GROUND - 18} Q 124 ${GROUND - 12} 134 ${GROUND - 20}`} />
         </g>
@@ -399,7 +434,14 @@ function Market({ v }: { v: SceneView }) {
           {stalls.slice(0, 3).map((x, i) => (
             <g key={x} transform={`translate(${x + 8} ${PLAZA - 10})`}>
               <rect x={-1.8} y={-3} width={3.6} height={4.6} rx={0.6} fill="#0f141c" stroke={strokeOf(v, 'cashless', INK)} strokeWidth={0.5} />
-              <path className="sc-pulse" d="M-1.6 -5 Q 0 -6.4 1.6 -5 M-2.8 -6.4 Q 0 -8.6 2.8 -6.4" fill="none" stroke={strokeOf(v, 'cashless', INK)} strokeWidth={0.5} style={{ ...dur(1.4), ...delay(i * 0.4) }} />
+              <path
+                className="sc-pulse"
+                d="M-1.6 -5 Q 0 -6.4 1.6 -5 M-2.8 -6.4 Q 0 -8.6 2.8 -6.4"
+                fill="none"
+                stroke={strokeOf(v, 'cashless', INK)}
+                strokeWidth={0.5}
+                style={{ ...dur(1.4), ...delay(i * 0.4) }}
+              />
             </g>
           ))}
         </Motif>

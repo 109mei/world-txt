@@ -1,9 +1,9 @@
 import { Menu, Play, Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { advanceYears, openEdit, openSheet, setLawFilter, setTab, showResult, useGame, type Tab } from '../../store/game';
-import { ADDED_CONCEPT, type GameView } from '../../store/view';
+import { advanceYears, marginText, openEdit, openSheet, sealedText, setLawFilter, setTab, showResult, showToast, useGame, type Tab } from '../../store/game';
+import { ADDED_CONCEPT, type GameView, type LimitView } from '../../store/view';
 import { Icon, TrendArrow } from '../icons';
-import { CauseLine, CostPips, LawText, Meter, NewsLine } from '../parts';
+import { CauseLine, CostPips, LawText, LimitRow, NewsLine } from '../parts';
 import { seTurn } from '../se';
 import { WorldScene } from '../WorldScene';
 
@@ -142,6 +142,12 @@ function useYearFlash(view: GameView): Set<string> {
   return on;
 }
 
+/** 世界の終わりまでの行を押したら、その線の説明を開く（人口は人類の詳しい原因） */
+function openLimit(id: LimitView['id']): void {
+  if (id === 'pop') openSheet({ kind: 'indicator', id: 'humanity' });
+  else openSheet({ kind: 'meta', which: id });
+}
+
 function WorldTab({ view, firstHint }: { view: GameView; firstHint: boolean }) {
   const analysis = useGame((s) => s.settings.analysis);
   const focus = new Set(view.focus);
@@ -192,6 +198,16 @@ function WorldTab({ view, firstHint }: { view: GameView; firstHint: boolean }) {
         <TrendArrow trend={view.population.trend} />
       </div>
 
+      {/* 世界の終わりまで：4つの終わりの線まで、あとどれぐらいか */}
+      <section className="limits" data-testid="limits" aria-label="世界の終わりまで">
+        <div className="section-title">
+          <Icon name="warning" size={14} /> 世界の終わりまで
+        </div>
+        {view.limits.map((l) => (
+          <LimitRow key={l.id} limit={l} onClick={() => openLimit(l.id)} testId={l.id === 'capacity' || l.id === 'coherence' ? l.id : `limit-${l.id}`} />
+        ))}
+      </section>
+
       {view.tags.length > 0 && (
         <div className="tags" data-testid="tags">
           {view.tags.map((t) => (
@@ -217,38 +233,14 @@ function WorldTab({ view, firstHint }: { view: GameView; firstHint: boolean }) {
             <span className="ind-label">{it.label}</span>
             <span className={`ind-word tone-${it.tone}`}>{it.word}</span>
             <TrendArrow trend={it.trend} />
+            {/* 今の水準と、ここより下は悪い状態になる目盛り */}
+            <span className="ind-bar" aria-hidden>
+              <span className={`ind-bar-fill tone-bg-${it.tone}`} style={{ width: `${it.pos * 100}%` }} />
+              <span className="ind-bar-danger" style={{ left: `${it.danger * 100}%` }} />
+            </span>
           </button>
         ))}
       </div>
-
-      <button className="meta-btn" onClick={() => openSheet({ kind: 'meta', which: 'capacity' })} data-testid="capacity">
-        <Meter
-          label={
-            <>
-              <Icon name="capacity" size={14} /> 世界容量 <span className="dim small">{view.capacity.used} / {view.capacity.max}字</span>
-            </>
-          }
-          ends={view.capacity.ends}
-          pos={view.capacity.pos}
-          word={view.capacity.word}
-          tone={view.capacity.tone}
-          trend={view.capacity.trend}
-        />
-      </button>
-      <button className="meta-btn" onClick={() => openSheet({ kind: 'meta', which: 'coherence' })} data-testid="coherence">
-        <Meter
-          label={
-            <>
-              <Icon name="coherence" size={14} /> 世界整合性
-            </>
-          }
-          ends={view.coherence.ends}
-          pos={view.coherence.pos}
-          word={view.coherence.word}
-          tone={view.coherence.tone}
-          trend={view.coherence.trend}
-        />
-      </button>
 
       {view.alerts.length > 0 && (
         <section className="alerts">
@@ -293,6 +285,7 @@ function LawsTab({ view }: { view: GameView }) {
   }, [view.laws, filter]);
   const usedConcepts = new Set(view.laws.filter((l) => l.kind === 'law').map((l) => l.concept));
   const hasAdded = view.laws.some((l) => l.kind === 'line');
+  const marginFull = !!view.pen && view.pen.margin.max !== null && view.pen.margin.used >= view.pen.margin.max;
 
   let lastConcept = '';
   return (
@@ -304,15 +297,22 @@ function LawsTab({ view }: { view: GameView }) {
         </span>
       </div>
       <p className="file-lead">行をタップすると、その文章を書き換えられる。消せば世界から消え、書き足せば世界に加わる。</p>
+      {view.pen && (
+        // 筆の位：書き換えられる範囲（封じられた行・書き足せる行の数・書ける物）
+        <div className="pen-strip" data-testid="pen" data-rank={view.pen.rank}>
+          <span className="pen-name">
+            <Icon name="edit" size={13} /> {view.pen.name}
+          </span>
+          <span className="pen-item">
+            書き足せる行 <b>{view.pen.margin.max === null ? '∞' : `${Math.max(0, view.pen.margin.max - view.pen.margin.used)}`}</b>
+          </span>
+          <span className="pen-item">書ける物：{view.pen.reach}</span>
+          {view.pen.crisisOpen && <span className="pen-crisis">危機の知らせで、封が解けている行がある</span>}
+        </div>
+      )}
       <label className="search">
         <Search size={15} strokeWidth={1.6} />
-        <input
-          type="search"
-          placeholder="検索（例：人間、水、病原体）"
-          value={filter.query}
-          onChange={(e) => setLawFilter({ query: e.target.value })}
-          data-testid="law-search"
-        />
+        <input type="search" placeholder="検索（例：人間、水、病原体）" value={filter.query} onChange={(e) => setLawFilter({ query: e.target.value })} data-testid="law-search" />
       </label>
       <div className="chips" role="listbox" aria-label="概念">
         <button className={filter.concept === null ? 'chip on' : 'chip'} onClick={() => setLawFilter({ concept: null })}>
@@ -344,10 +344,12 @@ function LawsTab({ view }: { view: GameView }) {
                 </div>
               )}
               <button
-                className={`line line-${l.state}${justWrote === l.id ? ' line-fresh' : ''}`}
-                onClick={() => openEdit({ kind: l.kind, id: l.id })}
+                className={`line line-${l.state}${justWrote === l.id ? ' line-fresh' : ''}${l.sealed !== null ? ' line-sealed' : ''}`}
+                // 封じられた行は書き換えられない（どの位で開くかを知らせる）
+                onClick={() => (l.sealed !== null ? showToast(sealedText(l.id, l.sealed)) : openEdit({ kind: l.kind, id: l.id }))}
                 data-testid={`law-${l.id}`}
                 data-state={l.state}
+                data-sealed={l.sealed !== null ? 'yes' : undefined}
               >
                 <span className="ln">{String(l.no).padStart(2, '0')}</span>
                 {/* 書き換えた行・書き足した行には、世界がどう読み取ったかを小さく添える */}
@@ -356,6 +358,11 @@ function LawsTab({ view }: { view: GameView }) {
                   {l.reading && l.state !== 'original' && <span className="line-reading">→ {l.reading}</span>}
                 </span>
                 <span className="line-end">
+                  {l.sealed !== null && (
+                    <span className="seal-tag" aria-label="封じられた行">
+                      封
+                    </span>
+                  )}
                   {!l.understood && l.state !== 'deleted' && <span className="noise-tag">意味なし</span>}
                   <CostPips cost={l.state === 'deleted' ? 0 : l.cost} />
                 </span>
@@ -366,8 +373,15 @@ function LawsTab({ view }: { view: GameView }) {
       </ol>
       {lines.length === 0 && <p className="dim center">見つからない</p>}
 
-      <button className="btn add-line wide" onClick={() => openEdit({ kind: 'new' })} data-testid="add-line">
+      <button
+        className="btn add-line wide"
+        // 書き足せる余白がなければ、書く前に知らせる
+        onClick={() => (marginFull ? showToast(marginText()) : openEdit({ kind: 'new' }))}
+        data-testid="add-line"
+        data-full={marginFull ? 'yes' : undefined}
+      >
         ＋ 新しい定義を書き足す
+        {view.pen && view.pen.margin.max !== null && <span className="add-left">（余白 あと{Math.max(0, view.pen.margin.max - view.pen.margin.used)}行）</span>}
       </button>
     </div>
   );

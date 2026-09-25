@@ -1,4 +1,18 @@
-import { CHANNEL_MODES, IMPULSE_KEYS, INDICATOR_IDS, type Crisis, type Ending, type EventDef, type EventEffects, type IconKey, type ImpulseKey, type IndicatorId, type StageId, type StateEffectKey, type TwistRef } from '../data/schema';
+import {
+  CHANNEL_MODES,
+  IMPULSE_KEYS,
+  INDICATOR_IDS,
+  type Crisis,
+  type Ending,
+  type EventDef,
+  type EventEffects,
+  type IconKey,
+  type ImpulseKey,
+  type IndicatorId,
+  type StageId,
+  type StateEffectKey,
+  type TwistRef,
+} from '../data/schema';
 import { activeMeanings, carriedIncoherence, computeChannels, lawTotals, NOISE_INCOHERENCE } from './channels';
 import { checkAll, checkCondition, parseCondition } from './conditions';
 import { capacityLevel, coherenceLevel, computeScores, indicatorLevel, trendOf } from './indicators';
@@ -8,13 +22,13 @@ import { clamp } from './math';
 import { measure, simulateYear, targetsOf } from './model';
 import { nextRandom, seedRng } from './rng';
 import { activeTags } from './summary';
-import type { CauseRef, Channels, FailReason, GameData, GameState, HistoryEntry, IndicatorChange, IndicatorMove, NewsItem, SimState, StepReport, WorldSnapshot } from './types';
+import type { CauseRef, Channels, FailReason, GameData, GameState, HistoryEntry, IndicatorChange, IndicatorMove, NewsItem, SimState, StepReport, WorldSnapshot, WriteAccess } from './types';
 
 /**
  * GameState の形の版（セーブの版とは別）。3：行が運ぶ意味（carried）。4：無限の世界の危機と今日の世界。5：結末（ending）。6：心・物価・くり返す世界。
- * 7：去年効いていた意味（inEffect）と書き換えの勢い（impulse）
+ * 7：去年効いていた意味（inEffect）と書き換えの勢い（impulse）。8：書き換えられる範囲（access。筆の位）
  */
-export const STATE_SCHEMA = 7;
+export const STATE_SCHEMA = 8;
 
 export const FAIL_TEXT: Record<FailReason, string> = {
   humanity: '人類の多くが失われ、文明を支えられなくなった。',
@@ -69,6 +83,8 @@ export function upgradeState(g: GameState, data: GameData): GameState {
   // 版6まで：去年効いていた意味と、書き換えの勢いはなかった
   if (!Array.isArray(g.inEffect)) g.inEffect = meaningKeys(meaningsInEffect(g, data));
   if (!g.impulse || typeof g.impulse !== 'object') g.impulse = {};
+  // 版7まで：書き換えられる範囲はなかった（それまでの世界は、すべて書き換えられるまま遊べる）
+  if (g.access === undefined) g.access = null;
   // 画面の項目が増えたときは、足りない項目の点数だけを今の様子から求める
   if (g.derived && INDICATOR_IDS.some((id) => typeof g.scores?.[id] !== 'number')) {
     const now = computeScores(g.sim, { ...g.derived, money: g.derived.money ?? 1 }, data.balance, g.startPop);
@@ -103,7 +119,11 @@ export function discoverTags(g: GameState, data: GameData): void {
   for (const t of activeTags(g, data)) discover(g, `g:${t.id}`);
 }
 
-export function createGame(data: GameData, stageId: StageId, seed: number): GameState {
+/**
+ * 新しい世界を作る。access は書き換えられる範囲（筆の位。core の accessFor で作る）。
+ * 渡さなければ、すべての行と概念を自由に書き換えられる（シミュレーターやテストの世界）
+ */
+export function createGame(data: GameData, stageId: StageId, seed: number, access: WriteAccess | null = null): GameState {
   const stage = stageOf(data, stageId);
   const laws: Record<string, string> = {};
   const texts: Record<string, string> = {};
@@ -157,6 +177,7 @@ export function createGame(data: GameData, stageId: StageId, seed: number): Game
     loop: null,
     inEffect: [],
     impulse: {},
+    access: access ? { ...access, concepts: [...access.concepts] } : null,
   };
   // はじまりの世界（ステージの形を含む）は、もう効いている
   g.inEffect = meaningKeys(meaningsInEffect(g, data));

@@ -1,4 +1,5 @@
 import type {
+  Access,
   Achievement,
   Anomaly,
   Balance,
@@ -45,6 +46,8 @@ export interface GameData {
   achievements: Achievement[];
   /** 法則・概念のほかに情景を動かすもの */
   scene: SceneData;
+  /** 筆の位（救った世界の数で、書き換えられる範囲が広がる） */
+  access: Access;
   // 索引
   lawById: Map<string, Law>;
   optionOf: Map<string, Map<string, LawOption>>;
@@ -287,6 +290,19 @@ export interface GameState {
   inEffect: string[];
   /** 書き換えの勢い：まだ世界に届いていない、ゆっくり動く量の向かう先の動き（次の1年で balance.impulse の割合だけ動く） */
   impulse: Partial<Record<ImpulseKey, number>>;
+  /** この世界で書き換えられる範囲（筆の位とステージで決まる。null ならすべて自由） */
+  access: WriteAccess | null;
+}
+
+/**
+ * 書き換えられる範囲。concepts はいつも書き換えられる概念の行（知らされた危機に関わる行は、そのあいだだけ開く）、
+ * margin は書き足せる行の数、depth は書ける概念の無理の大きさの上限（どちらも null なら限りなし）、rank は筆の位
+ */
+export interface WriteAccess {
+  rank: number;
+  concepts: string[];
+  margin: number | null;
+  depth: number | null;
 }
 
 /** 巻き戻るときに戻す、世界の側の様子（書き手の側のもの＝WORLD.txt・書換の力・世界容量・観測記録・世界史は含めない） */
@@ -318,7 +334,7 @@ export interface ActiveCrisis {
   strength: number;
 }
 
-export type EditBlock = 'ended' | 'same' | 'no-edits' | 'capacity' | 'unknown' | 'empty' | 'redundant';
+export type EditBlock = 'ended' | 'same' | 'no-edits' | 'capacity' | 'unknown' | 'empty' | 'redundant' | 'sealed' | 'margin' | 'heavy';
 
 /** 行が運ぶ意味 */
 export interface Carried {
@@ -358,4 +374,8 @@ export interface EditResult {
   stacked: string | null;
   /** 読み取れなかったとき、その理由 */
   noise: NoiseInfo | null;
+  /** 封じられた行を書き換えようとしたとき（block が sealed）、その行（法則の id）と、その行が開く筆の位 */
+  sealed?: { law: string; rank: number } | null;
+  /** いまの筆には重すぎる概念を書こうとしたとき（block が heavy）、その概念の名前と、それを書ける筆の位 */
+  heavy?: { name: string; rank: number } | null;
 }

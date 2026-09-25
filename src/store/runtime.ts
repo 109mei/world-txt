@@ -1,6 +1,8 @@
 import {
+  accessFor,
   advance,
   createGame,
+  rankOf,
   lawTotals,
   refresh,
   syncPhraseFlags,
@@ -14,17 +16,7 @@ import {
   type StepReport,
 } from '../core';
 import type { StageId } from '../data/schema';
-import {
-  DEFAULT_SETTINGS,
-  EMPTY_PROGRESS,
-  exportText,
-  importText,
-  SAVE_VERSION,
-  type Progress,
-  type SaveData,
-  type SaveStore,
-  type Settings,
-} from '../save';
+import { DEFAULT_SETTINGS, EMPTY_PROGRESS, exportText, importText, SAVE_VERSION, type Progress, type SaveData, type SaveStore, type Settings } from '../save';
 import { newAchievements } from './achievements';
 import { insertRun } from './ranking';
 
@@ -70,6 +62,8 @@ export class GameRuntime {
   loadError: string | null = null;
   /** 直前の命令で、観測記録に初めて入ったもの（実績は「ach:」） */
   fresh: string[] = [];
+  /** 直前に終わった世界で筆の位が上がったなら、その新しい位（結果の画面で知らせる） */
+  rankUp: number | null = null;
   /** 別の画面で同じセーブが書き換えられたので、もう保存しない */
   private frozen = false;
   /** 保存についての知らせ（保存できなかった・保存できない画面） */
@@ -179,7 +173,9 @@ export class GameRuntime {
     // 世界は1つだけ。遊んでいる世界があれば、それを放棄して新しい世界を開く
     if (this.playing) this.progress.abandoned += 1;
     const date = daily ? this.today() : null;
-    this.state = createGame(this.data, stageId, date ? dailySeed(date) : this.opts.newSeed());
+    // 書き換えられる範囲は、いまの筆の位（救った世界の数）とステージで決まる
+    this.state = createGame(this.data, stageId, date ? dailySeed(date) : this.opts.newSeed(), accessFor(this.data, stageId, this.progress.cleared.length));
+    this.rankUp = null;
     this.state.daily = date;
     this.progress.worlds += 1;
     this.fresh = [];
@@ -249,7 +245,13 @@ export class GameRuntime {
         averted: g.crises.averted,
       }).list;
     }
-    if (g.status === 'cleared' && !this.progress.cleared.includes(g.stageId)) this.progress.cleared.push(g.stageId);
+    if (g.status === 'cleared' && !this.progress.cleared.includes(g.stageId)) {
+      // 救った世界が増えて筆の位が上がったら、結果の画面で知らせる
+      const before = rankOf(this.data, this.progress.cleared.length);
+      this.progress.cleared.push(g.stageId);
+      const after = rankOf(this.data, this.progress.cleared.length);
+      if (after > before) this.rankUp = after;
+    }
     const prev = this.progress.best[g.stageId];
     const cleared = g.status === 'cleared';
     // クリアした記録を優先し、同じ結果なら長く続いた世界を残す

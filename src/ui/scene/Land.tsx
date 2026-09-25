@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { SpecimenMode, SpecimenShape } from '../../data/schema';
 import type { SceneView } from '../../store/scene';
 import { SvgIcon } from '../icons';
-import { BAD, DARK, dur, delay, GOOD, GROUND, H, HORIZON, INK, m, Motif, PAPER, PLAZA, SHORE, SILVER, SILVER_DIM, SILVER_FAINT, strokeOf, WARN } from './common';
+import { BAD, DARK, dur, delay, Ghost, GOOD, GROUND, H, HORIZON, INK, m, Motif, PAPER, PLAZA, SHORE, SILVER, SILVER_DIM, SILVER_FAINT, strokeOf, WARN } from './common';
 import { Person } from './People';
 
 /** 遠い山並みと火山 */
@@ -113,6 +113,12 @@ export function Hills({ v }: { v: SceneView }) {
           ),
         )}
       </Motif>
+      {/* 森が消えた年は、木々が根元へ崩れ落ち、切り株が残る */}
+      {noForest > 0.3 && (
+        <Ghost v={v} when="noForest" kind="sink">
+          {TREES.slice(n, n + 10).map(([x, y], i) => tree(x, y, `g${i}`, SILVER))}
+        </Ghost>
+      )}
       {noForest > 0 && (
         <Motif v={v} id="noForest">
           {TREES.slice(n, n + 10).map(([x, y], i) => (
@@ -145,7 +151,7 @@ export function Hills({ v }: { v: SceneView }) {
             <g key={i} transform={`translate(${x} ${y})`}>
               <line x1={0} y1={0} x2={0} y2={-16} stroke={SILVER} strokeWidth={0.8} />
               <g transform="translate(0 -16)">
-                <g className={millStill ? undefined : 'sc-spin'} style={dur(windy ? 1.2 : 3.4)}>
+                <g className={millStill ? undefined : 'sc-spin'} style={dur(windy ? 1.2 : 3.4 * (1 + 3 * m(v, 'still')))}>
                   {[0, 120, 240].map((a) => (
                     <line key={a} x1={0} y1={0} x2={0} y2={-7} stroke={millStill ? strokeOf(v, 'still', SILVER_DIM) : SILVER} strokeWidth={0.8} transform={`rotate(${a})`} />
                   ))}
@@ -170,7 +176,7 @@ export function Hills({ v }: { v: SceneView }) {
 /** 獣・家畜・恐竜・よみがえった生き物・獣の王・人と動物の会話 */
 function Beasts({ v }: { v: SceneView }) {
   const wild = Math.round((1 + 3 * v.eco) * (1 - m(v, 'noAnimals')) + 4 * m(v, 'animals'));
-  const cows = m(v, 'noLivestock') > 0.5 || m(v, 'noAnimals') > 0.5 ? 0 : 2;
+  const cows = m(v, 'noLivestock') > 0.5 || m(v, 'noAnimals') >= 0.5 ? 0 : 2;
   const deer = (x: number, y: number, key: string, color: string) => (
     <g key={key} transform={`translate(${x} ${y})`}>
       <g className="sc-graze" style={{ ...dur(4 + (x % 3)), ...delay(x * 0.1) }}>
@@ -184,6 +190,12 @@ function Beasts({ v }: { v: SceneView }) {
         <Motif v={v} id="animals">
           {Array.from({ length: Math.min(9, wild) }, (_, i) => deer(12 + i * 12 + (i % 2) * 3, 178 + (i % 3) * 3, `d${i}`, i >= 4 ? strokeOf(v, 'animals') : SILVER))}
         </Motif>
+      )}
+      {/* 獣がいなくなった年は、野の獣が薄れて消えていく */}
+      {m(v, 'noAnimals') > 0.5 && (
+        <Ghost v={v} when="noAnimals" kind="fade">
+          {Array.from({ length: 4 }, (_, i) => deer(12 + i * 12 + (i % 2) * 3, 178 + (i % 3) * 3, `gd${i}`, SILVER))}
+        </Ghost>
       )}
       {cows > 0 && (
         <g>
@@ -352,7 +364,7 @@ export function Steles({ v }: { v: SceneView }) {
   return (
     <g>
       {v.steles.slice(0, 7).map((s, i) => (
-        <g key={s.key} className={s.fresh ? 'sc-appear' : undefined} data-stele={s.key}>
+        <g key={s.key} className={s.fresh ? 'sc-fresh sc-in-rise' : undefined} data-stele={s.key}>
           <g transform={`translate(${8 + i * 15} ${H - 1})`}>
             <path d="M-6 0 L-6 -14 Q 0 -19 6 -14 L6 0 Z" fill="#14151a" stroke={INK} strokeWidth={0.8} />
             <g transform="translate(-4.5 -13)" style={{ color: 'var(--ink)' }}>
@@ -455,7 +467,7 @@ export function Specimens({ v }: { v: SceneView }) {
   return (
     <g>
       {v.specimens.slice(0, 4).map((s, i) => (
-        <g key={s.key} className={s.fresh ? 'sc-appear' : undefined} data-specimen={s.key}>
+        <g key={s.key} className={s.fresh ? 'sc-fresh sc-in-drop' : undefined} data-specimen={s.key}>
           <g transform={`translate(${slots[i]} ${98 + (i % 2) * 12})`}>
             <g className="sc-hover" style={{ ...dur(6 + i), ...delay(i * 1.2) }}>
               <g stroke={INK} strokeWidth={0.9} strokeLinecap="round" strokeLinejoin="round">

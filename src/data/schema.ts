@@ -85,22 +85,7 @@ export const ModsSchema = z.partialRecord(ChannelIdSchema, z.number());
 export type Mods = z.infer<typeof ModsSchema>;
 
 /** 画面に出す世界の状態（14項目） */
-export const INDICATOR_IDS = [
-  'humanity',
-  'food',
-  'water',
-  'energy',
-  'eco',
-  'health',
-  'climate',
-  'society',
-  'peace',
-  'science',
-  'logistics',
-  'industry',
-  'mind',
-  'prices',
-] as const;
+export const INDICATOR_IDS = ['humanity', 'food', 'water', 'energy', 'eco', 'health', 'climate', 'society', 'peace', 'science', 'logistics', 'industry', 'mind', 'prices'] as const;
 export type IndicatorId = (typeof INDICATOR_IDS)[number];
 export const IndicatorIdSchema = z.enum(INDICATOR_IDS);
 
@@ -430,19 +415,7 @@ export type SceneSpec = z.infer<typeof SceneSpecSchema>;
 export const TONES = ['good', 'ok', 'warn', 'bad', 'critical'] as const;
 export type Tone = (typeof TONES)[number];
 
-export const NEWS_CATEGORIES = [
-  'WORLD',
-  'SCIENCE',
-  'ECONOMY',
-  'TRANSPORT',
-  'SOCIETY',
-  'NATURE',
-  'HEALTH',
-  'ENERGY',
-  'CLIMATE',
-  'ANOMALY',
-  'CRISIS',
-] as const;
+export const NEWS_CATEGORIES = ['WORLD', 'SCIENCE', 'ECONOMY', 'TRANSPORT', 'SOCIETY', 'NATURE', 'HEALTH', 'ENERGY', 'CLIMATE', 'ANOMALY', 'CRISIS'] as const;
 export type NewsCategory = (typeof NEWS_CATEGORIES)[number];
 export const NewsCategorySchema = z.enum(NEWS_CATEGORIES);
 
@@ -870,6 +843,19 @@ export const IndicatorsSchema = z.object({
   civilization: z.array(z.tuple([z.number(), z.string(), z.string(), z.enum(TONES)])),
   capacity: z.array(z.tuple([z.number(), z.string(), z.enum(TONES)])),
   coherence: z.array(z.tuple([z.number(), z.string(), z.enum(TONES)])),
+  /**
+   * 世界の終わりまでの近さ（人口・文明・世界整合性・世界容量）。
+   * 近さは、終わりの線を 0、状態語が「安定」になる所（人口ははじめの人口）を 1 とした位置。
+   * words は [この近さ以上, 言葉, 色] を遠い順に、line は帯の上の終わりの線の位置、
+   * eta は「このままなら何年で線に届くか」を見せる上限の年。
+   * soon は [この年数以内に届くなら, 近さをここまでに抑える]：遠くても速く近づいていれば、言葉は急ぎを表す（約1年なら「目前」）
+   */
+  limits: z.object({
+    words: z.array(z.tuple([z.number(), z.string(), z.enum(TONES)])).min(2),
+    line: z.number().min(0.05).max(0.5),
+    eta: z.number().int().positive(),
+    soon: z.array(z.tuple([z.number().int().positive(), z.number()])).default([]),
+  }),
   /** 無限の世界の称号 [この年数以上, 称号] を短い順に */
   ranks: z.array(z.tuple([z.number(), z.string()])).min(1),
 });
@@ -1208,5 +1194,39 @@ export const SceneDataSchema = z.object({
   anomalies: z.record(z.string(), SceneMotifsSchema),
   eventIcons: z.partialRecord(IconKeySchema, SceneMotifsSchema),
   kinds: z.record(z.string(), z.enum(SPECIMEN_SHAPES)),
+  /**
+   * 両立しない描き方（森が茂る・森がない など）。同時にあれば一つだけ残す：
+   * 書き換えから来たものを先に、その中では後に書いたものを、どちらでもなければ強いほうを残す
+   */
+  exclusive: z.array(z.array(SceneMotifSchema).min(2)).default([]),
+  /** あるものが hideAt 以上の強さであれば、それを前提にする絵を描かない（海がなければ潜る人も海の町も描かない） */
+  hides: z.partialRecord(SceneMotifSchema, z.array(SceneMotifSchema).min(1)).default({}),
+  hideAt: z.number().min(0).max(1).default(0.5),
 });
 export type SceneData = z.infer<typeof SceneDataSchema>;
+
+// ---------------------------------------------------------------- 筆の位（書き換えられる範囲）
+
+/**
+ * 筆の位：救った世界の数で上がり、書き換えられる範囲が広がる。
+ * realms は行の分野（どの概念の行を書き換えられるか）、margin は書き足せる行の数（null なら容量の許すかぎり）、
+ * depth は書ける概念の無理の大きさ（incoherence）の上限（null なら何でも）、reach はその位で書ける物の言い表し。
+ * stages：そのステージの危機に関わる行は、位にかかわらずいつも書き換えられる
+ */
+export const AccessSchema = z.object({
+  realms: z.array(z.object({ id: z.string(), name: z.string().max(20), icon: IconKeySchema, concepts: z.array(z.string()).min(1) })).min(1),
+  ranks: z
+    .array(
+      z.object({
+        clears: z.number().int().nonnegative(),
+        name: z.string().max(20),
+        realms: z.array(z.string()),
+        margin: z.number().int().nonnegative().nullable(),
+        depth: z.number().nonnegative().nullable(),
+        reach: z.string().max(30),
+      }),
+    )
+    .min(2),
+  stages: z.record(StageIdSchema, z.array(z.string())),
+});
+export type Access = z.infer<typeof AccessSchema>;

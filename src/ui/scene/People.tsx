@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { SceneMotif } from '../../data/schema';
 import type { SceneView } from '../../store/scene';
-import { BAD, DARK, dur, delay, GOOD, GROUND, INK, m, Motif, PAPER, PLAZA, rnd, SHORE, SILVER, strokeOf, WARN } from './common';
+import { BAD, DARK, dur, delay, Ghost, GOOD, GROUND, INK, m, Motif, PAPER, PLAZA, rnd, SHORE, SILVER, strokeOf, WARN } from './common';
 
 type Arms = 'down' | 'up' | 'forward' | 'raise' | 'wide';
 
@@ -79,6 +79,21 @@ function lookOf(v: SceneView, i: number): SceneMotif | null {
     }
   }
   return best;
+}
+
+/**
+ * 広場の人それぞれの姿。いくつもの姿が重なっても埋もれないよう、まずどの姿にも一人ずつ（その年に現れたもの・
+ * 書き換えから来たものを先に、広場に散らして）割り当て、残りの人は強さの割合で決める
+ */
+function looksOf(v: SceneView, walkers: number): (SceneMotif | null)[] {
+  const weight = (id: SceneMotif) => (v.fresh.includes(id) ? 4 : 0) + (v.inked.includes(id) ? 2 : 0) + m(v, id);
+  const present = LOOKS.filter((id) => m(v, id) > 0).sort((a, b) => weight(b) - weight(a));
+  const out = Array.from({ length: walkers }, (_, i) => lookOf(v, i));
+  const shown = present.slice(0, walkers);
+  shown.forEach((id, k) => {
+    out[Math.min(walkers - 1, Math.floor(((k + 0.5) * walkers) / shown.length))] = id;
+  });
+  return out;
 }
 
 /** 頭の上の印（ひらめき・忘れる・心の声・言葉・眠り） */
@@ -230,11 +245,12 @@ export function People({ v }: { v: SceneView }) {
   const linked = m(v, 'linked') > 0;
   const heads: [number, number][] = [];
   const rows: ReactNode[] = [];
+  const looks = looksOf(v, walkers);
   for (let i = 0; i < walkers; i++) {
     // 離れて立つ世界では間隔を広げる（広場の外、海へははみ出さない）
     const x = Math.min(SHORE - 10, Math.max(112, 118 + ((i + 0.5) / Math.max(1, walkers)) * 160 * spread - (spread - 1) * 40 + (rnd(v.seed, 1000 + i) - 0.5) * 6));
     const y = PLAZA + (i % 2) * 3;
-    const look = lookOf(v, i);
+    const look = looks[i] ?? null;
     const range = 6 + rnd(v.seed, 1100 + i) * 14;
     if (linked) heads.push([x, y - 9.6 * size]);
     rows.push(
@@ -247,7 +263,13 @@ export function People({ v }: { v: SceneView }) {
             ['--dx' as string]: `${range.toFixed(0)}px`,
           }}
         >
-          <Figure v={v} look={look} i={i} tint={sizeId ? strokeOf(v, sizeId) : SILVER} />
+          {look ? (
+            <Motif v={v} id={look}>
+              <Figure v={v} look={look} i={i} tint={sizeId ? strokeOf(v, sizeId) : SILVER} />
+            </Motif>
+          ) : (
+            <Figure v={v} look={look} i={i} tint={sizeId ? strokeOf(v, sizeId) : SILVER} />
+          )}
         </g>
       </g>,
     );
@@ -260,6 +282,16 @@ export function People({ v }: { v: SceneView }) {
         </Motif>
       ) : (
         rows
+      )}
+      {/* 人がいなくなった年は、広場の人々が薄れて消えていく */}
+      {none > 0.5 && (
+        <Ghost v={v} when="noPeople" kind="fade">
+          {Array.from({ length: 9 }, (_, i) => (
+            <g key={i} transform={`translate(${128 + i * 17} ${PLAZA + (i % 2) * 3})`}>
+              <Person />
+            </g>
+          ))}
+        </Ghost>
       )}
       {linked && heads.length > 1 && (
         <Motif v={v} id="linked">
@@ -347,7 +379,6 @@ function Pairs({ v }: { v: SceneView }) {
 function Groups({ v }: { v: SceneView }) {
   const crowd = Math.max(m(v, 'crowd'), v.society < 0.35 ? (0.35 - v.society) * 2.5 : 0);
   const soldiers = Math.max(m(v, 'soldiers'), v.war > 0 ? 0.8 : 0, v.peace < 0.3 ? (0.3 - v.peace) * 2 : 0);
-  const lying = Math.max(m(v, 'lying'), m(v, 'sleepers'));
   return (
     <g>
       {m(v, 'queue') > 0 && (
@@ -383,21 +414,24 @@ function Groups({ v }: { v: SceneView }) {
           ))}
         </Motif>
       )}
-      {lying > 0 && (
-        <Motif v={v} id={m(v, 'sleepers') >= m(v, 'lying') ? 'sleepers' : 'lying'}>
-          {Array.from({ length: 2 + Math.round(4 * lying) }, (_, i) => (
-            <g key={i} transform={`translate(${140 + i * 22} ${PLAZA + 8}) rotate(-90)`}>
-              <Person color={strokeOf(v, m(v, 'sleepers') >= m(v, 'lying') ? 'sleepers' : 'lying')} />
-              {m(v, 'sleepers') > 0.3 && (
-                <g transform="rotate(90 -4 -12)">
-                  <text className="sc-zzz" x={-4} y={-12} fontSize={4} fill={SILVER} style={{ ...dur(2.6), ...delay(i * 0.6) }}>
-                    z
-                  </text>
-                </g>
-              )}
-            </g>
-          ))}
-        </Motif>
+      {/* 眠る人（寝息が立ちのぼる）と、倒れて横たわる人。両方あれば、横たわる人は一段手前に並べる */}
+      {(['sleepers', 'lying'] as const).map((id, row) =>
+        m(v, id) > 0 ? (
+          <Motif key={id} v={v} id={id}>
+            {Array.from({ length: 2 + Math.round(4 * m(v, id)) }, (_, i) => (
+              <g key={i} transform={`translate(${140 + i * 22 + (row === 1 && m(v, 'sleepers') > 0 ? 11 : 0)} ${PLAZA + 8 + (row === 1 && m(v, 'sleepers') > 0 ? 5 : 0)}) rotate(-90)`}>
+                <Person color={strokeOf(v, id)} />
+                {id === 'sleepers' && m(v, 'sleepers') > 0.3 && (
+                  <g transform="rotate(90 -4 -12)">
+                    <text className="sc-zzz" x={-4} y={-12} fontSize={4} fill={SILVER} style={{ ...dur(2.6), ...delay(i * 0.6) }}>
+                      z
+                    </text>
+                  </g>
+                )}
+              </g>
+            ))}
+          </Motif>
+        ) : null,
       )}
       {m(v, 'daring') > 0 && (
         <Motif v={v} id="daring">

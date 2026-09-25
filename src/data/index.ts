@@ -9,6 +9,7 @@ import combosRaw from './combos.json';
 import conceptsRaw from './concepts.json';
 import crisesRaw from './crises.json';
 import endingsRaw from './endings.json';
+import accessRaw from './access.json';
 import achievementsRaw from './achievements.json';
 import eventsRaw from './events.json';
 import indicatorsRaw from './indicators.json';
@@ -20,6 +21,7 @@ import stagesRaw from './stages.json';
 import tagsRaw from './tags.json';
 import twistsRaw from './twists.json';
 import {
+  AccessSchema,
   AnomalySchema,
   BalanceSchema,
   ComboSchema,
@@ -59,6 +61,7 @@ export interface RawData {
   endings: unknown;
   achievements: unknown;
   scene: unknown;
+  access: unknown;
 }
 
 export const RAW_DATA: RawData = {
@@ -78,6 +81,7 @@ export const RAW_DATA: RawData = {
   endings: endingsRaw,
   achievements: achievementsRaw,
   scene: sceneRaw,
+  access: accessRaw,
 };
 
 export class DataError extends Error {}
@@ -115,6 +119,7 @@ export function buildGameData(raw: RawData): GameData {
       .map((x) => x.e),
     achievements: z.array(AchievementSchema).parse(raw.achievements),
     scene: SceneDataSchema.parse(raw.scene),
+    access: AccessSchema.parse(raw.access),
     lawById: new Map(),
     optionOf: new Map(),
     conceptById: new Map(),
@@ -175,7 +180,11 @@ export function buildGameData(raw: RawData): GameData {
   // ものの名前（言葉の境目を見るため）：行の主語と話題・存在の言葉・まとまりと言い換え
   const nouns: string[] = [...Object.values(lex.groups).flat(), ...Object.keys(lex.synonyms), ...Object.values(lex.synonyms).flat()];
   for (const law of data.laws) nouns.push(originalText(law).split(/は|には|が/u)[0] ?? '', ...law.subject, ...law.exists, ...law.topic.filter((w) => w.length >= 2));
-  setLexicon(lex, vocab.filter((w) => !w.startsWith('@')), nouns);
+  setLexicon(
+    lex,
+    vocab.filter((w) => !w.startsWith('@')),
+    nouns,
+  );
 
   const problems: string[] = [];
   const checkGroups = (where: string, rules: readonly MatchRule[]) => {
@@ -230,9 +239,11 @@ export function buildGameData(raw: RawData): GameData {
   }
   for (const a of data.achievements) {
     check(`実績 ${a.id}`, a.world);
-    for (const c of a.progress) if (!/^(cleared|worlds|discovered|endlessBest|endings|achievements|abandoned)\s*(<=|>=|==|<|>)\s*\d+$/.test(c)) problems.push(`実績 ${a.id}: 進み具合の条件が読めない ${c}`);
+    for (const c of a.progress)
+      if (!/^(cleared|worlds|discovered|endlessBest|endings|achievements|abandoned)\s*(<=|>=|==|<|>)\s*\d+$/.test(c)) problems.push(`実績 ${a.id}: 進み具合の条件が読めない ${c}`);
   }
-  for (const law of data.laws) for (const w of law.exists) if (!law.subject.includes(w) && !law.topic.includes(w) && !originalText(law).startsWith(w)) problems.push(`法則 ${law.id}: exists の ${w} が主語にも話題にもない`);
+  for (const law of data.laws)
+    for (const w of law.exists) if (!law.subject.includes(w) && !law.topic.includes(w) && !originalText(law).startsWith(w)) problems.push(`法則 ${law.id}: exists の ${w} が主語にも話題にもない`);
   // 情景：絵に描く相手が内容にあるか。書き換え（法則の読み取り・概念）は、どれも情景のどこかを変える
   const sceneOf = (s: SceneSpec | undefined) => !!s && (Object.keys(s.motifs).length > 0 || !!s.specimen || s.stele);
   for (const law of data.laws) {
@@ -249,6 +260,36 @@ export function buildGameData(raw: RawData): GameData {
   for (const id of Object.keys(data.scene.anomalies)) if (!data.anomalies.some((a) => a.id === id)) problems.push(`情景: 知らない世界異常 ${id}`);
   for (const k of Object.keys(data.scene.kinds)) if (!lex.kinds[k] && !Object.values(lex.suffixes).includes(k)) problems.push(`情景: 知らない言葉の種類 ${k}`);
   if (data.stages.length === 0) problems.push('ステージがない');
+  // 筆の位：どの概念の行も、ちょうど一つの分野に入る。位は救った世界の数の順で、広がるだけ（狭まらない）。最後の位は自由
+  const acc = data.access;
+  const inRealm = new Map<string, string>();
+  for (const r of acc.realms) {
+    for (const c of r.concepts) {
+      if (!data.conceptById.has(c)) problems.push(`筆の位: 分野 ${r.id} の知らない概念 ${c}`);
+      if (inRealm.has(c)) problems.push(`筆の位: 概念 ${c} が二つの分野にある（${inRealm.get(c)} と ${r.id}）`);
+      inRealm.set(c, r.id);
+    }
+  }
+  for (const c of data.concepts) if (!inRealm.has(c.id)) problems.push(`筆の位: 概念 ${c.id} がどの分野にもない`);
+  acc.ranks.forEach((rank, i) => {
+    for (const r of rank.realms) if (!acc.realms.some((x) => x.id === r)) problems.push(`筆の位 ${rank.name}: 知らない分野 ${r}`);
+    const prev = acc.ranks[i - 1];
+    if (!prev) {
+      if (rank.clears !== 0) problems.push('筆の位: はじめの位は、救った世界が0のとき');
+      return;
+    }
+    if (rank.clears <= prev.clears) problems.push(`筆の位 ${rank.name}: 救った世界の数が前の位より多くない`);
+    if (prev.realms.some((r) => !rank.realms.includes(r))) problems.push(`筆の位 ${rank.name}: 前の位の分野が閉じている`);
+    if (prev.margin === null ? rank.margin !== null : rank.margin !== null && rank.margin < prev.margin) problems.push(`筆の位 ${rank.name}: 書き足せる行が減っている`);
+    if (prev.depth === null ? rank.depth !== null : rank.depth !== null && rank.depth < prev.depth) problems.push(`筆の位 ${rank.name}: 書ける概念の重さが減っている`);
+  });
+  const last = acc.ranks[acc.ranks.length - 1]!;
+  if (last.margin !== null || last.depth !== null || last.realms.length !== acc.realms.length) problems.push('筆の位: 最後の位は、すべての行・限りのない余白・どんな概念も書ける');
+  for (const s of data.stages) {
+    const open = acc.stages[s.id as StageId];
+    if (!open) problems.push(`筆の位: ステージ ${s.id} で開いている行がない`);
+    for (const c of open ?? []) if (!data.conceptById.has(c)) problems.push(`筆の位: ステージ ${s.id} の知らない概念 ${c}`);
+  }
   if (problems.length > 0) throw new DataError(problems.join('\n'));
   return data;
 }

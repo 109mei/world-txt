@@ -99,6 +99,31 @@ function carrierText(g: GameState, data: GameData, phraseId: string): string {
   return '';
 }
 
+/**
+ * 両立しない描き方を片づける（どんな組み合わせでも、書いたとおりの矛盾のない絵にする）。
+ * 反対どうし（森が茂る・森がない）は、書き換えから来たもの → 後に書いたもの → 強いもの の順に一つだけ残し、
+ * 「海がない」「人がいない」のような大きな欠けは、それを前提にする絵（潜る人・空を飛ぶ人）を描かない
+ */
+function resolve(data: GameData, motifs: Motifs, inked: Set<SceneMotif>, order: Motifs): void {
+  const rank = (k: SceneMotif) => [inked.has(k) ? 1 : 0, order[k] ?? 0, motifs[k] ?? 0];
+  const better = (a: SceneMotif, b: SceneMotif) => {
+    const ra = rank(a);
+    const rb = rank(b);
+    for (let i = 0; i < ra.length; i += 1) if (ra[i] !== rb[i]) return ra[i]! > rb[i]! ? a : b;
+    return a;
+  };
+  for (const group of data.scene.exclusive) {
+    const present = group.filter((k) => motifs[k] !== undefined);
+    if (present.length < 2) continue;
+    const keep = present.reduce(better);
+    for (const k of present) if (k !== keep) delete motifs[k];
+  }
+  for (const [hider, hidden] of Object.entries(data.scene.hides) as [SceneMotif, SceneMotif[]][]) {
+    if ((motifs[hider] ?? 0) < data.scene.hideAt) continue;
+    for (const k of hidden) delete motifs[k];
+  }
+}
+
 export function sceneView(g: GameState, data: GameData): SceneView {
   const b = data.balance;
   const score = (id: IndicatorId) => clamp((g.scores[id] ?? 50) / 100, 0, 1);
@@ -108,12 +133,19 @@ export function sceneView(g: GameState, data: GameData): SceneView {
   const motifs: Motifs = {};
   const inked = new Set<SceneMotif>();
   const fresh = new Set<SceneMotif>();
+  // 書き換えから来た要素の、書いた順（後に書いたほど大きい。両立しない描き方で、後に書いたほうを残すため）
+  const order: Motifs = {};
+  let seq = 0;
   const add = (m: Motifs, scale: number, ink: boolean, isFresh = false) => {
+    seq += 1;
     for (const [k, v] of Object.entries(m) as [SceneMotif, number][]) {
       const val = clamp(v * scale, 0, 1);
       if (val < 0.02) continue;
       motifs[k] = Math.max(motifs[k] ?? 0, val);
-      if (ink) inked.add(k);
+      if (ink) {
+        inked.add(k);
+        order[k] = seq;
+      }
       if (isFresh) fresh.add(k);
     }
   };
@@ -174,6 +206,8 @@ export function sceneView(g: GameState, data: GameData): SceneView {
   // 世界の結末
   if (g.status !== 'playing' && g.ending) add(data.scene.endings[g.ending] ?? {}, 1, false);
 
+  resolve(data, motifs, inked, order);
+
   const oilF = clamp(g.sim.oilReserve / b.energy.reserveComfort, 0, 1);
   return {
     seed: g.seed,
@@ -200,8 +234,8 @@ export function sceneView(g: GameState, data: GameData): SceneView {
     renew: clamp(g.sim.renewShare, 0, 1),
     fossil: clamp((1 - g.sim.renewShare) * oilF, 0, 1),
     motifs,
-    inked: [...inked],
-    fresh: [...fresh],
+    inked: [...inked].filter((k) => motifs[k] !== undefined),
+    fresh: [...fresh].filter((k) => motifs[k] !== undefined),
     specimens,
     steles,
     ink: lastWritten(g),

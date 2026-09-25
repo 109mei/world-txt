@@ -1,5 +1,5 @@
 import type { SceneView } from '../../store/scene';
-import { dur, delay, HORIZON, INK, m, Motif, PAPER, rnd, SILVER, SILVER_DIM, strokeOf, W } from './common';
+import { dur, delay, Ghost, HORIZON, INK, m, Motif, PAPER, rnd, SILVER, SILVER_DIM, strokeOf, W } from './common';
 
 /** 空の暗さ：太陽のない空・夜の明けない空は暗く、夜の来ない空は明るい */
 export function skyTone(v: SceneView): 'day' | 'night' | 'dark' {
@@ -129,10 +129,15 @@ export function SkyBack({ v }: { v: SceneView }) {
   );
 }
 
+/** ふだんの月（三日月） */
+const MOON = 'M54 22 A9 9 0 1 0 54 40 A10 10 0 0 1 54 22 Z';
+
 /** 太陽・月・ブラックホール・空の時計・空の目 */
 export function Celestial({ v }: { v: SceneView }) {
   const hole = m(v, 'sunHole');
-  const hidden = m(v, 'noSun') > 0.3 || m(v, 'eternalNight') > 0.3 || hole > 0.3;
+  // 太陽が照らさない・夜が明けない・太陽が穴になった：半ばを越えれば太陽は見えず、それまでは薄れていく
+  const fade = Math.max(m(v, 'noSun'), m(v, 'eternalNight'), hole);
+  const hidden = fade >= 0.5;
   const size = 1 + 0.7 * m(v, 'sunNear') + 0.25 * m(v, 'sunBright') + 0.25 * m(v, 'eternalDay') - 0.55 * m(v, 'sunFar') - 0.2 * m(v, 'sunDim');
   const sunFill = m(v, 'sunDim') > 0.3 ? '#b9bcc4' : PAPER;
   const sunCls = m(v, 'sunFlicker') > 0.3 ? 'sc-flicker-slow' : undefined;
@@ -142,13 +147,16 @@ export function Celestial({ v }: { v: SceneView }) {
   const bh = m(v, 'blackHole');
   const clock = m(v, 'clock');
   const eye = m(v, 'eye');
+  const sunGone = (['sunHole', 'eternalNight', 'noSun'] as const).find((id) => v.fresh.includes(id) && m(v, id) >= 0.5);
   return (
     <g>
       {!hidden && (
         <Motif v={v} id={sunId}>
-          <g className={sunCls} style={dur(2.2)}>
-            <circle cx={330} cy={44} r={34 * size} fill={glowInk ? 'url(#sc-glow-ink)' : 'url(#sc-glow)'} opacity={m(v, 'sunDim') > 0.3 ? 0.5 : 1} />
-            <circle cx={330} cy={44} r={11 * size} fill={sunFill} />
+          <g opacity={1 - fade}>
+            <g className={sunCls} style={dur(2.2)}>
+              <circle cx={330} cy={44} r={34 * size} fill={glowInk ? 'url(#sc-glow-ink)' : 'url(#sc-glow)'} opacity={m(v, 'sunDim') > 0.3 ? 0.5 : 1} />
+              <circle cx={330} cy={44} r={11 * size} fill={sunFill} />
+            </g>
           </g>
         </Motif>
       )}
@@ -166,8 +174,20 @@ export function Celestial({ v }: { v: SceneView }) {
           <circle cx={364} cy={76} r={7} fill={PAPER} />
         </Motif>
       )}
-      {m(v, 'noMoon') < 0.5 && (
-        <path d={moonBig ? 'M318 26 A18 18 0 1 0 318 62 A20 20 0 0 1 318 26 Z' : 'M54 22 A9 9 0 1 0 54 40 A10 10 0 0 1 54 22 Z'} fill="#d8dbe2" opacity={moonBig ? 0.92 : 0.5} />
+      {m(v, 'noMoon') < 0.5 ? (
+        <path d={moonBig ? 'M318 26 A18 18 0 1 0 318 62 A20 20 0 0 1 318 26 Z' : MOON} fill="#d8dbe2" opacity={(moonBig ? 0.92 : 0.5) * (1 - m(v, 'noMoon'))} />
+      ) : (
+        // 月が消えた年は、月が欠けていって消える
+        <Ghost v={v} when="noMoon" kind="wane">
+          <path d={MOON} fill="#d8dbe2" opacity={0.5} />
+        </Ghost>
+      )}
+      {/* 太陽が消えた年は、太陽が沈む・吸い込まれる・薄れていく */}
+      {hidden && sunGone && (
+        <Ghost v={v} when={sunGone} kind={sunGone === 'sunHole' ? 'collapse' : sunGone === 'eternalNight' ? 'set' : 'fade'}>
+          <circle cx={330} cy={44} r={34} fill="url(#sc-glow)" />
+          <circle cx={330} cy={44} r={11} fill={PAPER} />
+        </Ghost>
       )}
       {bh > 0 && (
         <Motif v={v} id="blackHole">

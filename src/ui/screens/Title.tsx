@@ -1,8 +1,10 @@
-import { Volume2, VolumeX } from 'lucide-react';
+import { BookOpen, Volume2, VolumeX } from 'lucide-react';
+import { useState } from 'react';
 import { continueGame, goStages, openRecords, updateSettings, useGame } from '../../store/game';
 import { syncBgm } from '../audio';
 import { Icon } from '../icons';
 import { TitleArt } from '../TitleArt';
+import { Tutorial } from '../Tutorial';
 
 export function Title() {
   const hasGame = useGame((s) => s.hasGame);
@@ -11,6 +13,8 @@ export function Title() {
   const worlds = useGame((s) => s.progress.worlds);
   const found = useGame((s) => s.progress.discovered.length);
   const trophies = useGame((s) => s.progress.achievements.length);
+  // あそびかた（5枚で、ゲームの流れを短く見せる）
+  const [tour, setTour] = useState(false);
 
   const start = (fn: () => void) => () => {
     syncBgm(settings.bgm, settings.volume);
@@ -42,6 +46,9 @@ export function Title() {
         <button className={hasGame ? 'btn' : 'btn btn-primary'} onClick={start(goStages)} data-testid="start">
           {worlds > 0 ? '世界を選ぶ' : 'はじめる'}
         </button>
+        <button className={worlds > 0 ? 'records-link' : 'btn tut-open'} onClick={() => setTour(true)} data-testid="open-tutorial">
+          <BookOpen size={15} strokeWidth={1.6} /> あそびかた
+        </button>
         {found > 0 && (
           <button className="records-link" onClick={start(() => openRecords('title'))} data-testid="title-records">
             <Icon name="record" size={14} /> 観測記録 <b>{found}</b>
@@ -68,6 +75,15 @@ export function Title() {
         </button>
       </div>
       <p className="title-foot">世界は、文章でできている。</p>
+      {tour && (
+        <Tutorial
+          onClose={() => setTour(false)}
+          onDone={() => {
+            setTour(false);
+            start(goStages)();
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -13,7 +13,8 @@
     "sim": "tsx scripts/sim.ts",
     "typecheck": "tsc --noEmit",
     "worlds": "tsx scripts/worlds.ts",
-    "fuzz": "tsx scripts/fuzz.ts"
+    "fuzz": "tsx scripts/fuzz.ts",
+    "ranks": "tsx scripts/ranks.ts"
   },
   "dependencies": {
     "lucide-react": "^1.48.0",

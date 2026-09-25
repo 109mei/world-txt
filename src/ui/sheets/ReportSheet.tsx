@@ -25,6 +25,7 @@ function rise(n: number): CSSProperties {
 export function ReportSheet() {
   const view = useGame((s) => s.view);
   const fresh = useGame((s) => s.fresh);
+  const sceneFrom = useGame((s) => s.sceneFrom);
   const rep = view?.report;
   // 開いたときに一度だけ：書いた一文が効き始めたらペンの音、重大な出来事は低い音、観測記録に加わったものがあれば鈴
   useEffect(() => {
@@ -86,7 +87,10 @@ export function ReportSheet() {
     <Sheet
       title={
         <>
-          ▶ {years}年経過　<span className="dim small">YEAR {rep.from} → {rep.to}</span>
+          ▶ {years}年経過　
+          <span className="dim small">
+            YEAR {rep.from} → {rep.to}
+          </span>
         </>
       }
       onClose={ended ? showResult : closeSheet}
@@ -94,9 +98,9 @@ export function ReportSheet() {
       footer={footer}
     >
       <div className="report">
-        {/* いまの世界の姿。この年に効き始めたものは、インクがにじむように現れる */}
+        {/* いまの世界の姿。去年の絵をインクが塗り替えていき、新しく描かれたものはそのものらしく現れ、なくなったものは消えていく */}
         <div className="rise" style={rise(n++)}>
-          <WorldScene scene={view.scene} compact testId="report-scene" />
+          <WorldScene scene={view.scene} from={sceneFrom} compact testId="report-scene" />
         </div>
 
         {rep.interrupted && (
@@ -161,7 +165,11 @@ export function ReportSheet() {
             ))}
           </div>
         )}
-        {nothing && <p className="dim small rise" style={rise(n++)}>目に見える変化はなかった。</p>}
+        {nothing && (
+          <p className="dim small rise" style={rise(n++)}>
+            目に見える変化はなかった。
+          </p>
+        )}
 
         {crises.length > 0 && (
           <section className="surprises crisis-news rise" style={rise(n++)} data-testid="crisis-news">

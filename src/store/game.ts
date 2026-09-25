@@ -3,7 +3,7 @@ import type { EditBlock, EditResult, NoiseInfo } from '../core';
 import type { IndicatorId, StageId } from '../data/schema';
 import type { Progress, Settings } from '../save';
 import type { EditTarget, GameRuntime } from './runtime';
-import { buildView, type GameView } from './view';
+import { buildView, type GameView, type SceneView } from './view';
 
 /**
  * 画面の状態（どの画面・どのシートを開いているか）と、core から作った写し。
@@ -12,12 +12,7 @@ import { buildView, type GameView } from './view';
 
 export type Screen = 'title' | 'stages' | 'briefing' | 'game' | 'result' | 'records';
 export type Tab = 'world' | 'laws' | 'history';
-export type Sheet =
-  | { kind: 'edit'; target: EditTarget }
-  | { kind: 'report' }
-  | { kind: 'indicator'; id: IndicatorId }
-  | { kind: 'menu' }
-  | { kind: 'meta'; which: 'capacity' | 'coherence' };
+export type Sheet = { kind: 'edit'; target: EditTarget } | { kind: 'report' } | { kind: 'indicator'; id: IndicatorId } | { kind: 'menu' } | { kind: 'meta'; which: 'capacity' | 'coherence' | 'civ' };
 
 interface UiState {
   screen: Screen;
@@ -44,6 +39,10 @@ interface UiState {
   saveWarning: string | null;
   /** いま書いたばかりの行（定義の一覧で、インクがにじむように光らせる） */
   justWrote: string | null;
+  /** 時間を進める前の世界の情景（結果の画面で、去年の絵から今年の絵へ塗り替えて見せる） */
+  sceneFrom: SceneView | null;
+  /** 直前に終わった世界で筆の位が上がったなら、その新しい位（結果の画面で知らせる） */
+  rankUp: number | null;
 }
 
 export const useGame = create<UiState>(() => ({
@@ -64,6 +63,8 @@ export const useGame = create<UiState>(() => ({
   elsewhere: false,
   saveWarning: null,
   justWrote: null,
+  sceneFrom: null,
+  rankUp: null,
 }));
 
 let runtime: GameRuntime | null = null;
@@ -91,6 +92,7 @@ export function refreshView(): void {
     hasGame: !!g && g.status === 'playing',
     loadError: runtime.loadError,
     saveWarning: runtime.saveWarning,
+    rankUp: runtime.rankUp,
   });
 }
 
@@ -142,7 +144,7 @@ export function closeRecords(): void {
 export function startStage(stageId: StageId, daily = false): void {
   const rt = getRuntime();
   rt.start(stageId, daily);
-  useGame.setState({ screen: 'game', tab: 'world', sheet: null, lawFilter: { concept: null, query: '' } });
+  useGame.setState({ screen: 'game', tab: 'world', sheet: null, lawFilter: { concept: null, query: '' }, sceneFrom: null });
   refreshView();
   // 放棄や、はじめての世界で得た実績を知らせる
   const got = rt.fresh.filter((id) => id.startsWith('ach:'));
@@ -205,7 +207,19 @@ const BLOCK_TEXT: Record<EditBlock, string> = {
   unknown: 'その行は見つからない',
   empty: '何も書かれていない',
   redundant: 'すでに同じ意味の定義がある',
+  sealed: 'その行は、まだ封じられている',
+  margin: '書き足せる余白が残っていない',
+  heavy: 'その言葉は、いまの筆には重すぎて書けない',
 };
+
+/** その筆の位になるまでの道のり（「あと2つの世界を救い『書記の筆』になると」） */
+export function rankHint(rank: number): string {
+  const rt = getRuntime();
+  const r = rt.data.access.ranks[rank];
+  if (!r) return '';
+  const left = Math.max(0, r.clears - rt.progress.cleared.length);
+  return left > 0 ? `あと${left}つの世界を救い「${r.name}」になると` : `「${r.name}」になると`;
+}
 
 export function blockText(block: EditBlock): string {
   return BLOCK_TEXT[block];
@@ -243,6 +257,9 @@ export function editMessage(res: EditResult, text: string, fresh: boolean, onLaw
   const star = fresh ? '　★新発見' : '';
   if (res.block) {
     if (res.block === 'capacity') return `世界容量が ${res.shortage} 足りない。先に何かを消す`;
+    if (res.block === 'sealed' && res.sealed) return sealedText(res.sealed.law, res.sealed.rank);
+    if (res.block === 'heavy' && res.heavy) return `「${res.heavy.name}」は、いまの筆には重すぎて書けない。${rankHint(res.heavy.rank)}書ける`;
+    if (res.block === 'margin') return marginText();
     if (res.block === 'redundant' && res.sameAs) return `${lineNo(res.sameAs.id)}に、すでに同じ意味の定義がある`;
     if (res.block === 'redundant' && res.reading) return `「${res.reading}」は、すでに世界の定義にある`;
     return BLOCK_TEXT[res.block];
@@ -253,6 +270,19 @@ export function editMessage(res: EditResult, text: string, fresh: boolean, onLaw
   if (res.replaced) return `元の定義は消え、世界は「${res.reading}」と読み取った${star}`;
   if (res.understood) return res.reading ? `世界は「${res.reading}」と読み取った${star}` : '世界は書き換えを受け入れた（意味は変わらない）';
   return `${noiseText(res.noise)}。${NOISE_EFFECT}${onLaw ? '（この行の意味は、書き換える前のまま）' : ''}`;
+}
+
+/** 封じられた行の知らせ（書き換えようとしたとき・行をタップしたとき） */
+export function sealedText(lawId: string, rank: number): string {
+  return `${lineNo(lawId)}は、まだ封じられていて書き換えられない。${rankHint(rank)}開く`;
+}
+
+/** 書き足せる余白がないときの知らせ */
+export function marginText(): string {
+  const rt = getRuntime();
+  const margin = rt.state?.access?.margin ?? 0;
+  const next = rt.data.access.ranks.findIndex((r) => r.margin === null || r.margin > margin);
+  return `いまの筆で書き足せるのは${margin}行まで。書き足した行を消せば書ける${next >= 0 ? `（${rankHint(next)}、もっと書き足せる）` : ''}`;
 }
 
 let justTimer: ReturnType<typeof setTimeout> | null = null;
@@ -310,8 +340,10 @@ export function skipPassing(): void {
 export function advanceYears(years: number, instant = false): void {
   if (useGame.getState().passing) return;
   const rt = getRuntime();
+  const before = useGame.getState().view?.scene ?? null;
   const report = rt.advance(years);
   if (!report) return;
+  useGame.setState({ sceneFrom: before });
   refreshView();
   const done = () => {
     passTimer = null;

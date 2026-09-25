@@ -1,5 +1,6 @@
 export * from './types';
 export { advance, blightResilience, createGame, FAIL_TEXT, projectScores, refresh, stepYear, STATE_SCHEMA, syncPhraseFlags, upgradeState } from './game';
+export { accessFor, crisisConcepts, isSealed, openConcepts, rankForDepth, rankOf, rankOpening } from './access';
 export { addLine, costAfter, planWrite, rewriteLaw, rewriteLine, sentence, weightOf, write, type WriteTarget } from './write';
 export {
   aboutLaw,

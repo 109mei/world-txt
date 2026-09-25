@@ -1,0 +1,26 @@
+{
+  "realms": [
+    { "id": "life", "name": "暮らし", "icon": "humanity", "concepts": ["human", "aging", "birth", "sleep", "death", "food", "agriculture"] },
+    { "id": "nature", "name": "生き物", "icon": "plant", "concepts": ["plant", "animal", "disease", "immunity", "medicine", "environment"] },
+    { "id": "society", "name": "社会", "icon": "nation", "concepts": ["education", "science", "industry", "nation", "money", "war", "crime", "happiness"] },
+    { "id": "power", "name": "力", "icon": "energy", "concepts": ["fire", "oil", "energy", "electricity", "atom"] },
+    { "id": "earth", "name": "大地と空", "icon": "earth", "concepts": ["temperature", "air", "co2", "water", "sea", "earth", "sun"] }
+  ],
+  "ranks": [
+    { "clears": 0, "name": "見習いの筆", "realms": ["life"], "margin": 1, "depth": 18, "reach": "暮らしのこと" },
+    { "clears": 1, "name": "写字生の筆", "realms": ["life", "nature"], "margin": 2, "depth": 22, "reach": "大きな願い" },
+    { "clears": 2, "name": "書記の筆", "realms": ["life", "nature", "society"], "margin": 3, "depth": 30, "reach": "時間と体のこと" },
+    { "clears": 3, "name": "改稿者の筆", "realms": ["life", "nature", "society", "power", "earth"], "margin": 5, "depth": 40, "reach": "物の理の根本" },
+    { "clears": 5, "name": "創世の筆", "realms": ["life", "nature", "society", "power", "earth"], "margin": null, "depth": null, "reach": "世界そのもの" }
+  ],
+  "stages": {
+    "food": ["human", "food", "agriculture", "plant", "animal", "water", "nation"],
+    "plague": ["human", "disease", "immunity", "medicine", "animal", "war", "crime"],
+    "climate": ["temperature", "air", "co2", "sea", "sun", "earth", "oil", "plant", "war", "disease", "crime", "money"],
+    "war": ["war", "nation", "happiness", "crime", "money", "atom"],
+    "energy": ["oil", "energy", "electricity", "atom", "fire", "industry"],
+    "tiny": ["human", "aging", "birth", "sleep", "death", "temperature", "air", "plant", "co2", "animal", "water", "sea", "sun", "earth", "fire", "oil", "energy", "electricity", "atom", "agriculture", "food", "disease", "immunity", "medicine", "education", "science", "industry", "nation", "money", "war", "crime", "happiness", "environment"],
+    "loop": ["human", "food", "disease", "animal", "war"],
+    "endless": []
+  }
+}

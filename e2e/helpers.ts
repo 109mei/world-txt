@@ -8,12 +8,16 @@ export async function ready(page: Page): Promise<void> {
   });
 }
 
-/** タイトルから食料危機のステージを始める */
-export async function startFood(page: Page): Promise<void> {
+/**
+ * タイトルから食料危機のステージを始める。
+ * free：すべての世界を救ったことにして、筆の位を最後（すべて自由）にしてから始める（書き換えの仕組みそのものを確かめるとき）
+ */
+export async function startFood(page: Page, free = false): Promise<void> {
   await page.goto('./?seed=7&debug=1');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await expect(page.getByTestId('title')).toBeVisible();
+  if (free) await debug(page, 'clears(7)');
   await page.getByTestId('start').click();
   await page.getByTestId('stage-food').click();
   await page.getByTestId('open-world').click();

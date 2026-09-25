@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 import { gameData } from '../../data';
 import { continueGame, goTitle, openBriefing, openRecords, playingWorld, stageLock, useGame } from '../../store/game';
 import { Icon } from '../icons';
+import { PenPanel } from '../PenPanel';
 
 export function Stages() {
   const progress = useGame((s) => s.progress);
@@ -35,6 +36,7 @@ export function Stages() {
       ) : (
         <p className="lead">どの世界を救いますか。</p>
       )}
+      <PenPanel clears={progress.cleared.length} />
       <div className="stage-list">
         {stages.map((st, i) => {
           const best = progress.best[st.id];
@@ -74,9 +76,7 @@ export function Stages() {
                 ) : st.endless ? (
                   <span className="stage-state">{best ? `最長 ${best.years}年` : '未挑戦'}</span>
                 ) : cleared ? (
-                  <span className="stage-state good">
-                    CLEAR{best?.fewest !== undefined && <span className="stage-fewest">最少 {best.fewest}手</span>}
-                  </span>
+                  <span className="stage-state good">CLEAR{best?.fewest !== undefined && <span className="stage-fewest">最少 {best.fewest}手</span>}</span>
                 ) : best ? (
                   <span className="stage-state">最高 {best.years}年</span>
                 ) : (

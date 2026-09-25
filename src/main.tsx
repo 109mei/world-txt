@@ -97,13 +97,20 @@ async function start(): Promise<void> {
         rewrite: (lawId: string, text: string) => writeWorld({ kind: 'law', id: lawId }, text),
         add: (text: string) => writeWorld({ kind: 'new' }, text),
         goStages: () => goStages(),
-        // 試しに多くを書き換えるため、書換の力と世界容量に余裕を持たせる（開発とテストだけ）
+        // 試しに多くを書き換えるため、書換の力と世界容量に余裕を持たせ、すべての行を開く（開発とテストだけ）
         boost: () => {
           const g = getRuntime().state;
           if (g) {
             g.edits.left = 99;
             g.sim.capacityMax += 3000;
+            g.access = null;
           }
+          refreshView();
+        },
+        // 救った世界の数を決める（筆の位を試すため。はじめの n ステージを救ったことにする）
+        clears: (n: number) => {
+          const order: StageId[] = ['food', 'plague', 'climate', 'war', 'energy', 'loop', 'tiny'];
+          getRuntime().progress.cleared = order.slice(0, n);
           refreshView();
         },
         ui: () => {

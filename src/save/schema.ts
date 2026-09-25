@@ -101,6 +101,16 @@ export const GameStateSchema = z.looseObject({
   inEffect: z.array(id).max(5000).optional(),
   /** 書き換えの勢い（版7から） */
   impulse: z.record(id, num).optional(),
+  /** 書き換えられる範囲・筆の位（版8から。古いセーブにはないので、すべて自由として補う） */
+  access: z
+    .object({
+      rank: z.number().int().min(0).max(50),
+      concepts: z.array(id).max(500),
+      margin: z.number().int().min(0).max(10000).nullable(),
+      depth: z.number().min(0).max(10000).nullable(),
+    })
+    .nullable()
+    .optional(),
 });
 
 export const SettingsSchema = z.object({

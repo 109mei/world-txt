@@ -1,20 +1,8 @@
 import type { IconKey, Law, Phrase } from '../data/schema';
+import { openConcepts, rankForDepth, rankOpening } from './access';
 import { covered, lawTotals, type Written } from './channels';
 import { addImpulse, discover, discoverTags, syncPhraseFlags, targetsNow } from './game';
-import {
-  canonical,
-  interpretAsLaw,
-  interpretLaw,
-  lineCost,
-  phraseName,
-  matchPhrases,
-  noiseOf,
-  normalize,
-  originalText,
-  subjectWords,
-  textCost,
-  type AddedAsLaw,
-} from './interpret';
+import { canonical, interpretAsLaw, interpretLaw, lineCost, phraseName, matchPhrases, noiseOf, normalize, originalText, subjectWords, textCost, type AddedAsLaw } from './interpret';
 import { NO_MEANING } from './lines';
 import type { Carried, EditBlock, EditResult, ExtraLine, GameData, GameState, NoiseInfo } from './types';
 
@@ -329,17 +317,39 @@ function blocked(g: GameState): EditBlock | null {
   return null;
 }
 
+/**
+ * 筆の位で書けない書き換えを止める：封じられた行（書き足した文が溶け込む行・重ねて書く行も）、
+ * 余白のない書き足し、いまの筆には重すぎる概念。止めたときは書換の力も世界容量も使わない
+ */
+function guard(g: GameState, data: GameData, plan: Plan, text: string): Plan {
+  const a = g.access;
+  if (!a || plan.block) return plan;
+  const open = openConcepts(g, data)!;
+  for (const id of [...plan.laws, ...(plan.result.stacked ? [plan.result.stacked] : [])]) {
+    const law = data.lawById.get(id);
+    if (law && !open.has(law.concept)) return blockPlan(g, 'sealed', { sealed: { law: id, rank: rankOpening(data, law.concept) } });
+  }
+  if (plan.added && a.margin !== null && g.extras.length >= a.margin) return blockPlan(g, 'margin');
+  if (a.depth !== null) {
+    for (const d of plan.discoveries) {
+      const p = d.startsWith('p:') ? data.phraseById.get(d.slice(2)) : undefined;
+      if (p && p.incoherence > a.depth) return blockPlan(g, 'heavy', { heavy: { name: phraseName(p.name, sentence(text)), rank: rankForDepth(data, p.incoherence) } });
+    }
+  }
+  return plan;
+}
+
 /** 書いたあとの WORLD.txt を組み立てる（世界はまだ変えない） */
 export function planWrite(g: GameState, data: GameData, target: WriteTarget, text: string): Plan {
   if (target.kind === 'law') {
     if (!data.lawById.has(target.id)) return blockPlan(g, 'unknown');
     const b = blocked(g);
-    return b ? blockPlan(g, b) : planLaw(g, data, target.id, text);
+    return b ? blockPlan(g, b) : guard(g, data, planLaw(g, data, target.id, text), text);
   }
   if (target.kind === 'line' && !g.extras.some((e) => e.id === target.id)) return blockPlan(g, 'unknown');
   const b = blocked(g);
   if (b) return blockPlan(g, b);
-  return planLine(g, data, target.kind === 'line' ? target.id : null, text);
+  return guard(g, data, planLine(g, data, target.kind === 'line' ? target.id : null, text), text);
 }
 
 /** 書き換えたあとの WORLD.txt が上限を何だけ超えるか。軽くなる書き換えはいつでもできる */
@@ -423,4 +433,3 @@ export function weightOf(data: GameData, text: string, isLine: boolean): number 
     phrases.map((p) => p.id),
   );
 }
-

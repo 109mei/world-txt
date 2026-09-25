@@ -1,5 +1,8 @@
 import {
   capacityLevel,
+  crisisConcepts,
+  openConcepts,
+  rankOpening,
   civLevel,
   coherenceLevel,
   FAIL_TEXT,
@@ -24,15 +27,7 @@ import { clamp } from '../core/math';
 import { sceneView, type SceneView } from './scene';
 
 export type { SceneView } from './scene';
-import {
-  CHANNEL_IDS,
-  INDICATOR_IDS,
-  type ChannelId,
-  type IconKey,
-  type IndicatorId,
-  type StageId,
-  type Tone,
-} from '../data/schema';
+import { CHANNEL_IDS, INDICATOR_IDS, type ChannelId, type IconKey, type IndicatorId, type StageId, type Tone } from '../data/schema';
 
 /** 画面に見せる写し。core の状態から作り、React はこれだけを読む */
 
@@ -44,6 +39,31 @@ export interface IndicatorView {
   tone: Tone;
   trend: Trend;
   score: number;
+  /** 帯の上の位置（0 が悪い端、1 が良い端） */
+  pos: number;
+  /** ここより下は「悪い」状態語になる位置 */
+  danger: number;
+}
+
+/** 世界の終わりまでの近さ（人口・文明・世界整合性・世界容量の4つ） */
+export interface LimitView {
+  id: 'pop' | 'civ' | 'coherence' | 'capacity';
+  label: string;
+  icon: IconKey;
+  /** 帯の上の今の位置（0 が終わり側の端、1 が安全な側の端） */
+  pos: number;
+  /** 帯の上の終わりの線の位置 */
+  line: number;
+  /** 線までの近さ（遠い・まだある・近い・目前・越えた） */
+  word: string;
+  tone: Tone;
+  trend: Trend;
+  /** 線の意味（数は現実の単位だけで、点数は出さない） */
+  note: string;
+  /** 線を越えてから、世界が終わるまでの年（越えていないなら null） */
+  countdown: number | null;
+  /** 去年の変わり方が続けば、何年で線に届くか（遠ざかっている・遠すぎるなら null） */
+  eta: number | null;
 }
 
 export interface MeterView {
@@ -72,6 +92,20 @@ export interface LawLine {
   reading: string | null;
   /** 世界容量で使う文字数（文章と、行が運ぶ概念の重さ） */
   cost: number;
+  /** 封じられた行なら、その行が開く筆の位（書き換えられる行なら null） */
+  sealed: number | null;
+}
+
+/** この世界の筆の位（書き換えられる範囲） */
+export interface WorldPen {
+  rank: number;
+  name: string;
+  /** その位で書ける物 */
+  reach: string;
+  /** 書き足した行の数と、書き足せる行の数（null なら容量の許すかぎり） */
+  margin: { used: number; max: number | null };
+  /** 知らされた危機のために、いまだけ封が解けている行がある */
+  crisisOpen: boolean;
 }
 
 /** 特別な結末（重力の消えた星・楽園 など） */
@@ -114,6 +148,10 @@ export interface GameView {
   focus: IndicatorId[];
   capacity: MeterView & { used: number; max: number };
   coherence: MeterView;
+  /** 世界の終わりまで（人口・文明・世界整合性・世界容量が、終わりの線まであとどれぐらいか） */
+  limits: LimitView[];
+  /** 筆の位（null なら、すべて自由に書き換えられる世界） */
+  pen: WorldPen | null;
   edits: { left: number; max: number; nextIn: number; used: number };
   tags: { id: string; label: string; icon: IconKey }[];
   alerts: NewsItem[];
@@ -135,6 +173,7 @@ export const ADDED_CONCEPT = '__added__';
 
 function lawLines(g: GameState, data: GameData): LawLine[] {
   const lines: LawLine[] = [];
+  const open = openConcepts(g, data);
   // 概念の順に並べ、その中は内容の順
   const order = new Map(data.concepts.map((c, i) => [c.id, i]));
   const laws = [...data.laws].sort((a, b) => (order.get(a.concept) ?? 0) - (order.get(b.concept) ?? 0));
@@ -160,6 +199,7 @@ function lawLines(g: GameState, data: GameData): LawLine[] {
       understood,
       reading: state !== 'original' && understood ? readingText(data, base !== law.initial ? { law: law.id, option: base } : null, c, text) : null,
       cost: lineCost(data.phraseById, text, c.phrases),
+      sealed: open && !open.has(law.concept) ? rankOpening(data, law.concept) : null,
     });
   }
   for (const x of g.extras) {
@@ -179,6 +219,7 @@ function lawLines(g: GameState, data: GameData): LawLine[] {
       understood: c.phrases.length > 0 || !!c.law,
       reading: readingText(data, null, c, x.text),
       cost: lineCost(data.phraseById, x.text, c.phrases),
+      sealed: null,
     });
   }
   return lines;
@@ -212,6 +253,113 @@ function crisisView(g: GameState, data: GameData): CrisisView | null {
   return { id: c.id, name: c.name, icon: c.icon, left, text: c.warn.replace('{n}', String(left)) };
 }
 
+const SAFE_TONES: readonly Tone[] = ['good', 'ok'];
+const BAD_TONES: readonly Tone[] = ['bad', 'critical'];
+
+/** 状態語の表で、ここより下は「悪い」になる点数（悪くない段のうち、いちばん低い段の下限） */
+function dangerOf(levels: readonly (readonly [number, string, Tone])[]): number {
+  const ok = levels.filter((l) => !BAD_TONES.includes(l[2])).map((l) => l[0]);
+  return ok.length > 0 ? Math.min(...ok) : 0;
+}
+
+/**
+ * 世界の終わりまでの近さ。終わりの線を 0、安定の所を 1 とした近さ（margin）から、帯の位置と言葉を決める。
+ * 帯は、終わりの線を limits.line の位置に置き、その右をじゅうぶん安全な所まで、左を線の先まで描く
+ */
+function limitsView(g: GameState, data: GameData): LimitView[] {
+  const ind = data.indicators;
+  const cfg = ind.limits;
+  const stage = data.stageById.get(g.stageId)!;
+  const b = data.balance;
+  const d = g.derived;
+  const s = g.sim;
+  const wordOf = (margin: number) => {
+    for (const [min, word, tone] of cfg.words) if (margin >= min) return { word, tone };
+    const last = cfg.words[cfg.words.length - 1]!;
+    return { word: last[1], tone: last[2] };
+  };
+  const posOf = (margin: number) => clamp(cfg.line + margin * (1 - cfg.line), 0, 1);
+  /** 去年の変わり方が続けば、何年で線に届くか */
+  const etaOf = (gap: number, delta: number) => {
+    if (gap <= 0 || delta >= 0) return null;
+    const years = Math.ceil(gap / -delta);
+    return years <= cfg.eta ? years : null;
+  };
+  const row = (id: LimitView['id'], label: string, icon: IconKey, margin: number, trend: Trend, note: string, countdown: number | null, eta: number | null): LimitView => {
+    // 線まで遠くても、このままなら数年で届くほど速く近づいていれば、言葉はその急ぎに合わせる
+    const soon = eta !== null ? cfg.soon.find(([years]) => eta <= years)?.[1] : undefined;
+    const w = countdown !== null ? wordOf(-1) : wordOf(soon === undefined ? margin : Math.min(margin, soon));
+    return { id, label, icon, pos: posOf(margin), line: cfg.line, word: w.word, tone: w.tone, trend, note, countdown, eta: countdown !== null ? null : eta };
+  };
+  // 人口：終わりの線はステージの人口の下限、安全ははじめの人口
+  const popSafe = Math.max(g.startPop, stage.fail.pop + 1);
+  const popPrev = g.trace.pop.length >= 2 ? g.trace.pop[g.trace.pop.length - 2]! : s.pop;
+  const popMargin = (s.pop - stage.fail.pop) / (popSafe - stage.fail.pop);
+  // 文明・世界整合性：安全は、状態語が「安定」以上になる所
+  const civSafe = Math.min(...ind.civilization.filter((l) => SAFE_TONES.includes(l[3])).map((l) => l[0]));
+  const civMargin = (d.civ - stage.fail.civ) / Math.max(1, civSafe - stage.fail.civ);
+  const civCount = g.counters.civLow > 0 ? Math.max(0, b.civ.graceYears - g.counters.civLow) : null;
+  const cohSafe = Math.min(...ind.coherence.filter((l) => SAFE_TONES.includes(l[2])).map((l) => l[0]));
+  const cohMargin = (s.coherence - b.coherence.collapse) / Math.max(1, cohSafe - b.coherence.collapse);
+  // 世界容量：終わりの線は上限いっぱい、安全は状態語が「安定」までの使い方
+  const capSafe = Math.max(...ind.capacity.filter((l) => SAFE_TONES.includes(l[2])).map((l) => l[0]));
+  const capMargin = (1 - d.capacityRatio) / Math.max(0.01, 1 - capSafe);
+  const capCount = g.counters.capOver > 0 || d.capacityRatio > 1 ? Math.max(0, b.capacity.graceYears - g.counters.capOver) : null;
+  const civWord = civLevel(ind, d.civ).word;
+  const cohWord = coherenceLevel(ind, s.coherence).word;
+  return [
+    row(
+      'pop',
+      '人口',
+      'population',
+      popMargin,
+      trendOf((d.birthRate - d.deathRate) * 100, 1, 0.2),
+      `${stage.fail.pop}億人を割ると、人類は終わる`,
+      null,
+      etaOf(s.pop - stage.fail.pop, s.pop - popPrev),
+    ),
+    row(
+      'civ',
+      '文明',
+      'civilization',
+      civMargin,
+      meterTrend(d.civ - g.prevMeta.civ),
+      `今は「${civWord}」。崩れたまま${b.civ.graceYears}年で終わる`,
+      civCount,
+      etaOf(d.civ - stage.fail.civ, d.civ - g.prevMeta.civ),
+    ),
+    row(
+      'coherence',
+      '世界整合性',
+      'coherence',
+      cohMargin,
+      meterTrend(s.coherence - g.prevMeta.coherence),
+      `今は「${cohWord}」。崩れると、世界は意味を失う`,
+      null,
+      etaOf(s.coherence - b.coherence.collapse, s.coherence - g.prevMeta.coherence),
+    ),
+    row(
+      'capacity',
+      '世界容量',
+      'capacity',
+      capMargin,
+      meterTrend(-(d.capacityRatio - g.prevMeta.capacityRatio) * 100),
+      `${d.capacityUsed} / ${Math.floor(s.capacityMax)}字。超えたまま${b.capacity.graceYears}年で終わる`,
+      capCount,
+      null,
+    ),
+  ];
+}
+
+/** この世界の筆の位 */
+function penView(g: GameState, data: GameData): WorldPen | null {
+  const a = g.access;
+  if (!a) return null;
+  const def = data.access.ranks[a.rank] ?? data.access.ranks[0]!;
+  const crisisOpen = !!g.crisis && g.status === 'playing' && crisisConcepts(data, g.crisis.id).some((c) => !a.concepts.includes(c));
+  return { rank: a.rank, name: def.name, reach: def.reach, margin: { used: g.extras.length, max: a.margin }, crisisOpen };
+}
+
 export function buildView(g: GameState, data: GameData): GameView {
   const stage = data.stageById.get(g.stageId)!;
   const ind = data.indicators;
@@ -227,6 +375,8 @@ export function buildView(g: GameState, data: GameData): GameView {
       tone: lv.tone,
       trend: trendOf(g.scores[id] - (g.prevScores[id] ?? g.scores[id]), t.fast, t.slow),
       score: g.scores[id],
+      pos: clamp(g.scores[id] / 100, 0, 1),
+      danger: dangerOf(def.levels) / 100,
     };
   });
   const civ = civLevel(ind, g.derived.civ);
@@ -282,6 +432,8 @@ export function buildView(g: GameState, data: GameData): GameView {
       pos: clamp(1 - sim.coherence / 100, 0, 1),
       ends: ['正常', '崩壊'],
     },
+    limits: limitsView(g, data),
+    pen: penView(g, data),
     edits: { left: g.edits.left, max: stage.edits.max, nextIn: Math.max(0, g.edits.nextAt - g.year), used: g.edits.used },
     tags,
     alerts,
@@ -516,7 +668,10 @@ export function explainIndicator(g: GameState, data: GameData, id: IndicatorId):
       }
       break;
   }
-  return out.sort((a, b2) => b2.weight - a.weight).slice(0, 4).map(({ icon, text, good }) => ({ icon, text, good }));
+  return out
+    .sort((a, b2) => b2.weight - a.weight)
+    .slice(0, 4)
+    .map(({ icon, text, good }) => ({ icon, text, good }));
 }
 
 /**

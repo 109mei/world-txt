@@ -17,6 +17,12 @@ test('主な画面', async ({ page }) => {
   await ready(page);
   await page.waitForTimeout(400);
   await page.screenshot({ path: shot('01_title') });
+  // あそびかた（5枚で、ゲームの流れを短く）
+  await page.getByTestId('open-tutorial').click();
+  await page.screenshot({ path: shot('01b_tutorial') });
+  for (let i = 0; i < 4; i++) await page.getByTestId('tutorial-next').click();
+  await page.screenshot({ path: shot('01c_tutorial_pen') });
+  await page.getByTestId('tutorial-close').click();
 
   await page.getByTestId('start').click();
   await page.screenshot({ path: shot('02_stages') });
@@ -24,6 +30,7 @@ test('主な画面', async ({ page }) => {
   await page.screenshot({ path: shot('03_briefing') });
   await page.getByTestId('open-world').click();
   await expect(page.getByTestId('game')).toBeVisible();
+  await quiet(page);
   await page.screenshot({ path: shot('04_world') });
 
   await page.getByTestId('tab-laws').click();
@@ -36,6 +43,11 @@ test('主な画面', async ({ page }) => {
   await page.getByTestId('write').click();
   await quiet(page);
   await page.screenshot({ path: shot('06_laws') });
+  // 封じられた行（筆の位が上がると開く）
+  await page.getByTestId('law-sun_shine').scrollIntoViewIfNeeded();
+  await page.getByTestId('law-sun_shine').click();
+  await page.screenshot({ path: shot('06b_laws_sealed') });
+  await quiet(page);
 
   // 1回で1年。最初の年：書いた一文が世界の姿になる（情景と「世界が書き換わった」）
   await page.getByTestId('advance').click();
@@ -164,7 +176,17 @@ test('主な画面', async ({ page }) => {
   // たくさん書き換えた世界の情景（空を飛ぶ人・二つの太陽・ロボット・宇宙人・恐竜・猫・巨大な像・虹）
   await debug(page, "start('food')");
   await debug(page, 'boost()');
-  for (const t of ['人間は空を飛べる。', '空には太陽が二つある。', 'ロボットが人の代わりに働く。', '宇宙人が現れる。', '恐竜がよみがえる。', '猫が増える。', '独裁者が世界を治める。', '災害は起きない。']) await debug(page, `add('${t}')`);
+  for (const t of [
+    '人間は空を飛べる。',
+    '空には太陽が二つある。',
+    'ロボットが人の代わりに働く。',
+    '宇宙人が現れる。',
+    '恐竜がよみがえる。',
+    '猫が増える。',
+    '独裁者が世界を治める。',
+    '災害は起きない。',
+  ])
+    await debug(page, `add('${t}')`);
   await debug(page, 'advance(1)');
   await page.getByTestId('report-ok').click();
   await page.getByTestId('tab-world').click();

@@ -31,7 +31,7 @@ test.describe('390×844 のスマホ縦画面', () => {
   });
 
   test('行を消すと、その法則は世界から消える', async ({ page }) => {
-    await startFood(page);
+    await startFood(page, true);
     await page.getByTestId('tab-laws').click();
     await page.getByTestId('law-war').click();
     await page.getByTestId('clear').click();
@@ -41,7 +41,7 @@ test.describe('390×844 のスマホ縦画面', () => {
   });
 
   test('新しい一文を書き足せる（意味のない文は、世界が何も変わらないと伝える）', async ({ page }) => {
-    await startFood(page);
+    await startFood(page, true);
     await page.getByTestId('tab-laws').click();
     await page.getByTestId('add-line').click();
     await page.getByTestId('editor').fill('人間は空を飛べる');
@@ -115,7 +115,7 @@ test.describe('390×844 のスマホ縦画面', () => {
   });
 
   test('再読み込みしても、書き換えた世界の続きから遊べる', async ({ page }) => {
-    await startFood(page);
+    await startFood(page, true);
     await page.getByTestId('tab-laws').click();
     await page.getByTestId('law-crime').click();
     await page.getByTestId('editor').fill('');
@@ -268,7 +268,7 @@ test.describe('390×844 のスマホ縦画面', () => {
   });
 
   test('宇宙を消すと、特別な結末「無」で世界が終わる', async ({ page }) => {
-    await startFood(page);
+    await startFood(page, true);
     await page.getByTestId('tab-laws').click();
     await page.getByTestId('add-line').click();
     await page.getByTestId('editor').fill('宇宙は消滅する。');
@@ -362,5 +362,59 @@ test.describe('390×844 のスマホ縦画面', () => {
     expect(manifest.display).toBe('browser');
     expect(manifest.icons.some((i) => i.purpose === 'maskable')).toBe(true);
     for (const i of manifest.icons) expect((await request.get(new URL(i.src, manifestUrl).href)).ok(), i.src).toBe(true);
+  });
+
+  test('タイトルの「あそびかた」で、ゲームの流れを5枚で短く見られる', async ({ page }) => {
+    await page.goto('./?seed=7&debug=1');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    await page.getByTestId('open-tutorial').click();
+    const tour = page.getByTestId('tutorial');
+    await expect(tour).toContainText('1 / 5');
+    await expect(tour).toContainText('世界は、文章でできている');
+    for (const title of ['兆しを読む', '書き換える', '時間を進める', '世界を救う']) {
+      await page.getByTestId('tutorial-next').click();
+      await expect(tour).toContainText(title);
+    }
+    await expect(tour).toContainText('筆の位');
+    // 押せる物は44px以上
+    const box = await page.getByTestId('tutorial-done').boundingBox();
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+    await page.getByTestId('tutorial-done').click();
+    await expect(page.getByTestId('stages')).toBeVisible();
+    await expect(page.getByTestId('pen-panel')).toContainText('見習いの筆');
+    await expect(page.getByTestId('pen-next')).toContainText('あと1つの世界を救うと');
+  });
+
+  test('はじめの筆では、封じられた行は書き換えられず、書き足せる行にも限りがある', async ({ page }) => {
+    await startFood(page);
+    await page.getByTestId('tab-laws').click();
+    await expect(page.getByTestId('pen')).toContainText('見習いの筆');
+    // 太陽の行は封じられている：タップすると、どの位で開くかを知らせ、書き換える画面は開かない
+    await expect(page.getByTestId('law-sun_shine')).toHaveAttribute('data-sealed', 'yes');
+    await page.getByTestId('law-sun_shine').click();
+    await expect(page.getByTestId('toast')).toContainText('封じられて');
+    await expect(page.getByTestId('edit-sheet')).toHaveCount(0);
+    // 食料危機に関わる行は開いている
+    await expect(page.getByTestId('law-human_food')).not.toHaveAttribute('data-sealed', 'yes');
+    // 書き足せる行は1つまで
+    await page.getByTestId('add-line').click();
+    await page.getByTestId('editor').fill('人間は空を飛べる');
+    await page.getByTestId('write').click();
+    await expect(page.getByTestId('toast')).toContainText('人間が空を飛ぶ');
+    await expect(page.getByTestId('add-line')).toHaveAttribute('data-full', 'yes');
+    await page.getByTestId('add-line').click();
+    await expect(page.getByTestId('toast')).toContainText('書き足せるのは1行まで');
+  });
+
+  test('世界の終わりまで：人口・文明・世界整合性・世界容量が、終わりの線まであとどれぐらいかを見せる', async ({ page }) => {
+    await startFood(page);
+    const limits = page.getByTestId('limits');
+    await expect(limits).toContainText('世界の終わりまで');
+    await expect(limits.locator('.limit')).toHaveCount(4);
+    await expect(page.getByTestId('limit-pop')).toContainText('億人を割ると');
+    await page.getByTestId('limit-civ').click();
+    await expect(page.getByTestId('meta-sheet')).toContainText('文明');
+    await expect(page.getByTestId('meta-limit')).toBeVisible();
   });
 });
