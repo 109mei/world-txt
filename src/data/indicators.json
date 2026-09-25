@@ -1,0 +1,114 @@
+{
+  "items": {
+    "humanity": {
+      "label": "人類",
+      "icon": "humanity",
+      "levels": [[80, "繁栄", "good"], [62, "安定", "ok"], [48, "不安", "warn"], [34, "減少", "bad"], [20, "危機", "bad"], [0, "壊滅", "critical"]],
+      "ends": ["壊滅", "繁栄"],
+      "related": ["population", "food", "water", "health", "peace"]
+    },
+    "food": {
+      "label": "食料",
+      "icon": "food",
+      "levels": [[85, "豊富", "good"], [68, "十分", "good"], [55, "安定", "ok"], [45, "不足気味", "warn"], [33, "不足", "bad"], [18, "深刻", "bad"], [0, "崩壊", "critical"]],
+      "ends": ["崩壊", "豊富"],
+      "related": ["water", "agriculture", "energy", "logistics", "climate"]
+    },
+    "water": {
+      "label": "水",
+      "icon": "water",
+      "levels": [[85, "豊富", "good"], [68, "十分", "good"], [55, "安定", "ok"], [45, "不足気味", "warn"], [33, "不足", "bad"], [18, "深刻", "bad"], [0, "枯渇", "critical"]],
+      "ends": ["枯渇", "豊富"],
+      "related": ["climate", "agriculture", "industry", "eco"]
+    },
+    "energy": {
+      "label": "エネルギー",
+      "icon": "energy",
+      "levels": [[85, "豊富", "good"], [68, "十分", "good"], [55, "安定", "ok"], [45, "不足気味", "warn"], [33, "不足", "bad"], [18, "深刻", "bad"], [0, "停止", "critical"]],
+      "ends": ["停止", "豊富"],
+      "related": ["oil", "sun", "industry", "logistics"]
+    },
+    "eco": {
+      "label": "生態系",
+      "icon": "eco",
+      "levels": [[80, "豊か", "good"], [65, "健全", "good"], [52, "安定", "ok"], [40, "劣化", "warn"], [28, "悪化", "bad"], [15, "深刻", "bad"], [0, "崩壊", "critical"]],
+      "ends": ["崩壊", "豊か"],
+      "related": ["plant", "animal", "climate", "agriculture"]
+    },
+    "health": {
+      "label": "健康",
+      "icon": "health",
+      "levels": [[76, "良好", "good"], [62, "安定", "ok"], [48, "流行", "warn"], [34, "拡大", "bad"], [18, "深刻", "bad"], [0, "壊滅", "critical"]],
+      "ends": ["壊滅", "良好"],
+      "related": ["pathogen", "immunity", "medicine", "science"]
+    },
+    "climate": {
+      "label": "気候",
+      "icon": "climate",
+      "levels": [[70, "安定", "good"], [57, "温暖", "ok"], [43, "高温", "warn"], [30, "異常", "bad"], [18, "危険", "bad"], [0, "破局", "critical"]],
+      "ends": ["寒冷", "灼熱"],
+      "related": ["co2", "sun", "sea", "oil"]
+    },
+    "society": {
+      "label": "社会",
+      "icon": "society",
+      "levels": [[70, "安定", "good"], [58, "平穏", "ok"], [46, "不満", "warn"], [34, "混乱", "bad"], [20, "暴動", "bad"], [0, "崩壊", "critical"]],
+      "ends": ["崩壊", "安定"],
+      "related": ["food", "industry", "health", "happiness"]
+    },
+    "peace": {
+      "label": "世界情勢",
+      "icon": "peace",
+      "levels": [[78, "平和", "good"], [64, "安定", "ok"], [52, "警戒", "warn"], [40, "緊張", "warn"], [30, "危険", "bad"], [0, "開戦寸前", "critical"]],
+      "ends": ["戦争", "平和"],
+      "related": ["nation", "food", "water", "society"]
+    },
+    "science": {
+      "label": "科学",
+      "icon": "science",
+      "levels": [[82, "飛躍", "good"], [60, "発展中", "good"], [45, "前進", "ok"], [30, "停滞", "warn"], [15, "衰退", "bad"], [0, "喪失", "critical"]],
+      "ends": ["喪失", "飛躍"],
+      "related": ["education", "society", "industry", "happiness"]
+    },
+    "logistics": {
+      "label": "物流",
+      "icon": "logistics",
+      "levels": [[80, "活発", "good"], [62, "正常", "ok"], [48, "遅延", "warn"], [34, "混乱", "bad"], [20, "麻痺", "bad"], [0, "断絶", "critical"]],
+      "ends": ["断絶", "活発"],
+      "related": ["industry", "energy", "nation", "peace"]
+    },
+    "industry": {
+      "label": "産業",
+      "icon": "industry",
+      "levels": [[80, "好況", "good"], [68, "成長", "good"], [55, "安定", "ok"], [42, "低迷", "warn"], [28, "不況", "bad"], [0, "崩壊", "critical"]],
+      "ends": ["崩壊", "好況"],
+      "related": ["energy", "logistics", "society", "science"]
+    },
+    "mind": {
+      "label": "心",
+      "icon": "mind",
+      "levels": [[80, "満ち足りた", "good"], [64, "穏やか", "ok"], [48, "疲れ", "warn"], [32, "すさみ", "bad"], [16, "荒廃", "bad"], [0, "崩壊", "critical"]],
+      "ends": ["崩壊", "満ち足りた"],
+      "related": ["happiness", "sleep", "death", "time"]
+    },
+    "prices": {
+      "label": "物価",
+      "icon": "money",
+      "levels": [[70, "安定", "good"], [55, "上昇", "ok"], [40, "高騰", "warn"], [20, "暴騰", "bad"], [0, "紙くず", "critical"]],
+      "ends": ["紙くず", "安定"],
+      "related": ["money", "food", "energy", "industry"]
+    }
+  },
+  "climateWords": [[3.5, "破局"], [2.9, "危険"], [2.4, "異常"], [1.85, "高温"], [1.3, "温暖"], [-0.3, "安定"], [-1.1, "寒冷"], [-2, "極寒"], [-99, "氷期"]],
+  "civilization": [
+    [72, "繁栄", "人類文明は現在、繁栄しています。", "good"],
+    [60, "安定", "人類文明は現在、安定しています。", "ok"],
+    [46, "不安定", "人類文明は現在、不安定です。", "warn"],
+    [34, "危機", "人類文明は現在、危機にあります。", "bad"],
+    [22, "崩壊寸前", "人類文明は現在、崩壊寸前です。", "critical"],
+    [0, "崩壊", "人類文明は崩壊しました。", "critical"]
+  ],
+  "capacity": [[0.6, "余裕", "good"], [0.75, "安定", "ok"], [0.87, "圧迫", "warn"], [0.95, "過密", "warn"], [1.0, "限界", "bad"], [99, "崩壊寸前", "critical"]],
+  "coherence": [[90, "正常", "good"], [76, "安定", "ok"], [62, "揺らぎ", "warn"], [48, "不安定", "warn"], [34, "危険", "bad"], [12, "崩壊寸前", "critical"], [0, "崩壊", "critical"]],
+  "ranks": [[0, "灯をともす者"], [20, "灯を守る者"], [50, "半世紀の書き手"], [100, "一世紀の書き手"], [150, "時代の書き手"], [200, "伝説の書き手"], [300, "神話の書き手"]]
+}

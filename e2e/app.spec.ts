@@ -1,0 +1,250 @@
+import { expect, test } from '@playwright/test';
+import { debug, startFood } from './helpers';
+
+test.describe('390×844 のスマホ縦画面', () => {
+  test('タイトルから世界を開くと、14の項目と世界容量（文字数）が見える', async ({ page }) => {
+    await startFood(page);
+    await expect(page.getByTestId('year')).toHaveAttribute('data-value', '0');
+    await expect(page.getByTestId('indicators').locator('.ind')).toHaveCount(14);
+    await expect(page.getByTestId('capacity')).toContainText('字');
+    await expect(page.getByTestId('capacity')).toBeVisible();
+    await expect(page.getByTestId('headline')).toContainText('人類文明は現在');
+    // 横にはみ出さない
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+
+  test('WORLD.txt の文章を、選択肢なしで自由に書き換えられる', async ({ page }) => {
+    await startFood(page);
+    await page.getByTestId('tab-laws').click();
+    await page.getByTestId('law-human_food').click();
+    await expect(page.getByTestId('edit-sheet')).toBeVisible();
+    await page.getByTestId('editor').fill('人間は二日に一度だけ食事をとる。');
+    await page.getByTestId('write').click();
+    await expect(page.getByTestId('toast')).toContainText('食事の回数が減る');
+    await expect(page.getByTestId('law-human_food')).toHaveAttribute('data-state', 'changed');
+    await expect(page.getByTestId('law-human_food')).toContainText('人間は二日に一度だけ食事をとる。');
+    await expect(page.getByTestId('edits')).toHaveAttribute('data-value', '2');
+  });
+
+  test('行を消すと、その法則は世界から消える', async ({ page }) => {
+    await startFood(page);
+    await page.getByTestId('tab-laws').click();
+    await page.getByTestId('law-war').click();
+    await page.getByTestId('clear').click();
+    await page.getByTestId('write').click();
+    await expect(page.getByTestId('toast')).toContainText('世界から消した');
+    await expect(page.getByTestId('law-war')).toHaveAttribute('data-state', 'deleted');
+  });
+
+  test('新しい一文を書き足せる（意味のない文は、世界が何も変わらないと伝える）', async ({ page }) => {
+    await startFood(page);
+    await page.getByTestId('tab-laws').click();
+    await page.getByTestId('add-line').click();
+    await page.getByTestId('editor').fill('人間は空を飛べる');
+    await page.getByTestId('write').click();
+    await expect(page.getByTestId('toast')).toContainText('人間が空を飛ぶ');
+    await expect(page.getByTestId('law-x1')).toContainText('人間は空を飛べる。');
+
+    await page.getByTestId('add-line').click();
+    await page.getByTestId('editor').fill('世界はうつくしい。');
+    await page.getByTestId('write').click();
+    await expect(page.getByTestId('toast')).toContainText('意味のない文なので、世界は何も変わらない');
+  });
+
+  test('入力の補助：「〜ない」で打ち消し、言葉をカーソルの位置に差し込める', async ({ page }) => {
+    await startFood(page);
+    await page.getByTestId('tab-laws').click();
+    await page.getByTestId('law-human_food').click();
+    const editor = page.getByTestId('editor');
+    await expect(editor).toHaveValue('人間は毎日食事を必要とする。');
+    await page.getByTestId('assist-negate').click();
+    await expect(editor).toHaveValue('人間は毎日食事を必要としない。');
+    // 「人間は」の後ろにカーソルを置いて「少し」を差し込む
+    await editor.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(3, 3));
+    await page.getByTestId('assist').getByRole('button', { name: '少し', exact: true }).click();
+    await expect(editor).toHaveValue('人間は少し毎日食事を必要としない。');
+    // 押せる物は44px以上
+    const box = await page.getByTestId('assist-negate').boundingBox();
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+  });
+
+  test('時間を進めると、結果とニュースが出る', async ({ page }) => {
+    await startFood(page);
+    await page.getByTestId('advance-5').click();
+    await expect(page.getByTestId('report-sheet')).toBeVisible();
+    await page.getByTestId('report-ok').click();
+    const year = Number(await page.getByTestId('year').getAttribute('data-value'));
+    expect(year).toBeGreaterThan(0);
+    await page.getByTestId('tab-history').click();
+    await expect(page.getByTestId('history-tab')).toContainText('MISSION');
+  });
+
+  test('再読み込みしても、書き換えた世界の続きから遊べる', async ({ page }) => {
+    await startFood(page);
+    await page.getByTestId('tab-laws').click();
+    await page.getByTestId('law-crime').click();
+    await page.getByTestId('editor').fill('');
+    await page.getByTestId('write').click();
+    await page.getByTestId('advance-1').click();
+    await page.getByTestId('report-ok').click();
+    await page.reload();
+    await page.getByTestId('continue').click();
+    await expect(page.getByTestId('year')).toHaveAttribute('data-value', '1');
+    await page.getByTestId('tab-laws').click();
+    await expect(page.getByTestId('law-crime')).toHaveAttribute('data-state', 'deleted');
+  });
+
+  test('書き足した文が既存の行の話なら、その行の書き換えとして読まれる', async ({ page }) => {
+    await startFood(page);
+    await page.getByTestId('tab-laws').click();
+    await page.getByTestId('add-line').click();
+    await page.getByTestId('editor').fill('雨がたくさん降る。');
+    await page.getByTestId('write').click();
+    await expect(page.getByTestId('toast')).toContainText('行目の書き換えとして');
+    await expect(page.getByTestId('law-water_rain')).toHaveAttribute('data-state', 'changed');
+    await expect(page.getByTestId('law-water_rain')).toContainText('雨がたくさん降る。');
+    await page.getByTestId('law-water_rain').click();
+    await expect(page.getByTestId('reading')).toContainText('雨が増える');
+  });
+
+  test('想定外の変化には、原因になった一文が付く', async ({ page }) => {
+    await startFood(page);
+    await page.getByTestId('tab-laws').click();
+    await page.getByTestId('law-human_food').click();
+    await page.getByTestId('editor').fill('人間は週に一度食事を必要とする。');
+    await page.getByTestId('write').click();
+    for (let i = 0; i < 3; i++) {
+      await page.getByTestId('advance-5').click();
+      await page.getByTestId('report-ok').click();
+    }
+    await page.getByTestId('tab-history').click();
+    await expect(page.getByTestId('history-tab').getByTestId('cause').first()).toContainText('人間は週に一度食事を必要とする。');
+  });
+
+  test('観測記録：見つけたものが残り、まだ見ぬものは「？」で数だけ見える', async ({ page }) => {
+    await startFood(page);
+    await page.getByTestId('tab-laws').click();
+    await page.getByTestId('law-human_food').click();
+    await page.getByTestId('editor').fill('人間は数日に一度食事を必要とする。');
+    await page.getByTestId('write').click();
+    await expect(page.getByTestId('toast')).toContainText('新発見');
+    await page.getByTestId('menu').click();
+    await page.getByTestId('menu-records').click();
+    await expect(page.getByTestId('records')).toBeVisible();
+    await expect(page.getByTestId('records')).toContainText('食事の回数が減る');
+    await expect(page.locator('.rec-q').first()).toBeVisible();
+    await page.getByTestId('records-back').click();
+    await expect(page.getByTestId('game')).toBeVisible();
+  });
+
+  test('まだ開いていない世界には鍵がかかっている', async ({ page }) => {
+    await page.goto('./?seed=7&debug=1');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    await page.getByTestId('start').click();
+    await expect(page.getByTestId('stage-war')).toHaveAttribute('data-locked', 'true');
+    await expect(page.getByTestId('stage-food')).toHaveAttribute('data-locked', 'false');
+    await page.getByTestId('stage-war').click();
+    await expect(page.getByTestId('toast')).toContainText('世界を救うと');
+    await expect(page.getByTestId('stages')).toBeVisible();
+  });
+
+  test('無限の世界：危機の知らせが届き、文明が滅ぶまで何年続いたかを競う', async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.goto('./?seed=7&debug=1');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    await page.getByTestId('start').click();
+    await expect(page.getByTestId('stage-endless')).toHaveAttribute('data-locked', 'true');
+    await debug(page, 'unlock()');
+    await expect(page.getByTestId('stage-endless')).toHaveAttribute('data-locked', 'false');
+    await page.getByTestId('stage-endless').click();
+    await expect(page.getByTestId('briefing')).toContainText('文明が滅ぶまで');
+    await expect(page.getByTestId('open-daily')).toContainText('今日の世界');
+    await page.getByTestId('open-world').click();
+    await expect(page.getByTestId('year')).toContainText('∞');
+    await expect(page.getByTestId('endless-left')).toContainText('∞');
+
+    // 最初の危機の知らせが届くまで進める（重大な知らせで時間は止まる）
+    await debug(page, 'advance(30)');
+    await page.getByTestId('report-ok').click();
+    await expect(page.getByTestId('crisis')).toBeVisible();
+    await expect(page.getByTestId('crisis')).toContainText('あと');
+    await expect(page.getByTestId('endless-left')).toContainText('危機まで');
+
+    // 滅ぶまで進めると、何年続いたかが残る
+    for (let i = 0; i < 200; i++) {
+      const st = await debug<{ status: string }>(page, 'state()');
+      if (st.status !== 'playing') break;
+      await debug(page, 'advance(10)');
+    }
+    // 世界が終わっていれば、結果の「世界の記録を見る」で結末へ
+    await page.getByTestId('report-ok').click();
+    await expect(page.getByTestId('result')).toBeVisible();
+    await expect(page.getByTestId('wc-years')).toContainText('続いた');
+    await expect(page.getByTestId('endless-record')).toContainText('最長');
+    await page.getByTestId('to-stages').click();
+    await expect(page.getByTestId('stage-endless')).toContainText('最長');
+  });
+
+  test('長押し・右クリックで、コピーや保存のメニューが出ず、文字も選ばれない（入力欄は除く）', async ({ page }) => {
+    await startFood(page);
+    // 文字の上で長押し（右クリック）しても、メニューは出ない
+    const blocked = await page.getByTestId('headline').evaluate((el) => {
+      const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+      el.dispatchEvent(ev);
+      return ev.defaultPrevented;
+    });
+    expect(blocked).toBe(true);
+    // 文字を続けてたたいても、選ばれない
+    await page.getByTestId('headline').dblclick();
+    expect(await page.evaluate(() => window.getSelection()?.toString() ?? '')).toBe('');
+    // 書き換えの編集欄は、これまでどおり選んで貼り付けられる
+    await page.getByTestId('tab-laws').click();
+    await page.getByTestId('law-human_food').click();
+    const editor = page.getByTestId('editor');
+    const allowed = await editor.evaluate((el) => {
+      const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+      el.dispatchEvent(ev);
+      return !ev.defaultPrevented;
+    });
+    expect(allowed).toBe(true);
+    await editor.selectText();
+    expect(await editor.evaluate((el) => (el as HTMLTextAreaElement).selectionEnd - (el as HTMLTextAreaElement).selectionStart)).toBeGreaterThan(0);
+  });
+
+  test('開ける世界は1つだけ：別の世界を開くときは、前の世界を放棄してよいかを確かめる', async ({ page }) => {
+    await startFood(page);
+    await debug(page, 'goStages()');
+    await expect(page.getByTestId('ongoing')).toContainText('食料危機');
+    await expect(page.getByTestId('stage-food')).toHaveAttribute('data-ongoing', 'true');
+    await page.getByTestId('stage-plague').click();
+    await expect(page.getByTestId('abandon-note')).toContainText('食料危機');
+    // 1度目は確かめるだけ
+    await page.getByTestId('open-world').click();
+    await expect(page.getByTestId('open-world')).toContainText('放棄して開く');
+    await expect(page.getByTestId('briefing')).toBeVisible();
+    // 2度目で、前の世界を放棄して開く
+    await page.getByTestId('open-world').click();
+    await expect(page.getByTestId('game')).toBeVisible();
+    const st = await debug<{ stageId: string }>(page, 'state()');
+    expect(st.stageId).toBe('plague');
+    await expect(page.getByTestId('toast')).toContainText('実績');
+  });
+
+  test('宇宙を消すと、特別な結末「無」で世界が終わる', async ({ page }) => {
+    await startFood(page);
+    await page.getByTestId('tab-laws').click();
+    await page.getByTestId('add-line').click();
+    await page.getByTestId('editor').fill('宇宙は消滅する。');
+    await page.getByTestId('write').click();
+    await expect(page.getByTestId('toast')).toContainText('宇宙が消える');
+    await page.getByTestId('advance-1').click();
+    await expect(page.getByTestId('end-banner')).toContainText('無');
+    await page.getByTestId('report-ok').click();
+    await expect(page.getByTestId('result')).toBeVisible();
+    await expect(page.getByTestId('ending')).toContainText('無');
+    await expect(page.getByTestId('ending')).toContainText('なぜ？');
+  });
+});

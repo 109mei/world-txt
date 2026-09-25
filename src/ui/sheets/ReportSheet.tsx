@@ -1,0 +1,138 @@
+import { useEffect } from 'react';
+import { gameData } from '../../data';
+import type { IconKey, IndicatorId } from '../../data/schema';
+import { closeSheet, showResult, useGame } from '../../store/game';
+import { describeDiscovery } from '../../store/records';
+import { Icon, TrendArrow } from '../icons';
+import { NewsLine, Sheet } from '../parts';
+import { seChime, seWarn } from '../se';
+
+const META_LABEL = { capacity: '世界容量', coherence: '世界整合性' } as const;
+
+/** 時間を進めた結果：状態語の変化 → 想定外の変化 → ニュース */
+export function ReportSheet() {
+  const view = useGame((s) => s.view);
+  const fresh = useGame((s) => s.fresh);
+  const rep = view?.report;
+  // 開いたときに一度だけ：重大な出来事は低い音、観測記録に加わったものがあれば鈴
+  useEffect(() => {
+    if (!rep) return;
+    if (rep.news.some((n) => n.severity === 'critical')) seWarn();
+    if (fresh.some((id) => !id.startsWith('g:'))) {
+      const t = setTimeout(seChime, 450);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, []);
+  if (!view || !rep) return null;
+  const ind = gameData.indicators.items;
+  // 世界の姿（タグ）は数が多いので、知らせは出来事・変化・結末などに絞る
+  const found = fresh
+    .filter((id) => !id.startsWith('g:'))
+    .map((id) => ({ id, ...describeDiscovery(gameData, id) }))
+    .filter((f): f is { id: string; icon: IconKey; text: string } => typeof f.text === 'string');
+  // 危機（無限の世界）は、知らせ・襲来・防いだことをまとめて先に見せる
+  const crises = rep.news.filter((n) => n.category === 'CRISIS');
+  const surprises = rep.news.filter((n) => n.surprise && n.category !== 'CRISIS');
+  const others = rep.news.filter((n) => !n.surprise && n.category !== 'CRISIS');
+  const ended = view.status !== 'playing';
+  const years = rep.to - rep.from;
+
+  return (
+    <Sheet
+      title={
+        <>
+          ▶ {years}年経過　<span className="dim small">YEAR {rep.from} → {rep.to}</span>
+        </>
+      }
+      onClose={ended ? showResult : closeSheet}
+      testId="report-sheet"
+    >
+      {rep.interrupted && (
+        <p className="interrupt" data-testid="interrupted">
+          <Icon name="warning" size={15} /> 重大な出来事が起きたため、時間を止めた
+        </p>
+      )}
+      {ended && (
+        <p className={view.status === 'cleared' ? 'end-banner good' : 'end-banner bad'} data-testid="end-banner">
+          {view.ending ? `「${view.ending.title}」${view.ending.text}` : view.status === 'cleared' ? `MISSION COMPLETE — 人類文明は${view.year}年を生き延びた` : view.failText}
+        </p>
+      )}
+
+      {rep.changes.length > 0 ? (
+        <ul className="changes" data-testid="changes">
+          {rep.changes.map((c) => {
+            const isMeta = c.id === 'capacity' || c.id === 'coherence';
+            const icon = isMeta ? (c.id as 'capacity' | 'coherence') : ind[c.id as IndicatorId].icon;
+            const label = isMeta ? META_LABEL[c.id as 'capacity' | 'coherence'] : ind[c.id as IndicatorId].label;
+            return (
+              <li key={c.id} className={c.better ? 'chg good' : 'chg bad'}>
+                <Icon name={icon} size={16} />
+                <span className="chg-label">{label}</span>
+                <span className="chg-from">{c.from}</span>
+                <span className="chg-arrow">→</span>
+                <span className="chg-to">{c.to}</span>
+                <TrendArrow trend={c.trend} />
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="dim small">目に見える変化はなかった。</p>
+      )}
+
+      {crises.length > 0 && (
+        <section className="surprises crisis-news" data-testid="crisis-news">
+          <div className="section-title">
+            <Icon name="meteor" size={14} /> 危機
+          </div>
+          {crises.map((n, i) => (
+            <NewsLine key={i} item={n} showYear />
+          ))}
+        </section>
+      )}
+
+      {surprises.length > 0 && (
+        <section className="surprises" data-testid="surprises">
+          <div className="section-title">
+            <Icon name="warning" size={14} /> 想定外の変化
+          </div>
+          {surprises.map((n, i) => (
+            <NewsLine key={i} item={n} showYear />
+          ))}
+        </section>
+      )}
+
+      {others.length > 0 && (
+        <section className="world-news">
+          <div className="section-title">
+            <Icon name="news" size={14} /> WORLD NEWS
+          </div>
+          {others.map((n, i) => (
+            <NewsLine key={i} item={n} showYear />
+          ))}
+        </section>
+      )}
+
+      {found.length > 0 && (
+        <section className="found" data-testid="fresh">
+          <div className="section-title">
+            <Icon name="record" size={14} /> 観測記録に加わったもの
+          </div>
+          <ul className="found-list">
+            {found.map((f) => (
+              <li key={f.id}>
+                <span className="found-star">★</span>
+                <Icon name={f.icon} size={14} /> {f.text}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <button className="btn btn-primary wide" onClick={ended ? showResult : closeSheet} data-testid="report-ok">
+        {ended ? '世界の記録を見る' : '世界を見る'}
+      </button>
+    </Sheet>
+  );
+}

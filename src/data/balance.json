@@ -1,0 +1,691 @@
+{
+  "popRef": 80,
+  "water": {
+    "supply": 1.33,
+    "heatLoss": 0.1,
+    "ecoBase": 0.6,
+    "human": 0.12,
+    "agri": 0.68,
+    "industry": 0.2
+  },
+  "food": {
+    "heatCoef": 0.08,
+    "heatExp": 1.4,
+    "coldCoef": 0.35,
+    "waterBase": 0.4,
+    "waterCap": 1.05,
+    "ecoBase": 0.7,
+    "ecoRef": 60,
+    "energyBase": 0.7,
+    "sciCoef": 0.12,
+    "sunExp": 1,
+    "distBase": 0.8,
+    "land": 1.25,
+    "targetRatio": 1.06,
+    "expandRate": 0.04,
+    "shrinkAbove": 1.18,
+    "shrinkRate": 0.08,
+    "agriMin": 0.1,
+    "laborShare": 0.25,
+    "blightDecay": 0.5,
+    "resBase": 0.05,
+    "resAgri": 0.7,
+    "resSci": 0.25,
+    "warDamage": 0.06,
+    "coldExp": 1.3,
+    "stockCap": 0.1,
+    "stockFill": 0.5,
+    "stockRot": 0.12,
+    "co2Curve": [
+      [
+        180,
+        0.6
+      ],
+      [
+        280,
+        0.88
+      ],
+      [
+        350,
+        0.97
+      ],
+      [
+        420,
+        1
+      ],
+      [
+        550,
+        1.07
+      ],
+      [
+        800,
+        1.12
+      ]
+    ]
+  },
+  "energy": {
+    "reserveComfort": 15,
+    "demand": 1,
+    "climateLoad": 0.05,
+    "cleanUnit": 1,
+    "expand": 0.05,
+    "shrink": 0.03,
+    "targetRatio": 1.04,
+    "transition": 0.01,
+    "climatePush": 0.6,
+    "warDamage": 0.05
+  },
+  "disease": {
+    "r0": 2,
+    "speed": 1.5,
+    "background": 0.3,
+    "min": 0.5,
+    "max": 60,
+    "densityBase": 0.6,
+    "medR": 0.3,
+    "medMort": 0.6,
+    "immGain": 2,
+    "immDecay": 0.08,
+    "strainRelax": 0.1
+  },
+  "medicine": {
+    "base": 0.55,
+    "sci": 0.25,
+    "indBase": 0.5,
+    "overload": 12,
+    "overloadScale": 15
+  },
+  "pop": {
+    "natural": 0.0078,
+    "birth": 0.0172,
+    "birthFoodBase": 0.6,
+    "crowdExp": 0.5,
+    "famine": 0.12,
+    "famineRef": 0.97,
+    "famineExp": 1.4,
+    "thirst": 0.05,
+    "thirstRef": 0.85,
+    "heat": 0.0005,
+    "heatRef": 1.8,
+    "cold": 0.004,
+    "coldRef": -0.8,
+    "war": 0.006
+  },
+  "industry": {
+    "sci": 0.25,
+    "war": 0.35,
+    "sick": 0.8,
+    "unemp": 1,
+    "rate": 0.3
+  },
+  "unemployment": {
+    "base": 0.06,
+    "industry": 0.3,
+    "rate": 0.2
+  },
+  "infra": {
+    "ref": 0.9,
+    "base": 0.45,
+    "ind": 0.45,
+    "rate": 0.15,
+    "war": 0.06
+  },
+  "science": {
+    "rate": 0.02,
+    "warPenalty": 0.3
+  },
+  "climate": {
+    "preCO2": 280,
+    "refCO2": 420,
+    "fossilEm": 4,
+    "indEm": 0.4,
+    "landEm": 3,
+    "fireEm": 1,
+    "plantSink": 1.1,
+    "oceanSink": 1.2,
+    "sensitivity": 3,
+    "natural": 6,
+    "sunCoef": 190,
+    "lag": 0.04,
+    "comfort": 1,
+    "coldRef": -0.5,
+    "fireBase": 0.3,
+    "agriEm": 0.6
+  },
+  "eco": {
+    "base": 72,
+    "landCoef": 20,
+    "landFree": 0.6,
+    "pollution": 6,
+    "heat": 8,
+    "war": 10,
+    "fire": 8,
+    "rate": 0.1
+  },
+  "society": {
+    "base": 70,
+    "foodRef": 0.98,
+    "food": 120,
+    "waterRef": 0.95,
+    "water": 80,
+    "energyRef": 0.95,
+    "energy": 60,
+    "unempRef": 0.07,
+    "unemp": 150,
+    "sick": 0.6,
+    "war": 25,
+    "fear": 0.4,
+    "happy": 0.3,
+    "deaths": 800,
+    "rate": 0.3
+  },
+  "happiness": {
+    "base": 58,
+    "food": 40,
+    "sick": 0.5,
+    "war": 15,
+    "unemp": 100,
+    "deaths": 600,
+    "eco": 8,
+    "heat": 4,
+    "rate": 0.3
+  },
+  "tension": {
+    "base": 30,
+    "food": 150,
+    "water": 100,
+    "energy": 60,
+    "instability": 0.5,
+    "climate": 6,
+    "rate": 0.25
+  },
+  "war": {
+    "threshold": 72,
+    "scale": 60,
+    "intensity": 0.8,
+    "exhaust": 4,
+    "endBelow": 55,
+    "cooldown": 3,
+    "exhaustGrowth": 0.5
+  },
+  "coherence": {
+    "rate": 0.25,
+    "fearRef": 70,
+    "collapse": 12,
+    "anomalyFrom": 70,
+    "anomalyScale": 120,
+    "anomalyMax": 0.45
+  },
+  "capacity": {
+    "strainFrom": 0.95,
+    "strainCoef": 100,
+    "graceYears": 3,
+    "legacyChars": 6,
+    "legacyShift": 6
+  },
+  "civ": {
+    "weights": {
+      "industry": 0.25,
+      "logistics": 0.2,
+      "science": 0.15,
+      "society": 0.2,
+      "humanity": 0.2
+    },
+    "graceYears": 3
+  },
+  "mind": {
+    "base": 60,
+    "rate": 0.25,
+    "span": 40,
+    "happy": 14,
+    "stability": 8,
+    "industry": 0.25,
+    "science": 0.35,
+    "fertility": 0.2,
+    "view": 0.5,
+    "viewRef": 55
+  },
+  "prices": {
+    "relax": 0.3,
+    "max": 1000000000,
+    "distribution": 0.12,
+    "industry": 0.12,
+    "unemp": 0.03,
+    "stability": 5,
+    "happiness": 4,
+    "mind": 4,
+    "viewShortage": 1.5,
+    "viewEnergy": 0.5
+  },
+  "scores": {
+    "humanity": {
+      "base": 72,
+      "excess": 2500,
+      "loss": 80,
+      "happy": 12
+    },
+    "health": {
+      "base": 88,
+      "prevalence": 1.2,
+      "deaths": 2500,
+      "medicine": 12
+    },
+    "food": [
+      [
+        0.5,
+        0
+      ],
+      [
+        0.65,
+        15
+      ],
+      [
+        0.8,
+        32
+      ],
+      [
+        0.9,
+        44
+      ],
+      [
+        0.97,
+        54
+      ],
+      [
+        1.04,
+        62
+      ],
+      [
+        1.12,
+        72
+      ],
+      [
+        1.3,
+        86
+      ],
+      [
+        1.6,
+        100
+      ]
+    ],
+    "water": [
+      [
+        0.5,
+        0
+      ],
+      [
+        0.65,
+        15
+      ],
+      [
+        0.8,
+        32
+      ],
+      [
+        0.9,
+        44
+      ],
+      [
+        0.97,
+        54
+      ],
+      [
+        1.04,
+        62
+      ],
+      [
+        1.12,
+        72
+      ],
+      [
+        1.3,
+        86
+      ],
+      [
+        1.6,
+        100
+      ]
+    ],
+    "energy": [
+      [
+        0.5,
+        0
+      ],
+      [
+        0.65,
+        15
+      ],
+      [
+        0.8,
+        32
+      ],
+      [
+        0.9,
+        44
+      ],
+      [
+        0.97,
+        54
+      ],
+      [
+        1.04,
+        62
+      ],
+      [
+        1.12,
+        72
+      ],
+      [
+        1.3,
+        86
+      ],
+      [
+        1.6,
+        100
+      ]
+    ],
+    "eco": [
+      [
+        0,
+        0
+      ],
+      [
+        100,
+        100
+      ]
+    ],
+    "climate": [
+      [
+        -3,
+        5
+      ],
+      [
+        -2,
+        18
+      ],
+      [
+        -1,
+        40
+      ],
+      [
+        -0.4,
+        62
+      ],
+      [
+        0.3,
+        85
+      ],
+      [
+        0.9,
+        82
+      ],
+      [
+        1.4,
+        70
+      ],
+      [
+        1.9,
+        57
+      ],
+      [
+        2.4,
+        43
+      ],
+      [
+        2.9,
+        30
+      ],
+      [
+        3.4,
+        18
+      ],
+      [
+        4,
+        6
+      ],
+      [
+        5,
+        0
+      ]
+    ],
+    "society": [
+      [
+        0,
+        0
+      ],
+      [
+        100,
+        100
+      ]
+    ],
+    "peace": [
+      [
+        0,
+        0
+      ],
+      [
+        100,
+        100
+      ]
+    ],
+    "science": [
+      [
+        -0.01,
+        0
+      ],
+      [
+        0,
+        12
+      ],
+      [
+        0.005,
+        25
+      ],
+      [
+        0.01,
+        40
+      ],
+      [
+        0.015,
+        52
+      ],
+      [
+        0.02,
+        62
+      ],
+      [
+        0.025,
+        72
+      ],
+      [
+        0.035,
+        86
+      ],
+      [
+        0.05,
+        100
+      ]
+    ],
+    "scienceLevel": [
+      [
+        0.2,
+        5
+      ],
+      [
+        0.5,
+        25
+      ],
+      [
+        1,
+        60
+      ],
+      [
+        1.5,
+        78
+      ],
+      [
+        2.5,
+        95
+      ],
+      [
+        4,
+        100
+      ]
+    ],
+    "logistics": [
+      [
+        0.2,
+        0
+      ],
+      [
+        0.4,
+        18
+      ],
+      [
+        0.6,
+        35
+      ],
+      [
+        0.8,
+        52
+      ],
+      [
+        0.95,
+        66
+      ],
+      [
+        1.05,
+        76
+      ],
+      [
+        1.2,
+        90
+      ]
+    ],
+    "industry": [
+      [
+        0.2,
+        0
+      ],
+      [
+        0.4,
+        12
+      ],
+      [
+        0.6,
+        28
+      ],
+      [
+        0.8,
+        45
+      ],
+      [
+        0.95,
+        58
+      ],
+      [
+        1.05,
+        66
+      ],
+      [
+        1.2,
+        78
+      ],
+      [
+        1.5,
+        92
+      ],
+      [
+        2,
+        100
+      ]
+    ],
+    "mind": [
+      [
+        5,
+        0
+      ],
+      [
+        20,
+        12
+      ],
+      [
+        35,
+        32
+      ],
+      [
+        50,
+        55
+      ],
+      [
+        60,
+        70
+      ],
+      [
+        75,
+        86
+      ],
+      [
+        90,
+        100
+      ]
+    ],
+    "prices": [
+      [
+        0,
+        80
+      ],
+      [
+        0.15,
+        70
+      ],
+      [
+        0.3,
+        60
+      ],
+      [
+        0.6,
+        45
+      ],
+      [
+        1,
+        32
+      ],
+      [
+        2,
+        15
+      ],
+      [
+        3,
+        5
+      ],
+      [
+        4,
+        0
+      ]
+    ]
+  },
+  "trend": {
+    "fast": 6,
+    "slow": 1.5
+  },
+  "crisis": {
+    "firstAt": 10,
+    "gapStart": 8,
+    "gapMin": 3,
+    "gapShrink": 0.04,
+    "jitter": 3,
+    "growth": 0.025,
+    "maxStrength": 4,
+    "soften": 0.5
+  },
+  "forecast": {
+    "years": 3,
+    "fast": 8,
+    "slow": 2
+  },
+  "news": {
+    "perYear": 4,
+    "historyMax": 400
+  }
+}

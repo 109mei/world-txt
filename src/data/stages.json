@@ -1,0 +1,446 @@
+[
+  {
+    "id": "food",
+    "order": 1,
+    "title": "食料危機",
+    "icon": "food",
+    "mission": "30年間、人類文明を維持せよ。",
+    "goalYears": 30,
+    "briefing": [
+      "人口は増え続け、農地は限界に近い。",
+      "雨は年々少なくなり、水が足りない。",
+      "飢えは社会の不安を呼び、やがて争いを呼ぶ。"
+    ],
+    "focus": [
+      "food",
+      "water",
+      "eco",
+      "humanity"
+    ],
+    "start": {
+      "pop": 80,
+      "agri": 0.98,
+      "industry": 1,
+      "energyCap": 1.04,
+      "renewShare": 0.25,
+      "oilReserve": 60,
+      "infra": 0.88,
+      "science": 1,
+      "eco": 50,
+      "co2": 425,
+      "temp": 1.3,
+      "pathogen": 2.5,
+      "immunity": 0.39,
+      "strainR": 1,
+      "strainV": 0.06,
+      "stability": 58,
+      "happiness": 50,
+      "tension": 47,
+      "unemployment": 0.07
+    },
+    "mods": {
+      "waterSupply": 0.8,
+      "agriMax": 0.78
+    },
+    "capacity": 636,
+    "edits": {
+      "start": 3,
+      "every": 5,
+      "max": 5
+    },
+    "fail": {
+      "pop": 60,
+      "civ": 25
+    }
+  },
+  {
+    "id": "plague",
+    "order": 2,
+    "title": "感染症",
+    "icon": "pathogen",
+    "mission": "40年間、文明の崩壊を防げ。",
+    "goalYears": 40,
+    "briefing": [
+      "世界は安定している。いまのところは。",
+      "各地で、原因不明の肺炎が報告され始めた。",
+      "病は人を奪い、社会を止め、文明を弱らせる。"
+    ],
+    "focus": [
+      "health",
+      "humanity",
+      "society",
+      "industry"
+    ],
+    "start": {
+      "pop": 80,
+      "agri": 1.1,
+      "industry": 1,
+      "energyCap": 1.04,
+      "renewShare": 0.25,
+      "oilReserve": 60,
+      "infra": 0.9,
+      "science": 1,
+      "eco": 54,
+      "co2": 420,
+      "temp": 1.2,
+      "pathogen": 2.5,
+      "immunity": 0.39,
+      "strainR": 1,
+      "strainV": 0.06,
+      "stability": 64,
+      "happiness": 57,
+      "tension": 32,
+      "unemployment": 0.06
+    },
+    "capacity": 576,
+    "edits": {
+      "start": 3,
+      "every": 5,
+      "max": 5
+    },
+    "fail": {
+      "pop": 60,
+      "civ": 25
+    }
+  },
+  {
+    "id": "climate",
+    "order": 3,
+    "title": "気候危機",
+    "icon": "climate",
+    "mission": "50年間、人類文明を維持せよ。",
+    "goalYears": 50,
+    "briefing": [
+      "二酸化炭素は増え続け、地球は熱を帯びている。",
+      "熱波・干ばつ・山火事が、年ごとに激しくなる。",
+      "しかも世界容量は、少しずつ縮み始めている。"
+    ],
+    "focus": [
+      "climate",
+      "food",
+      "water",
+      "eco"
+    ],
+    "start": {
+      "pop": 82,
+      "agri": 1.05,
+      "industry": 1,
+      "energyCap": 1.04,
+      "renewShare": 0.18,
+      "oilReserve": 45,
+      "infra": 0.88,
+      "science": 1,
+      "eco": 50,
+      "co2": 455,
+      "temp": 1.5,
+      "pathogen": 2.5,
+      "immunity": 0.39,
+      "strainR": 1,
+      "strainV": 0.06,
+      "stability": 62,
+      "happiness": 55,
+      "tension": 36,
+      "unemployment": 0.06
+    },
+    "mods": {
+      "emissions": 1.3,
+      "renewGrowth": 0.5
+    },
+    "capacity": 612,
+    "capacityDecay": 1.5,
+    "edits": {
+      "start": 3,
+      "every": 5,
+      "max": 5
+    },
+    "fail": {
+      "pop": 55,
+      "civ": 25
+    }
+  },
+  {
+    "id": "war",
+    "order": 4,
+    "title": "世界大戦",
+    "icon": "war",
+    "mission": "40年間、戦火から文明を守れ。",
+    "goalYears": 40,
+    "briefing": [
+      "国々は二つの陣営に分かれ、にらみ合っている。",
+      "軍備は膨らみ続け、小さな火種がいつ大戦に変わってもおかしくない。",
+      "戦争は人を奪い、街を焼き、ときに空まで暗くする。"
+    ],
+    "focus": [
+      "peace",
+      "society",
+      "humanity",
+      "industry"
+    ],
+    "start": {
+      "pop": 80,
+      "agri": 1.05,
+      "industry": 1,
+      "energyCap": 1.04,
+      "renewShare": 0.25,
+      "oilReserve": 55,
+      "infra": 0.88,
+      "science": 1,
+      "eco": 52,
+      "co2": 425,
+      "temp": 1.3,
+      "pathogen": 2.5,
+      "immunity": 0.39,
+      "strainR": 1,
+      "strainV": 0.06,
+      "stability": 52,
+      "happiness": 46,
+      "tension": 74,
+      "unemployment": 0.06
+    },
+    "mods": {
+      "war": 1.5,
+      "warHarm": 1.5,
+      "tension": 24
+    },
+    "capacity": 612,
+    "edits": {
+      "start": 3,
+      "every": 5,
+      "max": 5
+    },
+    "fail": {
+      "pop": 62,
+      "civ": 25
+    },
+    "unlock": 1
+  },
+  {
+    "id": "energy",
+    "order": 5,
+    "title": "資源枯渇",
+    "icon": "oil",
+    "mission": "40年間、エネルギーの尽きゆく文明を支えよ。",
+    "goalYears": 40,
+    "briefing": [
+      "石油は、あと十数年分しか残っていない。",
+      "代わりの電気は、まだ世界の一部しか支えられない。",
+      "エネルギーが尽きれば、工場も、肥料も、物流も止まる。"
+    ],
+    "focus": [
+      "energy",
+      "industry",
+      "food",
+      "logistics"
+    ],
+    "start": {
+      "pop": 80,
+      "agri": 1.05,
+      "industry": 1,
+      "energyCap": 1.04,
+      "renewShare": 0.2,
+      "oilReserve": 10,
+      "infra": 0.88,
+      "science": 1,
+      "eco": 52,
+      "co2": 425,
+      "temp": 1.3,
+      "pathogen": 2.5,
+      "immunity": 0.39,
+      "strainR": 1,
+      "strainV": 0.06,
+      "stability": 60,
+      "happiness": 54,
+      "tension": 38,
+      "unemployment": 0.06
+    },
+    "mods": {
+      "renewGrowth": 0.55,
+      "fossilDepletion": 1.25
+    },
+    "capacity": 612,
+    "edits": {
+      "start": 3,
+      "every": 5,
+      "max": 5
+    },
+    "fail": {
+      "pop": 60,
+      "civ": 25
+    },
+    "unlock": 1
+  },
+  {
+    "id": "tiny",
+    "order": 6,
+    "title": "極小世界",
+    "icon": "capacity",
+    "mission": "縮みゆく世界で、50年間文明を維持せよ。",
+    "goalYears": 50,
+    "briefing": [
+      "世界は、すべてを覚えていられなくなった。",
+      "WORLD.txt ははじめから世界容量をはみ出していて、世界容量はこれからも縮み続ける。",
+      "短く言い換えれば、意味を変えずに軽くできる。消せばもっと軽くなるが、世界は揺らぐ。"
+    ],
+    "focus": [
+      "humanity",
+      "society",
+      "food",
+      "eco"
+    ],
+    "start": {
+      "pop": 80,
+      "agri": 1.05,
+      "industry": 1,
+      "energyCap": 1.04,
+      "renewShare": 0.25,
+      "oilReserve": 55,
+      "infra": 0.88,
+      "science": 1,
+      "eco": 52,
+      "co2": 425,
+      "temp": 1.3,
+      "pathogen": 2.5,
+      "immunity": 0.39,
+      "strainR": 1,
+      "strainV": 0.06,
+      "stability": 60,
+      "happiness": 54,
+      "tension": 38,
+      "unemployment": 0.06
+    },
+    "mods": {},
+    "capacity": 516,
+    "capacityDecay": 1.8,
+    "edits": {
+      "start": 4,
+      "every": 3,
+      "max": 6
+    },
+    "fail": {
+      "pop": 60,
+      "civ": 25
+    },
+    "unlock": 3,
+    "overflow": true
+  },
+  {
+    "id": "loop",
+    "order": 7,
+    "title": "くり返す十年",
+    "icon": "cycle",
+    "mission": "10年ごとに巻き戻る世界。破局の原因を突き止め、11年目へ抜け出して、30年を生き延びよ。",
+    "goalYears": 30,
+    "briefing": [
+      "この世界は、10年目の終わりに0年目へ巻き戻る。その10年のあいだに大戦が起きていれば、あるいは文明が保たれていなければ。",
+      "巻き戻るのは世界の様子だけ。あなたが書いた文章は残り、同じ書き方なら、同じ出来事が同じようにくり返す。",
+      "10年のあいだに何が起きるのかを見届け、その原因を書き換えで断て。",
+      "巻き戻るたびに世界の頁は擦り切れ、世界容量が減っていく。書換の力は、巻き戻るたびに1つだけ戻る。"
+    ],
+    "focus": [
+      "health",
+      "food",
+      "peace",
+      "society"
+    ],
+    "start": {
+      "pop": 80,
+      "agri": 1.02,
+      "industry": 1,
+      "energyCap": 1.04,
+      "renewShare": 0.25,
+      "oilReserve": 60,
+      "infra": 0.9,
+      "science": 1,
+      "eco": 52,
+      "co2": 420,
+      "temp": 1.25,
+      "pathogen": 2.5,
+      "immunity": 0.39,
+      "strainR": 1,
+      "strainV": 0.06,
+      "stability": 58,
+      "happiness": 52,
+      "tension": 48,
+      "unemployment": 0.06
+    },
+    "mods": {},
+    "capacity": 612,
+    "capacityDecay": 0,
+    "edits": {
+      "start": 3,
+      "every": 5,
+      "max": 5
+    },
+    "fail": {
+      "pop": 60,
+      "civ": 25
+    },
+    "unlock": 2,
+    "loop": {
+      "years": 10,
+      "breakWhen": [
+        "!flag:loop_war",
+        "civ >= 45"
+      ],
+      "wear": 30,
+      "ink": 1,
+      "news": "10年目の終わり。時が巻き戻り、世界は{n}年前の同じ朝に戻った（{count}回目）",
+      "fallNews": "文明が崩れたその年、時が巻き戻り、世界は{n}年前の同じ朝に戻った（{count}回目）",
+      "breakNews": "10年目を越えた。くり返しがほどけ、世界は11年目へ進んでいく",
+      "rule": "10年目の終わりに、その10年のうちに大戦が起きていれば、あるいは文明が保たれていなければ、世界は0年目へ戻る。"
+    }
+  },
+  {
+    "id": "endless",
+    "order": 8,
+    "title": "無限の世界",
+    "icon": "infinity",
+    "mission": "文明が滅ぶまで、何年続くか。",
+    "goalYears": 9999,
+    "endless": true,
+    "briefing": [
+      "危機は、忘れたころにやってくる。",
+      "隕石、疫病、戦争、飢え。どれも、この世界ではまだ起きていないだけだ。",
+      "知らせが届いてから襲われるまでに、世界の定義を書き換えよ。"
+    ],
+    "focus": [
+      "humanity",
+      "food",
+      "health",
+      "society"
+    ],
+    "start": {
+      "pop": 80,
+      "agri": 1.05,
+      "industry": 1,
+      "energyCap": 1.04,
+      "renewShare": 0.25,
+      "oilReserve": 60,
+      "infra": 0.9,
+      "science": 1,
+      "eco": 52,
+      "co2": 420,
+      "temp": 1.2,
+      "pathogen": 2.5,
+      "immunity": 0.39,
+      "strainR": 1,
+      "strainV": 0.06,
+      "stability": 62,
+      "happiness": 55,
+      "tension": 36,
+      "unemployment": 0.06
+    },
+    "capacity": 624,
+    "capacityDecay": 0.3,
+    "edits": {
+      "start": 3,
+      "every": 5,
+      "max": 5
+    },
+    "fail": {
+      "pop": 50,
+      "civ": 25
+    },
+    "unlock": 1
+  }
+]

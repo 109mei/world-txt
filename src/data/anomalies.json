@@ -1,0 +1,12 @@
+[
+  { "id": "causality", "text": "因果逆転：結果が原因より先に起き始めた", "weight": 3, "below": 70, "effects": { "mods": { "science": 0.85 }, "duration": 3, "add": { "stability": -4 } } },
+  { "id": "duplicate", "text": "重複人物：同じ人間が二人ずつ存在している", "weight": 2, "below": 66, "effects": { "mul": { "pop": 1.03 }, "add": { "stability": -3 } } },
+  { "id": "time_stop", "text": "時間停止区域：いくつかの都市で時間が止まった", "weight": 3, "below": 66, "effects": { "mods": { "industry": 0.9 }, "duration": 3, "add": { "infra": -0.03 } } },
+  { "id": "matter_error", "text": "物質生成エラー：何もない場所から水が湧き出している", "weight": 2, "below": 66, "effects": { "mods": { "waterSupply": 1.15 }, "duration": 3, "add": { "stability": -2 } } },
+  { "id": "heat_leak", "text": "世界の外から熱が漏れ込んでいる", "weight": 2, "below": 60, "effects": { "mods": { "tempEq": 0.3 }, "duration": 4 } },
+  { "id": "fusion_life", "text": "生物融合：動物と植物の区別があいまいになった", "weight": 2, "below": 56, "effects": { "add": { "eco": -8 }, "mods": { "yield": 1.05, "transmission": 1.2 }, "duration": 5 } },
+  { "id": "past_change", "text": "過去改変：人々の記憶と記録が食い違い始めた", "weight": 2, "below": 56, "effects": { "add": { "stability": -6, "happiness": -4 } } },
+  { "id": "meaning_loss", "text": "意味消失：「国境」という言葉が意味を失った", "weight": 1.5, "below": 50, "effects": { "mods": { "tension": -10, "stability": -5 }, "duration": 5 } },
+  { "id": "vanish", "text": "存在消失：世界の定義がひとつ消えた", "weight": 1.5, "below": 45, "effects": { "vanishLaw": true } },
+  { "id": "sky_crack", "text": "空に亀裂が走っている", "weight": 1, "below": 40, "effects": { "add": { "stability": -8, "happiness": -6 } } }
+]

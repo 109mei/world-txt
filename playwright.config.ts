@@ -1,0 +1,34 @@
+import { defineConfig, devices } from '@playwright/test';
+
+/** e2e：390×844 のスマホ縦画面で、公開用のビルドを動かして確かめる */
+const PORT = 4174;
+
+export default defineConfig({
+  testDir: 'e2e',
+  testMatch: /.*\.spec\.ts/,
+  testIgnore: /screens\.spec\.ts/,
+  fullyParallel: true,
+  workers: process.env.CI ? 2 : 4,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 1 : 0,
+  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  timeout: 60_000,
+  use: {
+    baseURL: `http://localhost:${PORT}/world-txt/`,
+    ...devices['Pixel 7'],
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 1,
+    hasTouch: true,
+    isMobile: true,
+    locale: 'ja-JP',
+    colorScheme: 'dark',
+    trace: 'retain-on-failure',
+  },
+  projects: [{ name: 'chromium-390x844' }],
+  webServer: {
+    command: `npx vite build && npx vite preview --port ${PORT} --strictPort`,
+    url: `http://localhost:${PORT}/world-txt/`,
+    reuseExistingServer: !process.env.CI,
+    timeout: 180_000,
+  },
+});
