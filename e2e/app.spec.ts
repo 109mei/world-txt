@@ -248,6 +248,71 @@ test.describe('390×844 のスマホ縦画面', () => {
     await expect(page.getByTestId('ending')).toContainText('なぜ？');
   });
 
+  test('読み込めるものを絞る決まり（CSP）が入っていて、遊んでもそれに触れない', async ({ page }) => {
+    const violations: string[] = [];
+    page.on('console', (m) => {
+      if (/Content Security Policy|Refused to (load|apply|execute|connect)/i.test(m.text())) violations.push(m.text());
+    });
+    await page.addInitScript(() => {
+      document.addEventListener('securitypolicyviolation', (e) => {
+        const w = window as unknown as { __csp?: string[] };
+        w.__csp = [...(w.__csp ?? []), `${e.violatedDirective} ${e.blockedURI}`];
+      });
+    });
+    await startFood(page);
+    await expect(page.locator('meta[http-equiv="Content-Security-Policy"]')).toHaveAttribute('content', /script-src 'self'/);
+    await page.getByTestId('tab-laws').click();
+    await page.getByTestId('add-line').click();
+    await page.getByTestId('editor').fill('人間は空を飛べる。');
+    await page.getByTestId('write').click();
+    await page.getByTestId('advance-5').click();
+    await expect(page.getByTestId('report-sheet')).toBeVisible();
+    await page.getByTestId('report-ok').click();
+    // 書体（Google Fonts）も読み込めている
+    expect(await page.evaluate(() => document.fonts.check('16px "Shippori Mincho"'))).toBe(true);
+    // 世界の終わりまで進め、共有用の画像（その場で描いて保存する）も作る
+    for (let i = 0; i < 20; i += 1) {
+      const st = await debug<{ status: string }>(page, 'state()');
+      if (st.status !== 'playing') break;
+      await debug(page, 'advance(5)');
+    }
+    await page.getByTestId('report-ok').click();
+    await expect(page.getByTestId('result')).toBeVisible();
+    await Promise.all([page.waitForEvent('download'), page.getByTestId('save-image').click()]);
+    const caught = await page.evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? []);
+    expect([...violations, ...caught]).toEqual([]);
+  });
+
+  test('保存できない画面（プライベートブラウズなど）では、そう知らせる', async ({ page }) => {
+    await page.addInitScript(() => {
+      Storage.prototype.setItem = () => {
+        throw new DOMException('保存できない', 'QuotaExceededError');
+      };
+    });
+    await page.goto('./?seed=7');
+    await expect(page.getByTestId('save-warning')).toContainText('この画面では保存できない');
+    // 知らせは閉じられる
+    await page.getByTestId('save-warning').getByRole('button').click();
+    await expect(page.getByTestId('save-warning')).toHaveCount(0);
+  });
+
+  test('途中で保存できなくなったら（空きがない）、そう知らせる', async ({ page }) => {
+    await page.addInitScript(() => {
+      const set = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (key: string, value: string) {
+        if (key === 'world-txt/save') throw new DOMException('いっぱい', 'QuotaExceededError');
+        set.call(this, key, value);
+      };
+    });
+    await page.goto('./?seed=7');
+    await expect(page.getByTestId('title')).toBeVisible();
+    await expect(page.getByTestId('save-warning')).toHaveCount(0);
+    await page.getByTestId('start').click();
+    await page.getByTestId('stage-food').click();
+    await page.getByTestId('open-world').click();
+    await expect(page.getByTestId('save-warning')).toContainText('保存できなかった');
+  });
+
   test('ホーム画面に追加したときのアイコンと名前がある（iPhone と Android）', async ({ page, request }) => {
     await page.goto('./');
     await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', 'WORLD.txt');

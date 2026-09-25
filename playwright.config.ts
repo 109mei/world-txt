@@ -26,7 +26,8 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium-390x844' }],
   webServer: {
-    command: `npx vite build && npx vite preview --port ${PORT} --strictPort`,
+    // テスト用のビルド（--mode e2e）：テスト用の窓口（?debug=1）が入る。公開用のビルド（npm run build）には入らない
+    command: `npx vite build --mode e2e && npx vite preview --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}/world-txt/`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

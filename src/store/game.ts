@@ -40,6 +40,8 @@ interface UiState {
   loadError: string | null;
   /** 別の画面（タブ）で同じ世界が開かれた */
   elsewhere: boolean;
+  /** 保存についての知らせ（保存できなかった・保存できない画面） */
+  saveWarning: string | null;
 }
 
 export const useGame = create<UiState>(() => ({
@@ -58,6 +60,7 @@ export const useGame = create<UiState>(() => ({
   passing: null,
   loadError: null,
   elsewhere: false,
+  saveWarning: null,
 }));
 
 let runtime: GameRuntime | null = null;
@@ -84,6 +87,7 @@ export function refreshView(): void {
     progress: { ...p, cleared: [...p.cleared], best: { ...p.best }, discovered: [...p.discovered], achievements: [...p.achievements] },
     hasGame: !!g && g.status === 'playing',
     loadError: runtime.loadError,
+    saveWarning: runtime.saveWarning,
   });
 }
 

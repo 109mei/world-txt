@@ -49,7 +49,14 @@ export interface RuntimeOptions {
   store: SaveStore;
   now: () => number;
   newSeed: () => number;
+  /** 保存についての知らせが変わったとき（保存できなかった・保存できない画面。直れば null） */
+  onSaveStatus?: (warning: string | null) => void;
 }
+
+/** 保存できなかったときの知らせ */
+export const SAVE_FAILED = '保存できなかった（端末の保存領域に空きがないなど）。メニューの「セーブを書き出す」で控えをとっておく';
+/** 画面を閉じると消える入れ物しか使えないときの知らせ */
+export const SAVE_VOLATILE = 'この画面では保存できない（プライベートブラウズなど）。画面を閉じると、遊んだ記録は消える';
 
 /**
  * ルール本体（core）と保存の窓口をつなぐ。ゲームの状態の持ち主は core で、
@@ -65,6 +72,8 @@ export class GameRuntime {
   fresh: string[] = [];
   /** 別の画面で同じセーブが書き換えられたので、もう保存しない */
   private frozen = false;
+  /** 保存についての知らせ（保存できなかった・保存できない画面） */
+  saveWarning: string | null = null;
 
   constructor(private readonly opts: RuntimeOptions) {}
 
@@ -73,15 +82,23 @@ export class GameRuntime {
   }
 
   async boot(): Promise<void> {
+    if (!this.opts.store.persistent) this.setSaveWarning(SAVE_VOLATILE);
     try {
       const save = await this.opts.store.load();
       if (save) {
         this.apply(save);
-        if (save.droppedCurrent) this.loadError = '遊んでいた世界が壊れていたので、その世界だけを手放した（記録は残っている）';
+        if (save.restored) this.loadError = '最新のセーブが壊れていたので、ひとつ前のセーブから読み込んだ（壊れたセーブは消さずに別に残してある）';
+        else if (save.droppedCurrent) this.loadError = '遊んでいた世界が壊れていたので、その世界だけを手放した（記録は残っている）';
       }
     } catch (e) {
       this.loadError = `${(e as Error).message}。壊れたセーブは消さずに別に残してある`;
     }
+  }
+
+  private setSaveWarning(warning: string | null): void {
+    if (this.saveWarning === warning) return;
+    this.saveWarning = warning;
+    this.opts.onSaveStatus?.(warning);
   }
 
   private apply(save: SaveData): void {
@@ -149,8 +166,11 @@ export class GameRuntime {
     if (this.frozen) return;
     try {
       await this.opts.store.save(this.snapshot());
+      // 保存できた（保存できない画面の知らせは、そのまま）
+      if (this.opts.store.persistent) this.setSaveWarning(null);
     } catch {
-      // 保存できなくても遊びは続ける
+      // 保存できなくても遊びは続ける。ただし、知らせる（黙って記録を失わないように）
+      this.setSaveWarning(SAVE_FAILED);
     }
   }
 

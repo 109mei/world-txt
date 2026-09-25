@@ -29,6 +29,14 @@
 7. 数値をコードに直接書かない。balance.json などのデータに置く
 8. セーブには版番号を入れ、古い版から新しい版へ変換する関数（src/save/migrations.ts）を用意する。GameState に項目を足したら、古い形を補う処理（core の upgradeState）も足す
 
+## 安全の決まり
+
+- 読み込めるものを絞る決まり（CSP）は vite.config.ts にあり、公開用のビルドだけに入る。外から読み込むもの（書体・画像・通信の先）を増やしたら、CSP も直す。e2e の CSP のテストで、決まりに触れていないことを確かめる
+- eval・new Function・innerHTML を使わない（Zod は jitless で動かす）
+- テスト用の窓口（?debug=1）は、開発中とテスト用のビルド（--mode e2e）だけ。公開用のビルドに入れない
+- 読み込むセーブ（書き出したテキストも）は疑う：大きさ・長さ・数の上限と Zod の形で確かめ、__proto__ などの鍵は取り除く。セーブの項目を足したら、src/save/schema.ts にも上限つきで足す
+- 保存できなかったときは黙らずに知らせる（runtime の saveWarning）
+
 ## 見た目の決まり
 
 - 黒と銀のモノクロ（写本・ゴシック調）。色は状態の良し悪しと「書き換えたインク」にだけ使う
@@ -43,7 +51,7 @@
 - src/store：Zustand と写し（view）、観測記録の写し（records）、無限の世界の記録簿（ranking）
 - src/ui：React の部品と CSS、タイトルの絵、BGM、共有画像（shareImage）、入力の補助（wording）
 - src/save：SaveStore
-- tests：Vitest（決定性・セーブと記録簿・読み取り・無茶な書き換え（wild）・総当たり（fuzz）・ルール・無限の世界（endless）・くり返す十年（loop）・結末（endings）・実績（achievements）・入力の補助（wording）・手触りの目安）
+- tests：Vitest（決定性・セーブと記録簿（控え・空き不足・読み込みの安全）・読み取り・無茶な書き換え（wild）・総当たり（fuzz）・ルール・無限の世界（endless）・くり返す十年（loop）・結末（endings）・実績（achievements）・入力の補助（wording）・手触りの目安）
 - e2e：Playwright
 - scripts：シミュレーター（npm run sim）と作戦・ボット（無限の世界のボットは endless.ts）、結末の筋書き（worlds.ts）、読み取りの総当たり（fuzz.ts）
 - docs：SPEC.md、PLAN.md（企画書）、screens/（スクリーンショット）

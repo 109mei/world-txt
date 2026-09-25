@@ -159,3 +159,22 @@ test('主な画面', async ({ page }) => {
   await page.getByTestId('ranking').scrollIntoViewIfNeeded();
   await page.screenshot({ path: shot('24_ranking') });
 });
+
+test('保存についての知らせ', async ({ page }) => {
+  // 途中で保存できなくなった（端末の保存領域に空きがない）ときの知らせ
+  await page.addInitScript(() => {
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key: string, value: string) {
+      if (key === 'world-txt/save') throw new DOMException('いっぱい', 'QuotaExceededError');
+      set.call(this, key, value);
+    };
+  });
+  await page.goto('./?seed=20260924&debug=1');
+  await ready(page);
+  await page.getByTestId('start').click();
+  await page.getByTestId('stage-food').click();
+  await page.getByTestId('open-world').click();
+  await expect(page.getByTestId('save-warning')).toBeVisible();
+  await quiet(page);
+  await page.screenshot({ path: shot('25_save_warning') });
+});

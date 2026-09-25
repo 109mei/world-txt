@@ -2476,3 +2476,26 @@ mark.ink {
 .rank-badge {
   letter-spacing: 0.04em;
 }
+
+/* 保存についての知らせ（保存できなかった・保存できない画面）。閉じるまで出しておく。
+   上の帯（メニュー）は隠さず、その下に出す。短い知らせ（toast）はこの上に重なる */
+.save-warning {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  top: calc(env(safe-area-inset-top, 0px) + 64px);
+  z-index: 29;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 4px 6px 14px;
+  background: #16130c;
+  border: 1px solid var(--warn);
+  color: var(--warn);
+  font-size: 13px;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+}
+.save-warning span {
+  flex: 1;
+}

@@ -5,6 +5,12 @@ import { SaveDataSchema, type Progress, type Settings } from './schema';
 /** セーブの版番号。形を変えたら上げて、MIGRATIONS に古い版からの変換を足す */
 export const SAVE_VERSION = 5;
 
+/**
+ * 読み込むセーブの大きさの上限（文字数）。ふつうのセーブは数十KB（何百もの世界を遊んでも100KBほど）。
+ * これより大きいものは、壊れたものか、よそで作られたものとして読まない
+ */
+export const MAX_SAVE_CHARS = 2_000_000;
+
 export interface SaveData {
   saveVersion: number;
   /** 最後に保存した時刻（ミリ秒） */
@@ -15,9 +21,19 @@ export interface SaveData {
   current: GameState | null;
   /** 読み込んだとき、遊んでいた世界が壊れていたので手放した（保存はしない） */
   droppedCurrent?: boolean;
+  /** 読み込んだとき、最新のセーブが壊れていたので、ひとつ前のセーブ（控え）から読んだ（保存はしない） */
+  restored?: boolean;
 }
 
 export class SaveFormatError extends Error {}
+
+/** 読み込むときに取り除く鍵（オブジェクトの仕組みを書き換えられないように） */
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/** JSON を読む。オブジェクトの仕組みに触れる鍵（__proto__ など）は取り除く */
+function parseJson(text: string): unknown {
+  return JSON.parse(text, (key, value: unknown) => (UNSAFE_KEYS.has(key) ? undefined : value));
+}
 
 /** 古い版のセーブを今の版へ変換する */
 export function migrate(raw: unknown): SaveData {
@@ -48,14 +64,15 @@ export function migrate(raw: unknown): SaveData {
 }
 
 export function serialize(data: SaveData): string {
-  const { droppedCurrent: _dropped, ...rest } = data;
+  const { droppedCurrent: _dropped, restored: _restored, ...rest } = data;
   return JSON.stringify(rest);
 }
 
 export function deserialize(text: string): SaveData {
+  if (text.length > MAX_SAVE_CHARS) throw new SaveFormatError('セーブが大きすぎる');
   let raw: unknown;
   try {
-    raw = JSON.parse(text);
+    raw = parseJson(text);
   } catch {
     throw new SaveFormatError('セーブを読めない');
   }
@@ -87,6 +104,8 @@ export function exportText(data: SaveData): string {
 
 /** 書き出したテキスト（または JSON そのまま）を読み込む */
 export function importText(text: string): SaveData {
+  // 書き出したテキストは Base64 で1.4倍ほどになる。それより大きなものは、手を加える前に断る
+  if (text.length > MAX_SAVE_CHARS * 2) throw new SaveFormatError('セーブが大きすぎる');
   const trimmed = text.trim().replace(/\s+/g, '');
   if (trimmed.startsWith(EXPORT_PREFIX)) {
     let json: string;

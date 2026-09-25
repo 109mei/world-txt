@@ -19,6 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # 取り出したあとの手順に、リポジトリの鍵（GITHUB_TOKEN）を残さない
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
@@ -49,6 +52,11 @@ jobs:
 
       - name: ビルド
         run: npm run build
+
+      - name: 公開用のビルドを確かめる（テスト用の窓口がなく、CSP が入っている）
+        run: |
+          if grep -q "__wtxt" dist/assets/*.js; then echo "テスト用の窓口（__wtxt）が公開用のビルドに入っている"; exit 1; fi
+          grep -q 'http-equiv="Content-Security-Policy"' dist/index.html
 
       - uses: actions/configure-pages@v6
 

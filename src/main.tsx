@@ -12,7 +12,8 @@ import './ui/styles.css';
 
 const params = new URLSearchParams(window.location.search);
 const seedParam = params.get('seed');
-const debug = params.get('debug') === '1';
+// テスト用の窓口（?debug=1）は、開発中とテスト用のビルド（--mode e2e）だけ。公開用のビルドには入れない
+const debug = (import.meta.env.DEV || import.meta.env.MODE === 'e2e') && params.get('debug') === '1';
 
 function randomSeed(): number {
   return crypto.getRandomValues(new Uint32Array(1))[0]! >>> 0;
@@ -23,7 +24,7 @@ const fixedSeed = seedParam !== null && Number.isFinite(Number(seedParam)) ? Mat
 
 function saveStore(): SaveStore {
   try {
-    const probe = '__wtxt_probe__';
+    const probe = 'world-txt/probe';
     window.localStorage.setItem(probe, '1');
     window.localStorage.removeItem(probe);
     return new LocalStorageSaveStore(window.localStorage);
@@ -32,12 +33,29 @@ function saveStore(): SaveStore {
   }
 }
 
+/**
+ * 端末の空きが少なくなっても、ブラウザにセーブを消されにくくする（できるブラウザだけ）。
+ * 遊び始めてから（最初に画面に触れたときに）頼む
+ */
+function askPersistentStorage(): void {
+  const ask = () => {
+    const storage = navigator.storage;
+    if (!storage?.persist || !storage.persisted) return;
+    storage
+      .persisted()
+      .then((yes) => (yes ? true : storage.persist()))
+      .catch(() => false);
+  };
+  window.addEventListener('pointerdown', ask, { once: true });
+}
+
 async function start(): Promise<void> {
   const runtime = new GameRuntime({
     data: gameData,
     store: saveStore(),
     now: () => Date.now(),
     newSeed: () => fixedSeed ?? randomSeed(),
+    onSaveStatus: (warning) => useGame.setState({ saveWarning: warning }),
   });
   await runtime.boot();
   setRuntime(runtime);
@@ -49,6 +67,7 @@ async function start(): Promise<void> {
   document.addEventListener('visibilitychange', () => onVisibility(document.visibilityState === 'hidden'));
   // 長押し・右クリックのメニューと、文字の選択を出さない（入力欄は除く）
   guardLongPress(document);
+  askPersistentStorage();
   // 世界は1つだけ：別の画面（タブ）で同じセーブが書き換えられたら、この画面は保存をやめる
   window.addEventListener('storage', (e) => {
     if (e.key === SAVE_KEY) markElsewhere();
