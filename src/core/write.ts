@@ -1,6 +1,6 @@
 import type { IconKey, Law, Phrase } from '../data/schema';
 import { covered, lawTotals, type Written } from './channels';
-import { discover, discoverTags, syncPhraseFlags } from './game';
+import { addImpulse, discover, discoverTags, syncPhraseFlags, targetsNow } from './game';
 import {
   canonical,
   interpretAsLaw,
@@ -356,6 +356,8 @@ export function write(g: GameState, data: GameData, target: WriteTarget, text: s
   if (plan.block) return plan.result;
   const shortage = shortageAfter(g, data, plan.written);
   if (shortage > 0) return { ...plan.result, block: 'capacity', shortage };
+  // 書き換えの勢い：書き換える前と後で、ゆっくり動く量の向かう先がどれだけ動いたか（次の1年に届ける）
+  const before = targetsNow(g, data);
   const w = plan.written;
   g.laws = w.laws;
   g.texts = w.texts;
@@ -366,6 +368,7 @@ export function write(g: GameState, data: GameData, target: WriteTarget, text: s
   if (plan.added) g.nextExtra += 1;
   for (const id of plan.discoveries) discover(g, id);
   commit(g, data, plan.history!);
+  addImpulse(g, before, targetsNow(g, data));
   return plan.result;
 }
 

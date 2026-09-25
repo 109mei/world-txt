@@ -1,4 +1,4 @@
-import type { Balance } from '../data/schema';
+import type { Balance, ImpulseKey } from '../data/schema';
 import { clamp, curve } from './math';
 import { nextRandom } from './rng';
 import type { Channels, Derived, GameState, SimState } from './types';
@@ -166,6 +166,148 @@ export function humanityScore(s: SimState, d: Derived, b: Balance, startPop: num
   );
 }
 
+// ---------------------------------------------------------------- ゆっくり動く量の向かう先
+
+/** 産業の向かう先 */
+function industryTarget(s: SimState, d: Derived, ch: Channels, b: Balance, popF: number, mindF: number, priceF: number): number {
+  return (
+    (Math.pow(popF, 0.6) *
+      Math.pow(clamp(d.energyRatio, 0.2, 1.15), 0.8) *
+      (0.4 + 0.6 * Math.min(1, s.infra / b.infra.ref)) *
+      (0.55 + 0.45 * clamp(s.stability / 60, 0, 1.2)) *
+      (1 + b.industry.sci * (s.science - 1)) *
+      ch.industry *
+      (1 - b.industry.war * s.war) *
+      (1 - (b.industry.sick * s.pathogen) / 100) *
+      (1 - b.industry.unemp * Math.max(0, s.unemployment - b.unemployment.base)) *
+      (1 + b.mind.industry * mindF)) /
+    (1 + b.prices.industry * priceF)
+  );
+}
+
+function unemploymentTarget(s: SimState, ch: Channels, b: Balance, priceF: number): number {
+  return b.unemployment.base + ch.unemployment + b.unemployment.industry * Math.max(0, 1 - s.industry) + b.prices.unemp * priceF;
+}
+
+function wildfireOf(s: SimState, d: Derived, ch: Channels, b: Balance, heatOver: number): number {
+  return b.climate.fireBase * ch.wildfire * (1 + 1.5 * heatOver) * (s.eco / 60) * (d.waterRatio < 0.9 ? 1.3 : 1);
+}
+
+function ecoTarget(s: SimState, ch: Channels, b: Balance, fossil: number, heatOver: number, coldOver: number, wildfire: number): number {
+  return (
+    b.eco.base +
+    ch.eco -
+    b.eco.landCoef * Math.max(0, s.agri - b.eco.landFree) -
+    b.eco.pollution * fossil * ch.fossilCO2 -
+    b.eco.heat * (heatOver * ch.heatLife + coldOver) -
+    b.eco.war * s.war -
+    b.eco.fire * wildfire
+  );
+}
+
+function stabilityTarget(s: SimState, d: Derived, ch: Channels, b: Balance, mindF: number, priceF: number): number {
+  const bs = b.society;
+  const foodStress = Math.max(0, bs.foodRef - d.foodRatio);
+  const waterStress = Math.max(0, bs.waterRef - d.waterRatio);
+  const energyStress = Math.max(0, bs.energyRef - d.energyRatio);
+  const unempStress = Math.max(0, s.unemployment - bs.unempRef);
+  const fear = Math.max(0, b.coherence.fearRef - s.coherence);
+  return (
+    bs.base +
+    ch.stability -
+    bs.food * foodStress -
+    bs.water * waterStress -
+    bs.energy * energyStress -
+    bs.unemp * unempStress -
+    bs.sick * s.pathogen -
+    bs.war * s.war -
+    bs.fear * fear +
+    bs.happy * (s.happiness - 55) -
+    bs.deaths * d.excessDeaths +
+    b.mind.stability * mindF -
+    b.prices.stability * priceF
+  );
+}
+
+function happinessTarget(s: SimState, d: Derived, ch: Channels, b: Balance, heatOver: number, mindF: number, priceF: number): number {
+  const bh = b.happiness;
+  const unempStress = Math.max(0, s.unemployment - b.society.unempRef);
+  return (
+    bh.base +
+    ch.happiness +
+    bh.food * (clamp(d.foodRatio, 0, 1.2) - 1) -
+    bh.sick * s.pathogen -
+    bh.war * s.war -
+    bh.unemp * unempStress -
+    bh.deaths * d.excessDeaths +
+    (bh.eco * (s.eco - 55)) / 45 -
+    bh.heat * heatOver +
+    b.mind.happy * mindF -
+    b.prices.happiness * priceF
+  );
+}
+
+function tensionTarget(s: SimState, d: Derived, ch: Channels, b: Balance, heatOver: number): number {
+  const bs = b.society;
+  const bt = b.tension;
+  const foodStress = Math.max(0, bs.foodRef - d.foodRatio);
+  const waterStress = Math.max(0, bs.waterRef - d.waterRatio);
+  const energyStress = Math.max(0, bs.energyRef - d.energyRatio);
+  return (
+    bt.base +
+    ch.tension +
+    bt.food * foodStress +
+    bt.water * waterStress +
+    bt.energy * energyStress +
+    bt.instability * Math.max(0, 60 - s.stability) +
+    bt.climate * heatOver
+  );
+}
+
+function mindTarget(ch: Channels, b: Balance, priceF: number): number {
+  return b.mind.base + ch.mind - b.prices.mind * priceF;
+}
+
+function coherenceTarget(d: Derived, ch: Channels, b: Balance): number {
+  const overload = Math.max(0, d.capacityRatio - b.capacity.strainFrom) * b.capacity.strainCoef;
+  return clamp(100 - d.incoherence - overload + ch.coherence, 0, 100);
+}
+
+/** 気温の落ち着く先（CO2・温室効果・太陽・直接の押し上げ） */
+function temperatureTarget(s: SimState, ch: Channels, b: Balance): number {
+  return (
+    b.climate.sensitivity * Math.log2(s.co2 / b.climate.preCO2) * ch.greenhouse +
+    b.climate.natural * (ch.greenhouse - 1) +
+    b.climate.sunCoef * (ch.sun - 1) +
+    ch.tempEq
+  );
+}
+
+/**
+ * 今の状態と係数での、ゆっくり動く量の向かう先。
+ * 書き換えの前と後で比べ、その差（書き換えの勢い）を次の1年ですぐに世界へ届ける
+ */
+export function targetsOf(s: SimState, d: Derived, ch: Channels, b: Balance): Record<ImpulseKey, number> {
+  const popF = s.pop / b.popRef;
+  const heatOver = Math.max(0, s.temp - b.climate.comfort);
+  const coldOver = Math.max(0, b.climate.coldRef - s.temp);
+  const mindF = mindShift(s, b);
+  const priceF = priceLevel(s, ch);
+  const oilF = clamp(s.oilReserve / b.energy.reserveComfort, 0, 1);
+  const fossil = s.energyCap * (1 - s.renewShare) * ch.fossilOutput * oilF;
+  return {
+    industry: Math.max(0.05, industryTarget(s, d, ch, b, popF, mindF, priceF)),
+    unemployment: unemploymentTarget(s, ch, b, priceF),
+    eco: clamp(ecoTarget(s, ch, b, fossil, heatOver, coldOver, wildfireOf(s, d, ch, b, heatOver)), 0, 100),
+    stability: clamp(stabilityTarget(s, d, ch, b, mindF, priceF), 0, 100),
+    happiness: clamp(happinessTarget(s, d, ch, b, heatOver, mindF, priceF), 0, 100),
+    tension: clamp(tensionTarget(s, d, ch, b, heatOver), 0, 100),
+    mind: clamp(mindTarget(ch, b, priceF), 0, 100),
+    coherence: coherenceTarget(d, ch, b),
+    temp: temperatureTarget(s, ch, b),
+  };
+}
+
 /**
  * 1年進める。g.sim を書き換え、g.derived を今年の値にする。
  * forecast のときは乱数を使わない（戦争は始まらない）。
@@ -248,21 +390,10 @@ export function simulateYear(g: GameState, ch: Channels, b: Balance, forecast: b
   s.pop = Math.max(0, s.pop * (1 + d.birthRate - d.deathRate));
 
   // ---- 産業・失業・物流・科学
-  const indTarget =
-    Math.pow(popF, 0.6) *
-    Math.pow(clamp(d.energyRatio, 0.2, 1.15), 0.8) *
-    (0.4 + 0.6 * Math.min(1, s.infra / b.infra.ref)) *
-    (0.55 + 0.45 * clamp(s.stability / 60, 0, 1.2)) *
-    (1 + b.industry.sci * (s.science - 1)) *
-    ch.industry *
-    (1 - b.industry.war * s.war) *
-    (1 - (b.industry.sick * s.pathogen) / 100) *
-    (1 - b.industry.unemp * Math.max(0, s.unemployment - b.unemployment.base)) *
-    (1 + b.mind.industry * mindF) /
-    (1 + b.prices.industry * priceF);
+  const indTarget = industryTarget(s, d, ch, b, popF, mindF, priceF);
   s.industry += (Math.max(0.05, indTarget) - s.industry) * b.industry.rate;
 
-  const unempTarget = b.unemployment.base + ch.unemployment + b.unemployment.industry * Math.max(0, 1 - s.industry) + b.prices.unemp * priceF;
+  const unempTarget = unemploymentTarget(s, ch, b, priceF);
   s.unemployment = clamp(s.unemployment + agriShrink * b.food.laborShare + (unempTarget - s.unemployment) * b.unemployment.rate, 0, 0.6);
 
   const infraTarget = Math.min(1, b.infra.base + b.infra.ind * Math.min(1.2, s.industry) * Math.sqrt(clamp(s.stability / 60, 0.05, 1.2)));
@@ -271,7 +402,7 @@ export function simulateYear(g: GameState, ch: Channels, b: Balance, forecast: b
   s.science = Math.max(0.05, s.science * (1 + d.research));
 
   // ---- 気候：CO2 が増えると、気温が遅れて上がる
-  const wildfire = b.climate.fireBase * ch.wildfire * (1 + 1.5 * heatOver) * (s.eco / 60) * (d.waterRatio < 0.9 ? 1.3 : 1);
+  const wildfire = wildfireOf(s, d, ch, b, heatOver);
   const emissions =
     (fossil * ch.fossilCO2 * b.climate.fossilEm +
       b.climate.indEm * s.industry +
@@ -282,76 +413,26 @@ export function simulateYear(g: GameState, ch: Channels, b: Balance, forecast: b
   const sinkF = Math.max(0, (s.co2 - b.climate.preCO2) / (b.climate.refCO2 - b.climate.preCO2));
   const sinks = sinkF * ((b.climate.plantSink * ch.plantSink * s.eco) / 60 + b.climate.oceanSink * ch.oceanSink) + ch.humanSink * popF;
   s.co2 = Math.max(180, s.co2 + emissions - sinks - ch.co2Removal);
-  const tempEq =
-    b.climate.sensitivity * Math.log2(s.co2 / b.climate.preCO2) * ch.greenhouse +
-    b.climate.natural * (ch.greenhouse - 1) +
-    b.climate.sunCoef * (ch.sun - 1) +
-    ch.tempEq;
+  const tempEq = temperatureTarget(s, ch, b);
   s.temp += (tempEq - s.temp) * b.climate.lag * clamp(ch.tempHold, 0, 3);
 
   // ---- 生態系
-  const ecoTarget =
-    b.eco.base +
-    ch.eco -
-    b.eco.landCoef * Math.max(0, s.agri - b.eco.landFree) -
-    b.eco.pollution * fossil * ch.fossilCO2 -
-    b.eco.heat * (heatOver * ch.heatLife + coldOver) -
-    b.eco.war * s.war -
-    b.eco.fire * wildfire;
-  s.eco = clamp(s.eco + (clamp(ecoTarget, 0, 100) - s.eco) * clamp(b.eco.rate * ch.ecoRecovery, 0, 0.8), 0, 100);
+  const ecoT = ecoTarget(s, ch, b, fossil, heatOver, coldOver, wildfire);
+  s.eco = clamp(s.eco + (clamp(ecoT, 0, 100) - s.eco) * clamp(b.eco.rate * ch.ecoRecovery, 0, 0.8), 0, 100);
 
   // ---- 社会：安定・幸福・国際緊張
-  const bs = b.society;
-  const foodStress = Math.max(0, bs.foodRef - d.foodRatio);
-  const waterStress = Math.max(0, bs.waterRef - d.waterRatio);
-  const energyStress = Math.max(0, bs.energyRef - d.energyRatio);
-  const unempStress = Math.max(0, s.unemployment - bs.unempRef);
-  const fear = Math.max(0, b.coherence.fearRef - s.coherence);
-  const stabTarget =
-    bs.base +
-    ch.stability -
-    bs.food * foodStress -
-    bs.water * waterStress -
-    bs.energy * energyStress -
-    bs.unemp * unempStress -
-    bs.sick * s.pathogen -
-    bs.war * s.war -
-    bs.fear * fear +
-    bs.happy * (s.happiness - 55) -
-    bs.deaths * d.excessDeaths +
-    b.mind.stability * mindF -
-    b.prices.stability * priceF;
-  s.stability += (clamp(stabTarget, 0, 100) - s.stability) * bs.rate;
+  const stabT = stabilityTarget(s, d, ch, b, mindF, priceF);
+  s.stability += (clamp(stabT, 0, 100) - s.stability) * b.society.rate;
 
-  const bh = b.happiness;
-  const happyTarget =
-    bh.base +
-    ch.happiness +
-    bh.food * (clamp(d.foodRatio, 0, 1.2) - 1) -
-    bh.sick * s.pathogen -
-    bh.war * s.war -
-    bh.unemp * unempStress -
-    bh.deaths * d.excessDeaths +
-    (bh.eco * (s.eco - 55)) / 45 -
-    bh.heat * heatOver +
-    b.mind.happy * mindF -
-    b.prices.happiness * priceF;
-  s.happiness += (clamp(happyTarget, 0, 100) - s.happiness) * bh.rate;
+  const happyT = happinessTarget(s, d, ch, b, heatOver, mindF, priceF);
+  s.happiness += (clamp(happyT, 0, 100) - s.happiness) * b.happiness.rate;
 
-  const bt = b.tension;
-  const tensionTarget =
-    bt.base +
-    ch.tension +
-    bt.food * foodStress +
-    bt.water * waterStress +
-    bt.energy * energyStress +
-    bt.instability * Math.max(0, 60 - s.stability) +
-    bt.climate * heatOver;
-  s.tension += (clamp(tensionTarget, 0, 100) - s.tension) * bt.rate;
+  const tensionT = tensionTarget(s, d, ch, b, heatOver);
+  s.tension += (clamp(tensionT, 0, 100) - s.tension) * b.tension.rate;
 
   // ---- 心：概念（係数 mind）と物価で動き、ふだんの高さへゆっくり戻る
-  const mindTarget = b.mind.base + ch.mind - b.prices.mind * priceF;
-  s.mind = clamp(s.mind + (clamp(mindTarget, 0, 100) - s.mind) * b.mind.rate, 0, 100);
+  const mindT = mindTarget(ch, b, priceF);
+  s.mind = clamp(s.mind + (clamp(mindT, 0, 100) - s.mind) * b.mind.rate, 0, 100);
 
   // ---- 物価：お金が刷られるほど上がり、刷られなくなれば戻る。お金のない世界では物価そのものが意味を失う
   const inflation = ch.inflation * clamp(ch.money, 0, 1);
@@ -382,8 +463,7 @@ export function simulateYear(g: GameState, ch: Channels, b: Balance, forecast: b
   g.counters.peaceYears = s.war > 0 ? 0 : g.counters.peaceYears + 1;
 
   // ---- 世界整合性：無理な法則が多いほど、世界容量が苦しいほど下がる
-  const overload = Math.max(0, d.capacityRatio - b.capacity.strainFrom) * b.capacity.strainCoef;
-  const cohTarget = clamp(100 - d.incoherence - overload + ch.coherence, 0, 100);
+  const cohTarget = coherenceTarget(d, ch, b);
   s.coherence += (cohTarget - s.coherence) * b.coherence.rate;
 
   return out;

@@ -91,6 +91,22 @@ function tone(ac: AudioContext, freq: number, peak: number, attack: number, rele
   osc.stop(t + attack + release + 0.05);
 }
 
+/** 書いた一文が世界に効き始めた：ペン先が紙をかすめ、インクがにじむ音 */
+export function seInk(): void {
+  const ac = audio();
+  if (!ac) return;
+  const src = noise(ac, 0.34);
+  const band = ac.createBiquadFilter();
+  band.type = 'bandpass';
+  band.frequency.setValueAtTime(1800, ac.currentTime);
+  band.frequency.exponentialRampToValueAtTime(5200, ac.currentTime + 0.3);
+  band.Q.value = 2.2;
+  const g = gainEnvelope(ac, 0.11, 0.04, 0.3);
+  src.connect(band).connect(g).connect(ac.destination);
+  src.start();
+  tone(ac, 880, 0.035, 0.02, 0.7, 'sine', 0.12);
+}
+
 /** 観測記録に新しいものが加わった：小さな鈴 */
 export function seChime(): void {
   const ac = audio();

@@ -1,0 +1,840 @@
+{
+  "twists": {
+    "food_culture_loss": {
+      "marketEmpty": 0.6
+    },
+    "meal_void": {
+      "marketEmpty": 1
+    },
+    "no_sweat": {
+      "heatHaze": 0.3
+    },
+    "gerontocracy": {
+      "elders": 0.6
+    },
+    "aging_society": {
+      "elders": 0.6,
+      "noChildren": 0.5
+    },
+    "dream_loss": {
+      "blank": 0.5
+    },
+    "vector_boom": {
+      "insects": 1,
+      "miasma": 0.3
+    },
+    "oxygen_rich": {
+      "wildfire": 0.7
+    },
+    "co2_hunger": {
+      "withered": 0.6
+    },
+    "sun_migration": {
+      "crowd": 0.4
+    },
+    "skin_uv": {
+      "ozone": 0.5
+    },
+    "overgrowth": {
+      "forest": 1,
+      "tallCrops": 0.5
+    },
+    "rain_loss": {
+      "drought": 0.6
+    },
+    "desert_bloom": {
+      "greenDesert": 1
+    },
+    "pollen_storm": {
+      "pollenWind": 1
+    },
+    "soil_exhaustion": {
+      "barren": 0.6
+    },
+    "pollinator_loss": {
+      "noBees": 1
+    },
+    "soil_death": {
+      "barren": 0.8,
+      "withered": 0.5
+    },
+    "animal_plague": {
+      "noAnimals": 0.6,
+      "graves": 0.2
+    },
+    "floods": {
+      "rain": 0.8,
+      "seaHigh": 0.6
+    },
+    "rainforest_dieback": {
+      "noForest": 0.7
+    },
+    "ocean_collapse": {
+      "seaBubbles": 0.5
+    },
+    "current_stop": {
+      "still": 0.5,
+      "ice": 0.3
+    },
+    "acid_sea": {
+      "seaBubbles": 0.4
+    },
+    "pest_boom": {
+      "insects": 0.8
+    },
+    "monsoon_loss": {
+      "drought": 0.6
+    },
+    "frost_nights": {
+      "snow": 0.4
+    },
+    "firewood_loss": {
+      "factoryIdle": 0.3
+    },
+    "deadwood": {
+      "withered": 0.5
+    },
+    "jevons": {
+      "megacity": 0.4
+    },
+    "no_transition": {
+      "oilGush": 0.5,
+      "smog": 0.3
+    },
+    "soot": {
+      "smog": 0.8
+    },
+    "petrostate_collapse": {
+      "oilDry": 0.8
+    },
+    "cheap_desal": {
+      "freshSea": 0.5
+    },
+    "radio_chaos": {
+      "screensOff": 0.6
+    },
+    "land_rush": {
+      "fieldsEverywhere": 0.8,
+      "noForest": 0.4
+    },
+    "sea_farm_bloom": {
+      "seaFields": 0.6
+    },
+    "gut_starvation": {
+      "fading": 0.3
+    },
+    "hygiene": {
+      "masks": 0.3
+    },
+    "herbivore_boom": {
+      "animals": 1
+    },
+    "airborne_crops": {
+      "harvest": 0.6
+    },
+    "chronic_fatigue": {
+      "lying": 0.5
+    },
+    "symbiont_mind": {
+      "blank": 0.4
+    },
+    "immune_overdrive": {
+      "masks": 0.5
+    },
+    "resistance": {
+      "noMedicine": 0.6
+    },
+    "undying_suffering": {
+      "halo": 0.5,
+      "elders": 0.6
+    },
+    "endless_aging": {
+      "elders": 1
+    },
+    "knowledge_freeze": {
+      "noSchool": 0.6
+    },
+    "corp_rule": {
+      "megacity": 0.4,
+      "coins": 0.5
+    },
+    "gridlock": {
+      "crowd": 0.5
+    },
+    "barter": {
+      "noMoney": 0.8
+    },
+    "shadow_conflict": {
+      "soldiers": 0.3,
+      "crime": 0.3
+    },
+    "conformity": {
+      "clones": 0.6
+    },
+    "magic_age": {
+      "sparkles": 1
+    },
+    "hasty_science": {
+      "labDark": 0.4
+    },
+    "self_sacrifice": {
+      "handshake": 0.6
+    },
+    "idle_masses": {
+      "lying": 0.8
+    },
+    "thermal_chaos": {
+      "heatHaze": 0.8
+    },
+    "sports_fever": {
+      "stadium": 1
+    },
+    "sky_traffic": {
+      "flyers": 0.4,
+      "flash": 0.3
+    },
+    "border_collapse": {
+      "crime": 0.6
+    },
+    "no_privacy": {
+      "cameras": 0.6
+    },
+    "too_many_chiefs": {
+      "genius": 0.5,
+      "crowd": 0.4
+    },
+    "dust_loss": {
+      "noClouds": 0.4
+    },
+    "sleepless_light": {
+      "sleepless": 0.8
+    },
+    "glacier_water": {
+      "drought": 0.5
+    },
+    "unarmed_order": {
+      "lanterns": 0.6
+    },
+    "cheap_war": {
+      "soldiers": 0.6
+    },
+    "arms_fear": {
+      "soldiers": 0.4
+    },
+    "nuclear_gap": {
+      "noReactor": 0.6
+    },
+    "reactor_scare": {
+      "flash": 0.5
+    },
+    "storm_age": {
+      "storm": 1,
+      "wind": 0.7
+    },
+    "stagnant_air": {
+      "smog": 0.6,
+      "still": 0.5
+    },
+    "windless_rain": {
+      "drought": 0.6
+    },
+    "corn_fail": {
+      "withered": 0.5
+    },
+    "double_day": {
+      "heatHaze": 0.6
+    },
+    "fusion_boom": {
+      "fusion": 1
+    },
+    "ai_power": {
+      "aiCore": 0.6,
+      "coins": 0.4
+    },
+    "plant_starve": {
+      "withered": 0.8
+    },
+    "hyperinflation": {
+      "paperMoney": 1
+    },
+    "honesty_shock": {
+      "crowd": 0.4
+    },
+    "insect_food_chain": {
+      "noBees": 0.5
+    },
+    "farm_exodus": {
+      "barren": 0.6
+    },
+    "manna_rats": {
+      "rats": 1
+    },
+    "meat_taboo": {
+      "noLivestock": 0.8
+    },
+    "tide_loss": {
+      "still": 0.4
+    },
+    "culture_loss": {
+      "blank": 0.4,
+      "signs": 0.3
+    },
+    "painless": {
+      "bandage": 0.8
+    },
+    "waterlogging": {
+      "saltSea": 0.6
+    },
+    "grazing": {
+      "grazers": 0.6,
+      "noForest": 0.4
+    },
+    "coastal_rush": {
+      "crowd": 0.5
+    },
+    "rejuvenation": {
+      "young": 1
+    },
+    "monoculture": {
+      "clones": 0.8
+    },
+    "insomnia": {
+      "sleepless": 0.8
+    },
+    "plants_stop_absorbing": {
+      "smog": 0.4
+    },
+    "oxygen_thin": {
+      "fading": 0.4
+    },
+    "stasis": {
+      "loop": 0.6
+    },
+    "contentment": {
+      "lying": 0.6
+    },
+    "no_friction": {
+      "blank": 0.4
+    },
+    "denial": {
+      "papers": 0.6
+    },
+    "magic_chaos": {
+      "sparkles": 0.7,
+      "fight": 0.4
+    },
+    "divine_dispute": {
+      "temple": 0.6,
+      "fight": 0.5
+    },
+    "value_collapse": {
+      "paperMoney": 0.8
+    },
+    "self_reference": {
+      "glitch": 0.8
+    },
+    "atmosphere_escape": {
+      "noClouds": 0.6,
+      "starsMore": 0.5
+    },
+    "bone_loss": {
+      "lying": 0.5
+    },
+    "thin_air": {
+      "fading": 0.4
+    },
+    "collapsing_buildings": {
+      "ruins": 0.8
+    },
+    "floating_life": {
+      "float": 0.8
+    },
+    "square_cube": {
+      "giant": 0.4,
+      "lying": 0.4
+    },
+    "photosynthesis_stop": {
+      "withered": 1
+    },
+    "first_contact": {
+      "ufo": 1
+    },
+    "rewilded": {
+      "forest": 0.8,
+      "animals": 0.6
+    },
+    "idle_world": {
+      "lying": 0.8,
+      "factoryIdle": 0.6
+    },
+    "power_hunger": {
+      "noPower": 0.6
+    },
+    "lost_words": {
+      "signs": 0.7
+    },
+    "sea_loss": {
+      "noSea": 1
+    },
+    "lost_floods": {
+      "drought": 0.4
+    },
+    "launch_cost": {
+      "rockets": 0.5
+    },
+    "other_self": {
+      "parallel": 0.7
+    },
+    "undying_grudge": {
+      "fight": 0.6
+    },
+    "lost_knowhow": {
+      "noSchool": 0.5
+    },
+    "cannot_decide": {
+      "forget": 0.6
+    },
+    "reckless": {
+      "daring": 0.8
+    },
+    "resignation": {
+      "blank": 0.6
+    },
+    "market_end": {
+      "marketEmpty": 0.6
+    },
+    "past_life_claims": {
+      "crowd": 0.5
+    },
+    "button_money": {
+      "moneyRain": 0.6
+    },
+    "button_echo": {
+      "blank": 0.5
+    },
+    "gold_crash": {
+      "gold": 0.8
+    },
+    "bank_run": {
+      "queue": 0.8
+    },
+    "unseen_crime": {
+      "invisible": 0.5,
+      "crime": 0.6
+    },
+    "nightmare_real": {
+      "dreams": 0.8,
+      "ghosts": 0.5
+    },
+    "eternal_ennui": {
+      "blank": 0.7
+    },
+    "thinking_outsourced": {
+      "aiCore": 0.6,
+      "blank": 0.5
+    },
+    "machine_war": {
+      "robotRevolt": 1
+    },
+    "broken_crypto": {
+      "screensOff": 0.5
+    },
+    "designer_babies": {
+      "dna": 0.8,
+      "babies": 0.4
+    },
+    "bare_cold": {
+      "snow": 0.4,
+      "naked": 0.4
+    },
+    "clothing_end": {
+      "naked": 0.6
+    },
+    "sti_spread": {
+      "masks": 0.5
+    },
+    "consent_loss": {
+      "crowd": 0.5
+    },
+    "prion_kuru": {
+      "fading": 0.5
+    },
+    "violence_cycle": {
+      "fight": 0.8
+    },
+    "machine_rights": {
+      "robots": 0.6,
+      "flags": 0.4
+    },
+    "antimatter_bomb": {
+      "flash": 0.8
+    },
+    "overwork": {
+      "sleepless": 0.6
+    }
+  },
+  "crises": {
+    "meteor": {
+      "meteors": 0.5
+    },
+    "pandemic": {
+      "miasma": 0.5,
+      "masks": 0.3
+    },
+    "supervolcano": {
+      "volcano": 0.6
+    },
+    "solar_storm": {
+      "aurora": 0.8
+    },
+    "megadrought": {
+      "drought": 0.5
+    },
+    "cold_age": {
+      "snow": 0.5
+    },
+    "blight": {
+      "withered": 0.4
+    },
+    "world_war": {
+      "soldiers": 0.5
+    },
+    "depression": {
+      "queue": 0.5,
+      "papers": 0.4
+    },
+    "megaquake": {
+      "quake": 0.4
+    }
+  },
+  "endings": {
+    "universe_void": {
+      "void": 1
+    },
+    "unbound_matter": {
+      "void": 1
+    },
+    "broken_nuclei": {
+      "void": 1
+    },
+    "swallowed": {
+      "blackHole": 1,
+      "void": 0.4
+    },
+    "annihilated": {
+      "flash": 1,
+      "void": 0.6
+    },
+    "earth_void": {
+      "void": 1
+    },
+    "stopped_spin": {
+      "halfNight": 1
+    },
+    "stopped_life": {
+      "frozen": 1
+    },
+    "unwritten_life": {
+      "noChildren": 1,
+      "withered": 0.8
+    },
+    "no_humans": {
+      "noPeople": 1
+    },
+    "world_end": {
+      "void": 1
+    },
+    "undying_far": {
+      "halo": 1,
+      "noChildren": 1
+    },
+    "far_future": {
+      "ruins": 1,
+      "forest": 0.8
+    },
+    "eternal_instant": {
+      "frozen": 1,
+      "clock": 1
+    },
+    "reversed_chronicle": {
+      "reverse": 1,
+      "clock": 0.6
+    },
+    "closed_time": {
+      "loop": 1,
+      "clock": 0.6
+    },
+    "unraveled_history": {
+      "glitch": 1,
+      "papers": 0.6
+    },
+    "gravity_void": {
+      "float": 1
+    },
+    "slippery_world": {
+      "slide": 1
+    },
+    "breathless": {
+      "fading": 1
+    },
+    "sunless": {
+      "noSun": 1,
+      "snow": 1
+    },
+    "conquered": {
+      "ufo": 1,
+      "soldiers": 0.6
+    },
+    "star_friends": {
+      "ufo": 1,
+      "lanterns": 0.8
+    },
+    "star_voyage": {
+      "rockets": 1
+    },
+    "closed_eternity": {
+      "loop": 1,
+      "halo": 0.6
+    },
+    "utopia": {
+      "joy": 1,
+      "lanterns": 1,
+      "rainbow": 1
+    },
+    "nuclear_winter": {
+      "mushroom": 0.6,
+      "snow": 1
+    },
+    "withered_eternity": {
+      "elders": 1
+    },
+    "undying": {
+      "halo": 1,
+      "elders": 0.6
+    },
+    "meteor_end": {
+      "meteors": 1,
+      "wildfire": 0.6
+    },
+    "machine_victory": {
+      "robotRevolt": 1
+    },
+    "undead": {
+      "zombies": 1
+    },
+    "plague_world": {
+      "miasma": 1,
+      "graves": 0.8
+    },
+    "mind_collapse": {
+      "blank": 1,
+      "graves": 0.6
+    },
+    "scorched": {
+      "heatHaze": 1,
+      "drought": 0.8
+    },
+    "frozen": {
+      "snow": 1,
+      "ice": 1
+    },
+    "paper_money": {
+      "paperMoney": 1
+    },
+    "crowded": {
+      "crowd": 1
+    },
+    "famine_world": {
+      "barren": 1,
+      "marketEmpty": 1
+    },
+    "thirst_world": {
+      "drought": 1
+    },
+    "war_world": {
+      "soldiers": 1,
+      "wildfire": 0.6
+    }
+  },
+  "anomalies": {
+    "causality": {
+      "reverse": 0.6
+    },
+    "duplicate": {
+      "parallel": 0.8,
+      "clones": 0.5
+    },
+    "time_stop": {
+      "frozen": 0.8
+    },
+    "matter_error": {
+      "springs": 0.8
+    },
+    "heat_leak": {
+      "heatHaze": 0.8
+    },
+    "fusion_life": {
+      "sparkles": 0.6,
+      "glowPlants": 0.5
+    },
+    "past_change": {
+      "papers": 0.6,
+      "glitch": 0.3
+    },
+    "meaning_loss": {
+      "noBorders": 0.5,
+      "glitch": 0.3
+    },
+    "vanish": {
+      "glitch": 0.8
+    },
+    "sky_crack": {
+      "skyCrack": 1
+    }
+  },
+  "eventIcons": {
+    "flood": {
+      "rain": 0.8,
+      "seaHigh": 0.5
+    },
+    "fire": {
+      "wildfire": 0.8
+    },
+    "war": {
+      "soldiers": 0.8
+    },
+    "pathogen": {
+      "miasma": 0.7,
+      "masks": 0.4
+    },
+    "meteor": {
+      "meteors": 0.8
+    },
+    "volcano": {
+      "volcano": 0.8
+    },
+    "earth": {
+      "quake": 0.6
+    },
+    "cold": {
+      "snow": 0.7
+    },
+    "temperature": {
+      "heatHaze": 0.7
+    },
+    "water": {
+      "drought": 0.5
+    },
+    "money": {
+      "paperMoney": 0.5,
+      "queue": 0.3
+    },
+    "crime": {
+      "crime": 0.7
+    },
+    "death": {
+      "graves": 0.6
+    },
+    "weapon": {
+      "soldiers": 0.6
+    },
+    "atom": {
+      "flash": 0.5
+    },
+    "anomaly": {
+      "glitch": 0.6
+    },
+    "agriculture": {
+      "withered": 0.5
+    },
+    "plant": {
+      "withered": 0.4
+    },
+    "animal": {
+      "noAnimals": 0.4
+    },
+    "robot": {
+      "robotRevolt": 0.4
+    },
+    "sea": {
+      "seaHigh": 0.4
+    },
+    "wind": {
+      "storm": 0.6,
+      "wind": 0.6
+    },
+    "air": {
+      "smog": 0.5
+    },
+    "nation": {
+      "crowd": 0.5
+    },
+    "society": {
+      "crowd": 0.5
+    },
+    "energy": {
+      "noPower": 0.5
+    },
+    "electricity": {
+      "noPower": 0.5
+    },
+    "oil": {
+      "oilDry": 0.5
+    },
+    "food": {
+      "marketEmpty": 0.5
+    },
+    "sun": {
+      "sunFlicker": 0.5
+    },
+    "unknown": {
+      "ufo": 0.4
+    },
+    "industry": {
+      "factoryIdle": 0.5
+    },
+    "mind": {
+      "blank": 0.4
+    },
+    "birth": {
+      "noChildren": 0.3
+    },
+    "aging": {
+      "elders": 0.4
+    },
+    "medicine": {
+      "noMedicine": 0.4
+    },
+    "health": {
+      "masks": 0.4
+    },
+    "humanity": {
+      "crowd": 0.3
+    },
+    "happiness": {
+      "crowd": 0.3
+    }
+  },
+  "kinds": {
+    "食べ物": "food",
+    "飲み物": "drink",
+    "動物": "animal",
+    "人": "person",
+    "植物": "plant",
+    "機械": "machine",
+    "病名": "disease",
+    "物質": "matter",
+    "天体": "star",
+    "気象": "weather",
+    "場所": "place",
+    "職業": "job",
+    "感情": "feeling",
+    "体の部分": "body",
+    "服": "clothes",
+    "文化": "culture",
+    "学問": "study",
+    "しくみ": "system",
+    "力": "thing",
+    "言葉": "culture"
+  }
+}

@@ -331,7 +331,8 @@ function novelVerbs(law: Law, f: TextFeatures): string[] {
     const t = m[1]!;
     const after = (f.rest || f.text).slice(m.index + t.length);
     if (NOUNISH.test(after) || /^[かやもへ]/u.test(after)) continue;
-    if (COMMON.has(t) || [...own].some((o) => o.includes(t))) continue;
+    // その行の言葉の一部か、その行の言葉を含む言葉（「死亡しない」の「死亡」は「死」の話）は、その行の動き
+    if (COMMON.has(t) || [...own].some((o) => o.includes(t) || t.includes(o))) continue;
     out.push(t);
   }
   return out;
@@ -888,9 +889,14 @@ export function interpretLaw(law: Law, text: string): LawReading {
     const scope = SCOPED.exec(f.text)?.[0] ?? '';
     return { optionId: law.initial, understood: paraphrase(law, { ...f, neg: orig.neg }, orig, scope) };
   }
+  // その行の知らない動きを打ち消した文（「人は死を望まない」の「望まない」）では、
+  // 打ち消しだけを手がかりにする規則（「人は〜ない」）を当てない（「人は死なない」と読まないように）
+  const otherVerb = novelVerbs(law, f).length > 0;
+  const onlyNegation = (r: MatchRule) => r.flip === true && !r.any && !r.rest && (r.all ?? []).every((w) => w.startsWith('@'));
   for (const o of law.options) {
     if (o.kind === 'delete' || !o.match) continue;
-    if (matches(f, orig, o.match, false)) return { optionId: o.id, understood: true };
+    const rules = otherVerb ? o.match.filter((r) => !onlyNegation(r)) : o.match;
+    if (rules.length > 0 && matches(f, orig, rules, false)) return { optionId: o.id, understood: true };
   }
   if (del && isDeletionOf(normalize(text), normalize(origText))) {
     // 言葉を消しただけの文：話題の言葉がなくなった（「人間は毎日を必要とする」）か、

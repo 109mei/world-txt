@@ -1,17 +1,20 @@
-import { CHANNEL_MODES, INDICATOR_IDS, type Crisis, type Ending, type EventDef, type EventEffects, type IndicatorId, type StageId, type StateEffectKey, type TwistRef } from '../data/schema';
+import { CHANNEL_MODES, IMPULSE_KEYS, INDICATOR_IDS, type Crisis, type Ending, type EventDef, type EventEffects, type IconKey, type ImpulseKey, type IndicatorId, type StageId, type StateEffectKey, type TwistRef } from '../data/schema';
 import { activeMeanings, carriedIncoherence, computeChannels, lawTotals, NOISE_INCOHERENCE } from './channels';
 import { checkAll, checkCondition, parseCondition } from './conditions';
 import { capacityLevel, coherenceLevel, computeScores, indicatorLevel, trendOf } from './indicators';
-import { originalText } from './interpret';
+import { originalText, phraseName } from './interpret';
 import { carriesPhrase, eachLine, lineWithPhrase, NO_MEANING, type LineRef } from './lines';
 import { clamp } from './math';
-import { measure, simulateYear } from './model';
+import { measure, simulateYear, targetsOf } from './model';
 import { nextRandom, seedRng } from './rng';
 import { activeTags } from './summary';
-import type { CauseRef, Channels, FailReason, GameData, GameState, HistoryEntry, IndicatorChange, NewsItem, SimState, StepReport, WorldSnapshot } from './types';
+import type { CauseRef, Channels, FailReason, GameData, GameState, HistoryEntry, IndicatorChange, IndicatorMove, NewsItem, SimState, StepReport, WorldSnapshot } from './types';
 
-/** GameState の形の版（セーブの版とは別）。3：行が運ぶ意味（carried）。4：無限の世界の危機と今日の世界。5：結末（ending）。6：心・物価・くり返す世界 */
-export const STATE_SCHEMA = 6;
+/**
+ * GameState の形の版（セーブの版とは別）。3：行が運ぶ意味（carried）。4：無限の世界の危機と今日の世界。5：結末（ending）。6：心・物価・くり返す世界。
+ * 7：去年効いていた意味（inEffect）と書き換えの勢い（impulse）
+ */
+export const STATE_SCHEMA = 7;
 
 export const FAIL_TEXT: Record<FailReason, string> = {
   humanity: '人類の多くが失われ、文明を支えられなくなった。',
@@ -63,6 +66,9 @@ export function upgradeState(g: GameState, data: GameData): GameState {
   if (typeof g.sim.mind !== 'number' || !Number.isFinite(g.sim.mind)) g.sim.mind = data.balance.mind.base;
   if (typeof g.sim.prices !== 'number' || !Number.isFinite(g.sim.prices)) g.sim.prices = 1;
   if (g.loop === undefined) g.loop = null;
+  // 版6まで：去年効いていた意味と、書き換えの勢いはなかった
+  if (!Array.isArray(g.inEffect)) g.inEffect = meaningKeys(meaningsInEffect(g, data));
+  if (!g.impulse || typeof g.impulse !== 'object') g.impulse = {};
   // 画面の項目が増えたときは、足りない項目の点数だけを今の様子から求める
   if (g.derived && INDICATOR_IDS.some((id) => typeof g.scores?.[id] !== 'number')) {
     const now = computeScores(g.sim, { ...g.derived, money: g.derived.money ?? 1 }, data.balance, g.startPop);
@@ -149,7 +155,11 @@ export function createGame(data: GameData, stageId: StageId, seed: number): Game
     ending: null,
     endingYears: {},
     loop: null,
+    inEffect: [],
+    impulse: {},
   };
+  // はじまりの世界（ステージの形を含む）は、もう効いている
+  g.inEffect = meaningKeys(meaningsInEffect(g, data));
   refresh(g, data);
   g.sim.coherence = clamp(100 - g.derived.incoherence, 0, 100);
   refresh(g, data);
@@ -286,6 +296,153 @@ function mostIncoherent(g: GameState, data: GameData): CauseRef | null {
     }
   }
   return src ? causeOf(g, data, src) : null;
+}
+
+// ---------------------------------------------------------------- 世界に効いている意味（効き始めた年の知らせと、情景に使う）
+
+/** 世界に効いている意味の1つ。key は o:法則.読み取り か p:言い回し（どの行が運んでいても同じ意味は1つ） */
+export interface Meaning {
+  key: string;
+  law: string | null;
+  option: string | null;
+  phrase: string | null;
+  src: Source;
+}
+
+/** 今の WORLD.txt で世界に効いている意味（元の文のままの行は数えない）。決まった順に並べる */
+export function meaningsInEffect(g: GameState, data: GameData): Meaning[] {
+  const out: Meaning[] = [];
+  const seen = new Set<string>();
+  const push = (m: Meaning) => {
+    if (seen.has(m.key)) return;
+    seen.add(m.key);
+    out.push(m);
+  };
+  for (const law of data.laws) {
+    const opt = g.laws[law.id] ?? law.initial;
+    if (opt !== law.initial) push({ key: `o:${law.id}.${opt}`, law: law.id, option: opt, phrase: null, src: { kind: 'law', id: law.id } });
+  }
+  for (const m of activeMeanings(g, data)) {
+    const src = lineRef(data, m.lineId);
+    for (const p of m.phrases) push({ key: `p:${p.id}`, law: null, option: null, phrase: p.id, src });
+    if (m.law) push({ key: `o:${m.law.id}.${m.law.option}`, law: m.law.id, option: m.law.option, phrase: null, src });
+  }
+  return out;
+}
+
+export function meaningKeys(ms: readonly Meaning[]): string[] {
+  return ms.map((m) => m.key);
+}
+
+/** 行の今の文章（言い回しの {X} を埋めるため） */
+function lineText(g: GameState, src: Source): string {
+  if (src.kind === 'law') return g.texts[src.id] ?? '';
+  return g.extras.find((x) => x.id === src.id)?.text ?? '';
+}
+
+function meaningIcon(data: GameData, m: Meaning): IconKey {
+  if (m.phrase) return data.phraseById.get(m.phrase)?.icon ?? 'edit';
+  const law = data.lawById.get(m.law ?? '');
+  return (law && data.conceptById.get(law.concept)?.icon) ?? 'edit';
+}
+
+/** 意味が効き始めた年の知らせ（世界がそのとおりに変わった姿） */
+function onsetText(g: GameState, data: GameData, m: Meaning): string | null {
+  if (m.phrase) {
+    const p = data.phraseById.get(m.phrase);
+    return p ? phraseName(p.onset, lineText(g, m.src)) : null;
+  }
+  return data.optionOf.get(m.law ?? '')?.get(m.option ?? '')?.onset ?? null;
+}
+
+/** 意味が世界から消えた年の知らせ（書き足した概念を消した・法則を元の文に戻した） */
+function returnText(g: GameState, data: GameData, key: string): { text: string; icon: IconKey; src: Source | null } | null {
+  if (key.startsWith('p:')) {
+    const p = data.phraseById.get(key.slice(2));
+    // 「{X}がいなくなる」のような言い回しは、何のことだったか分からなくなるので知らせない
+    if (!p || p.name.includes('{X')) return null;
+    return { text: `「${p.name.replace(/（[^）]*）$/u, '')}」世界は、終わった`, icon: p.icon, src: null };
+  }
+  const m = /^o:([^.]+)\./u.exec(key);
+  const law = m ? data.lawById.get(m[1]!) : undefined;
+  // 別の読み取りに書き換えたときは、新しい読み取りの知らせだけを出す
+  if (!law || (g.laws[law.id] ?? law.initial) !== law.initial) return null;
+  return { text: `「${originalText(law)}」が、世界に戻った`, icon: data.conceptById.get(law.concept)?.icon ?? 'edit', src: { kind: 'law', id: law.id } };
+}
+
+/**
+ * 去年書いた一文が、今年から世界に効き始める。効き始めた意味と、世界から消えた意味を知らせ、
+ * 効いている意味を覚え直す（書いただけでは知らせない。時間を進めて初めてわかる）
+ */
+function announceMeanings(g: GameState, data: GameData, now: readonly Meaning[], news: NewsItem[]): void {
+  const prev = new Set(g.inEffect);
+  const cur = new Set(meaningKeys(now));
+  for (const m of now) {
+    if (prev.has(m.key)) continue;
+    const text = onsetText(g, data, m);
+    if (!text) continue;
+    const icon = meaningIcon(data, m);
+    const cause = causeOf(g, data, m.src);
+    news.push({ year: g.year, category: 'WORLD', icon, text, why: null, severity: 'info', surprise: false, cause, onset: true });
+    g.history.push({ year: g.year, kind: 'event', icon, text, why: null, severity: 'info', cause });
+  }
+  for (const key of g.inEffect) {
+    if (cur.has(key)) continue;
+    const back = returnText(g, data, key);
+    if (!back) continue;
+    const cause = back.src ? causeOf(g, data, back.src) : null;
+    news.push({ year: g.year, category: 'WORLD', icon: back.icon, text: back.text, why: null, severity: 'info', surprise: false, cause, onset: true });
+    g.history.push({ year: g.year, kind: 'event', icon: back.icon, text: back.text, why: null, severity: 'info', cause });
+  }
+  g.inEffect = [...cur];
+}
+
+// ---------------------------------------------------------------- 書き換えの勢い
+
+/** 今の WORLD.txt での、ゆっくり動く量の向かう先（世界は変えない） */
+export function targetsNow(g: GameState, data: GameData): Record<ImpulseKey, number> {
+  const { ch } = computeChannels(g, data);
+  const t = lawTotals(data, g);
+  const d = measure(g.sim, ch, data.balance, g.startPop, t.cost, t.incoherence);
+  return targetsOf(g.sim, d, ch, data.balance);
+}
+
+/** 書き換えの前と後の向かう先の差を、次の1年に届ける勢いとして貯める */
+export function addImpulse(g: GameState, before: Record<ImpulseKey, number>, after: Record<ImpulseKey, number>): void {
+  for (const k of IMPULSE_KEYS) {
+    const v = (g.impulse[k] ?? 0) + (after[k] - before[k]);
+    if (Math.abs(v) < 1e-9) delete g.impulse[k];
+    else g.impulse[k] = v;
+  }
+}
+
+const IMPULSE_RANGE: Record<ImpulseKey, [number, number]> = {
+  industry: [0.05, 10],
+  unemployment: [0, 0.6],
+  eco: [0, 100],
+  stability: [0, 100],
+  happiness: [0, 100],
+  tension: [0, 100],
+  mind: [0, 100],
+  coherence: [0, 100],
+  temp: [-10, 10],
+};
+
+/**
+ * 書き換えの勢いを世界に届ける：向かう先が動いた分の balance.impulse の割合だけ、すぐに動かす
+ * （残りは、ふだんの速さで追いつく）。気温が変わらない世界では、気温は動かさない
+ */
+function applyImpulse(g: GameState, data: GameData): void {
+  if (Object.keys(g.impulse).length === 0) return;
+  const share = data.balance.impulse;
+  const hold = clamp(computeChannels(g, data).ch.tempHold, 0, 1);
+  for (const k of IMPULSE_KEYS) {
+    const v = g.impulse[k];
+    if (!v) continue;
+    const [lo, hi] = IMPULSE_RANGE[k];
+    g.sim[k] = clamp(g.sim[k] + v * share[k] * (k === 'temp' ? hold : 1), lo, hi);
+  }
+  g.impulse = {};
 }
 
 // ---------------------------------------------------------------- 予測
@@ -703,11 +860,15 @@ export function stepYear(g: GameState, data: GameData): NewsItem[] {
   // 書き換えで生まれた組み合わせも、時間を進めて初めて知らせる（書き換えただけでは結果を見せない）
   const known = g.combos;
 
-  // 1) 今の法則で世界を1年動かす
+  // 1) 書き換えの勢いを届け、今の法則で世界を1年動かす
+  applyImpulse(g, data);
+  const meanings = meaningsInEffect(g, data);
   const ch0 = refresh(g, data);
   const out = simulateYear(g, ch0, b, false);
   g.year += 1;
   g.sim.capacityMax = Math.max(stage.capacity * 0.5, g.sim.capacityMax - stage.capacityDecay);
+  // 去年書いた一文が、今年から世界に効き始めた（世界がそのとおりに変わった姿を、まず知らせる）
+  announceMeanings(g, data, meanings, news);
 
   // 2) 遅れて効く副作用が育ち、一時的な出来事の効果が切れていく
   const tc = twistCauses(g, data);
@@ -831,6 +992,8 @@ function wordsOf(g: GameState, data: GameData): Record<IndicatorChange['id'], { 
 export function advance(g: GameState, data: GameData, years: number): StepReport {
   const from = g.year;
   const before = wordsOf(g, data);
+  const popFrom = g.sim.pop;
+  const effectBefore = new Set(g.inEffect);
   const news: NewsItem[] = [];
   let interrupted: string | null = null;
   for (let i = 0; i < years && g.status === 'playing'; i++) {
@@ -851,7 +1014,17 @@ export function advance(g: GameState, data: GameData, years: number): StepReport
     const per = delta / Math.max(1, g.year - from);
     changes.push({ id, from: before[id].word, to: after[id].word, trend: trendOf(per, t.fast, t.slow), better: delta > 0 });
   }
-  const report: StepReport = { from, to: g.year, requested: years, interrupted, changes, news };
+  // 状態語は変わらなくても、はっきり動いた項目は矢印で見せる
+  const moves: IndicatorMove[] = [];
+  for (const id of INDICATOR_IDS) {
+    if (before[id].word !== after[id].word) continue;
+    const delta = after[id].score - before[id].score;
+    const per = delta / Math.max(1, g.year - from);
+    if (Math.abs(per) < t.slow) continue;
+    moves.push({ id, trend: trendOf(per, t.fast, t.slow), better: delta > 0 });
+  }
+  const became = g.inEffect.filter((k) => !effectBefore.has(k));
+  const report: StepReport = { from, to: g.year, requested: years, interrupted, changes, moves, pop: { from: popFrom, to: g.sim.pop }, became, news };
   g.report = report;
   return report;
 }

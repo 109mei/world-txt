@@ -21,6 +21,9 @@ import {
   type WorldSummary,
 } from '../core';
 import { clamp } from '../core/math';
+import { sceneView, type SceneView } from './scene';
+
+export type { SceneView } from './scene';
 import {
   CHANNEL_IDS,
   INDICATOR_IDS,
@@ -120,6 +123,8 @@ export interface GameView {
   report: StepReport | null;
   summary: WorldSummary;
   analysis: { label: string; value: string }[];
+  /** 世界の情景（世界のタブの絵） */
+  scene: SceneView;
 }
 
 export function populationText(pop: number): string {
@@ -310,6 +315,7 @@ export function buildView(g: GameState, data: GameData): GameView {
       { label: '世界整合性', value: `${Math.round(sim.coherence)}` },
       { label: '世界容量', value: `${d.capacityUsed} / ${Math.floor(sim.capacityMax)}字` },
     ],
+    scene: sceneView(g, data),
   };
 }
 

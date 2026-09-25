@@ -49,12 +49,17 @@ function negatePredicate(s: string): string | null {
   return null;
 }
 
-/** 文を打ち消す（文の終わりの述語だけを変える）。打ち消せなければ null */
+/** 文を打ち消す（文の終わりの述語だけを変える）。文の終わりの「。」は、書いてあればそのまま残す。打ち消せなければ null */
 export function negate(text: string): string | null {
   const tail = TAIL.exec(text)?.[0] ?? '';
   const body = text.slice(0, text.length - tail.length);
   const out = negatePredicate(body);
-  return out === null ? null : out + (tail || (text.trim() === '' ? '' : '。'));
+  return out === null ? null : out + tail;
+}
+
+/** 文の終わりの「。」を外す（「。」は書き込むときに世界が付けるので、書き換えるときは要らない） */
+export function withoutPeriod(text: string): string {
+  return text.trim().replace(/[。．]+$/u, '');
 }
 
 /**

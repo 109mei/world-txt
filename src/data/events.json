@@ -202,5 +202,6 @@
   {"id":"acid_rain_note","category":"NATURE","icon":"climate","text":"酸性の雨が降り、森が枯れ、湖の魚が消えはじめた","why":"1970〜80年代、ヨーロッパや北米では酸性雨で森や湖の生き物が弱った。","when":["phrase:acid_rain"],"surprise":true},
   {"id":"air_pollution_note","category":"HEALTH","icon":"air","text":"汚れた空気で、咳き込む人と病院へ運ばれる人が増えている","why":"大気汚染による死者は、世界で年に約700万人とされる（WHO）。","when":["phrase:air_pollution"],"surprise":true},
   {"id":"desertification_note","category":"NATURE","icon":"earth","text":"砂漠が広がり、畑と牧草地が砂に呑まれている","why":"世界の陸地の約4割は乾燥地で、そこに約20億人が暮らしている。","when":["phrase:desertification"],"surprise":true},
-  {"id":"brain_net_note","category":"SCIENCE","icon":"mind","text":"人々の脳がネットにつながり、考えたことがそのまま画面に映るようになった","why":"脳に埋めた電極で、考えただけで画面のカーソルを動かす研究が進んでいる。","when":["phrase:brain_net"],"surprise":true}
+  {"id":"brain_net_note","category":"SCIENCE","icon":"mind","text":"人々の脳がネットにつながり、考えたことがそのまま画面に映るようになった","why":"脳に埋めた電極で、考えただけで画面のカーソルを動かす研究が進んでいる。","when":["phrase:brain_net"],"surprise":true},
+  {"id":"death_wish_note","category":"SOCIETY","icon":"death","text":"生きる望みを失った人々が、次々と世を去っていく","why":"心の健康は、生きる力を支えている。心が深く傷つくと、体を守る力も弱まることが知られている。","when":["phrase:death_wish"],"surprise":true,"severity":"critical"}
 ]

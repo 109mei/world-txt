@@ -233,6 +233,21 @@ describe('古い形の世界', () => {
     expect(up.loop).toBeNull();
     expect(() => advance(up, gameData, 2)).not.toThrow();
   });
+
+  it('去年効いていた意味と書き換えの勢いがない世界（版6まで）は、今の意味で補う（読み込んだだけで「効き始めた」と知らせない）', () => {
+    const g = createGame(gameData, 'food', 1);
+    addLine(g, gameData, '人間は空を飛べる。');
+    advance(g, gameData, 1);
+    const old = JSON.parse(JSON.stringify(g));
+    delete old.inEffect;
+    delete old.impulse;
+    old.schema = 6;
+    const up = upgradeState(old, gameData);
+    expect(up.inEffect).toEqual(['p:flight']);
+    expect(up.impulse).toEqual({});
+    const rep = advance(up, gameData, 1);
+    expect(rep.news.filter((n) => n.onset)).toEqual([]);
+  });
 });
 
 /** 入れられる文字数に上限のある入れ物（端末の保存領域の空きが少ないとき） */

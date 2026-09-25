@@ -207,3 +207,51 @@ describe('条件の書き方', () => {
     expect(() => parseCondition('law:death=not_human || ')).toThrow();
   });
 });
+
+describe('書き換えた年の世界（効き始めの知らせと、書き換えの勢い）', () => {
+  it('書いた一文は、時間を進めた最初の年に「世界がそのとおりに変わった」と知らせる（次の年からは知らせない）', () => {
+    const g = createGame(gameData, 'food', 1);
+    rewriteLaw(g, gameData, 'human_food', '人間は数日に一度食事を必要とする');
+    // 書いただけでは、まだ知らせない（結果は時間を進めて初めてわかる）
+    expect(g.inEffect).toEqual([]);
+    const first = advance(g, gameData, 1);
+    const onset = first.news.filter((n) => n.onset);
+    expect(onset.map((n) => n.text)).toEqual([gameData.optionOf.get('human_food')!.get('few_days')!.onset]);
+    expect(onset[0]!.cause?.text).toBe('人間は数日に一度食事を必要とする。');
+    expect(first.became).toEqual(['o:human_food.few_days']);
+    expect(advance(g, gameData, 1).news.filter((n) => n.onset)).toEqual([]);
+    // 元の文に戻すと、次の年に「戻った」と知らせる
+    rewriteLaw(g, gameData, 'human_food', '人間は毎日食事を必要とする。');
+    const back = advance(g, gameData, 1).news.filter((n) => n.onset);
+    expect(back.map((n) => n.text)).toEqual(['「人間は毎日食事を必要とする。」が、世界に戻った']);
+  });
+
+  it('書き換えの勢い：社会を揺らす書き換えは、最初の1年で大きく動く（勢いがなければ、ゆっくり動く）', () => {
+    const still = { ...gameData, balance: { ...gameData.balance, impulse: Object.fromEntries(Object.keys(gameData.balance.impulse).map((k) => [k, 0])) as typeof gameData.balance.impulse } };
+    const run = (data: typeof gameData) => {
+      const base = createGame(data, 'food', 3);
+      advance(base, data, 1);
+      const g = createGame(data, 'food', 3);
+      addLine(g, data, '人が人を食べる。');
+      advance(g, data, 1);
+      return base.sim.stability - g.sim.stability;
+    };
+    const withImpulse = run(gameData);
+    const without = run(still);
+    expect(without).toBeGreaterThan(0);
+    expect(withImpulse).toBeGreaterThan(without * 1.8);
+  });
+
+  it('書き換えの勢いは書いた年の次の1年だけで、同じ種・同じ書き換えなら同じ結果になる', () => {
+    const play = () => {
+      const g = createGame(gameData, 'war', 9);
+      addLine(g, gameData, '人の心が通じ合う。');
+      expect(Object.keys(g.impulse).length).toBeGreaterThan(0);
+      advance(g, gameData, 1);
+      expect(g.impulse).toEqual({});
+      advance(g, gameData, 5);
+      return JSON.stringify(g.sim);
+    };
+    expect(play()).toBe(play());
+  });
+});

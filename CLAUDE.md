@@ -28,6 +28,7 @@
 6. 見つけたもの（読み取り・副作用・出来事・結末など）は core が GameState.found に残し、runtime が観測記録（progress.discovered）へ移す。新しい内容を足したら、観測記録にも自動で並ぶ
 7. 数値をコードに直接書かない。balance.json などのデータに置く
 8. セーブには版番号を入れ、古い版から新しい版へ変換する関数（src/save/migrations.ts）を用意する。GameState に項目を足したら、古い形を補う処理（core の upgradeState）も足す
+9. 概念（phrases.json）や法則の読み取り（laws.json の options）を足したら、効き始めた年の知らせ（onset）と情景での描き方（scene）も書く。書いた一文は、時間を進めた最初の年に「世界が書き換わった」と知らせ、情景にそのとおりに描く（書いただけでは見せない）。描く要素（SCENE_MOTIFS）を足したら、src/ui/scene に絵を描く（データの検査と tests/scene.test.ts が確かめる）
 
 ## 安全の決まり
 
@@ -47,11 +48,11 @@
 ## フォルダ
 
 - src/core：ルール本体（状態・進行・命令・読み取り・乱数）
-- src/data：JSON と Zod のスキーマ
-- src/store：Zustand と写し（view）、観測記録の写し（records）、無限の世界の記録簿（ranking）
-- src/ui：React の部品と CSS、タイトルの絵、BGM、共有画像（shareImage）、入力の補助（wording）
+- src/data：JSON と Zod のスキーマ（情景を動かすものは scene.json）
+- src/store：Zustand と写し（view）、世界の情景の写し（scene）、観測記録の写し（records）、無限の世界の記録簿（ranking）
+- src/ui：React の部品と CSS、タイトルの絵、世界の情景（WorldScene と scene/ の層：空・天気・大地・海・町・人々・全体の効果。開発用の一覧は ?gallery=1）、BGM、共有画像（shareImage）、入力の補助（wording）
 - src/save：SaveStore
-- tests：Vitest（決定性・セーブと記録簿（控え・空き不足・読み込みの安全）・読み取り・無茶な書き換え（wild）・総当たり（fuzz）・ルール・無限の世界（endless）・くり返す十年（loop）・結末（endings）・実績（achievements）・入力の補助（wording）・手触りの目安）
+- tests：Vitest（決定性・セーブと記録簿（控え・空き不足・読み込みの安全）・読み取り・無茶な書き換え（wild）・総当たり（fuzz）・ルール・無限の世界（endless）・くり返す十年（loop）・結末（endings）・実績（achievements）・入力の補助（wording）・世界の情景（scene）・手触りの目安）
 - e2e：Playwright
 - scripts：シミュレーター（npm run sim）と作戦・ボット（無限の世界のボットは endless.ts）、結末の筋書き（worlds.ts）、読み取りの総当たり（fuzz.ts）
 - docs：SPEC.md、PLAN.md（企画書）、screens/（スクリーンショット）

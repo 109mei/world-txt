@@ -15,6 +15,7 @@ import indicatorsRaw from './indicators.json';
 import lawsRaw from './laws.json';
 import lexiconRaw from './lexicon.json';
 import phrasesRaw from './phrases.json';
+import sceneRaw from './scene.json';
 import stagesRaw from './stages.json';
 import tagsRaw from './tags.json';
 import twistsRaw from './twists.json';
@@ -31,10 +32,12 @@ import {
   LawSchema,
   LexiconSchema,
   PhraseSchema,
+  SceneDataSchema,
   StageSchema,
   TagSchema,
   TwistSchema,
   type LawOption,
+  type SceneSpec,
   type MatchRule,
   type StageId,
 } from './schema';
@@ -55,6 +58,7 @@ export interface RawData {
   crises: unknown;
   endings: unknown;
   achievements: unknown;
+  scene: unknown;
 }
 
 export const RAW_DATA: RawData = {
@@ -73,6 +77,7 @@ export const RAW_DATA: RawData = {
   crises: crisesRaw,
   endings: endingsRaw,
   achievements: achievementsRaw,
+  scene: sceneRaw,
 };
 
 export class DataError extends Error {}
@@ -109,6 +114,7 @@ export function buildGameData(raw: RawData): GameData {
       .sort((a, b) => b.e.priority - a.e.priority || a.i - b.i)
       .map((x) => x.e),
     achievements: z.array(AchievementSchema).parse(raw.achievements),
+    scene: SceneDataSchema.parse(raw.scene),
     lawById: new Map(),
     optionOf: new Map(),
     conceptById: new Map(),
@@ -227,6 +233,21 @@ export function buildGameData(raw: RawData): GameData {
     for (const c of a.progress) if (!/^(cleared|worlds|discovered|endlessBest|endings|achievements|abandoned)\s*(<=|>=|==|<|>)\s*\d+$/.test(c)) problems.push(`実績 ${a.id}: 進み具合の条件が読めない ${c}`);
   }
   for (const law of data.laws) for (const w of law.exists) if (!law.subject.includes(w) && !law.topic.includes(w) && !originalText(law).startsWith(w)) problems.push(`法則 ${law.id}: exists の ${w} が主語にも話題にもない`);
+  // 情景：絵に描く相手が内容にあるか。書き換え（法則の読み取り・概念）は、どれも情景のどこかを変える
+  const sceneOf = (s: SceneSpec | undefined) => !!s && (Object.keys(s.motifs).length > 0 || !!s.specimen || s.stele);
+  for (const law of data.laws) {
+    for (const o of law.options) {
+      if (o.kind === 'original') continue;
+      if (!o.onset) problems.push(`法則 ${law.id}=${o.id}: 効き始めた年の知らせ（onset）がない`);
+      if (!sceneOf(o.scene)) problems.push(`法則 ${law.id}=${o.id}: 情景での描き方（scene）がない`);
+    }
+  }
+  for (const p of data.phrases) if (!sceneOf(p.scene)) problems.push(`言い回し ${p.id}: 情景での描き方（scene）がない`);
+  for (const id of Object.keys(data.scene.twists)) if (!data.twistById.has(id)) problems.push(`情景: 知らない副作用 ${id}`);
+  for (const id of Object.keys(data.scene.crises)) if (!data.crisisById.has(id)) problems.push(`情景: 知らない危機 ${id}`);
+  for (const id of Object.keys(data.scene.endings)) if (!data.endingById.has(id)) problems.push(`情景: 知らない結末 ${id}`);
+  for (const id of Object.keys(data.scene.anomalies)) if (!data.anomalies.some((a) => a.id === id)) problems.push(`情景: 知らない世界異常 ${id}`);
+  for (const k of Object.keys(data.scene.kinds)) if (!lex.kinds[k] && !Object.values(lex.suffixes).includes(k)) problems.push(`情景: 知らない言葉の種類 ${k}`);
   if (data.stages.length === 0) problems.push('ステージがない');
   if (problems.length > 0) throw new DataError(problems.join('\n'));
   return data;

@@ -67,8 +67,8 @@ function useKeyboardInset(): { inset: number; visible: number } {
   return state;
 }
 
-/** 下から出る画面 */
-export function Sheet({ title, onClose, children, testId }: { title: ReactNode; onClose: () => void; children: ReactNode; testId?: string }) {
+/** 下から出る画面。footer は読み進めても隠れない（いちばん下に留まる） */
+export function Sheet({ title, onClose, children, testId, footer }: { title: ReactNode; onClose: () => void; children: ReactNode; testId?: string; footer?: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const kb = useKeyboardInset();
   useEffect(() => {
@@ -92,6 +92,7 @@ export function Sheet({ title, onClose, children, testId }: { title: ReactNode; 
           </button>
         </div>
         <div className="sheet-body">{children}</div>
+        {footer && <div className="sheet-foot">{footer}</div>}
       </div>
     </div>
   );

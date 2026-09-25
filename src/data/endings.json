@@ -282,7 +282,7 @@
     "why": "世界では毎年約1億3000万人が生まれ、約6000万人が亡くなる。どちらもなくなれば、人口はそのまま止まる。",
     "icon": "cycle",
     "when": ["law:death=not_human|delete|eternal || phrase:immortal", "law:human_birth=delete", "civ >= 57", "minScore >= 35"],
-    "years": 12,
+    "years": 10,
     "warn": "誰も死なず、誰も生まれない世界が始まった。文明が保たれれば、あと{n}年で永遠になる",
     "priority": 45
   },
@@ -383,7 +383,7 @@
     "text": "人々の心が先に尽き、文明を支えられなくなった。",
     "why": "世界では約2億8000万人がうつ病を抱えているとされる（WHO）。心の不調は、働くことも学ぶことも難しくする。",
     "icon": "mind",
-    "when": ["mind <= 20"],
+    "when": ["mind <= 20 || phrase:death_wish"],
     "priority": 19
   },
   {

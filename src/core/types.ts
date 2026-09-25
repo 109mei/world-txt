@@ -9,6 +9,7 @@ import type {
   Ending,
   EventDef,
   IconKey,
+  ImpulseKey,
   IndicatorId,
   Indicators,
   Law,
@@ -17,6 +18,7 @@ import type {
   Mods,
   NewsCategory,
   Phrase,
+  SceneData,
   Severity,
   Stage,
   StageId,
@@ -41,6 +43,8 @@ export interface GameData {
   crises: Crisis[];
   endings: Ending[];
   achievements: Achievement[];
+  /** 法則・概念のほかに情景を動かすもの */
+  scene: SceneData;
   // 索引
   lawById: Map<string, Law>;
   optionOf: Map<string, Map<string, LawOption>>;
@@ -155,6 +159,8 @@ export interface NewsItem {
   surprise: boolean;
   /** プレイヤーの書いたどの行から来たか */
   cause: CauseRef | null;
+  /** 書き換えた一文が効き始めた（世界がそのとおりに変わった）知らせ */
+  onset?: boolean;
 }
 
 export type HistoryKind = 'start' | 'edit' | 'event' | 'twist' | 'combo' | 'anomaly' | 'war' | 'crisis' | 'end';
@@ -168,6 +174,13 @@ export interface HistoryEntry {
   severity: Severity;
   /** プレイヤーの書いたどの行から来たか（古いセーブにはない） */
   cause?: CauseRef | null;
+}
+
+/** 状態語は変わらないが、はっきり動いた項目（矢印だけで見せる） */
+export interface IndicatorMove {
+  id: IndicatorId;
+  trend: Trend;
+  better: boolean;
 }
 
 export interface IndicatorChange {
@@ -186,6 +199,12 @@ export interface StepReport {
   /** 重大な出来事で途中で止まったとき、その理由 */
   interrupted: string | null;
   changes: IndicatorChange[];
+  /** 状態語は変わらないが、はっきり動いた項目 */
+  moves?: IndicatorMove[];
+  /** 人口（億人）：進める前と後 */
+  pop?: { from: number; to: number };
+  /** この年から効き始めた意味（inEffect の鍵）。情景で、新しく描かれたものを見せる */
+  became?: string[];
   news: NewsItem[];
 }
 
@@ -261,6 +280,13 @@ export interface GameState {
   endingYears: Record<string, number>;
   /** くり返す世界（ステージ「くり返す十年」）：くり返しが始まった年と、その年の世界の様子、巻き戻った回数、抜け出したか */
   loop: TimeLoop | null;
+  /**
+   * 去年1年のあいだ世界に効いていた意味（o:法則.読み取り、o:法則.読み取り@行、p:言い回し@行）。
+   * 書いたばかりの行は、時間を進めて初めてここに入る（情景も知らせも、時間を進めてから）
+   */
+  inEffect: string[];
+  /** 書き換えの勢い：まだ世界に届いていない、ゆっくり動く量の向かう先の動き（次の1年で balance.impulse の割合だけ動く） */
+  impulse: Partial<Record<ImpulseKey, number>>;
 }
 
 /** 巻き戻るときに戻す、世界の側の様子（書き手の側のもの＝WORLD.txt・書換の力・世界容量・観測記録・世界史は含めない） */

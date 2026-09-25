@@ -97,6 +97,10 @@ export const GameStateSchema = z.looseObject({
     })
     .nullable()
     .optional(),
+  /** 去年効いていた意味（版7から。古いセーブにはないので、読み込むときに補う） */
+  inEffect: z.array(id).max(5000).optional(),
+  /** 書き換えの勢い（版7から） */
+  impulse: z.record(id, num).optional(),
 });
 
 export const SettingsSchema = z.object({
@@ -105,6 +109,8 @@ export const SettingsSchema = z.object({
   analysis: z.boolean(),
   /** 効果音（古いセーブにはないので、既定で ON） */
   se: z.boolean().default(true),
+  /** 世界の情景を動かす（古いセーブにはないので、既定で ON） */
+  motion: z.boolean().default(true),
 });
 
 export const ProgressSchema = z.object({
@@ -162,5 +168,5 @@ export const SaveDataSchema = z.object({
 export type Settings = z.infer<typeof SettingsSchema>;
 export type Progress = z.infer<typeof ProgressSchema>;
 
-export const DEFAULT_SETTINGS: Settings = { bgm: true, volume: 0.6, analysis: false, se: true };
+export const DEFAULT_SETTINGS: Settings = { bgm: true, volume: 0.6, analysis: false, se: true, motion: true };
 export const EMPTY_PROGRESS: Progress = { cleared: [], best: {}, worlds: 0, discovered: [], endless: [], ranking: [], achievements: [], abandoned: 0 };

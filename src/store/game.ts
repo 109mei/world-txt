@@ -42,6 +42,8 @@ interface UiState {
   elsewhere: boolean;
   /** 保存についての知らせ（保存できなかった・保存できない画面） */
   saveWarning: string | null;
+  /** いま書いたばかりの行（定義の一覧で、インクがにじむように光らせる） */
+  justWrote: string | null;
 }
 
 export const useGame = create<UiState>(() => ({
@@ -50,7 +52,7 @@ export const useGame = create<UiState>(() => ({
   sheet: null,
   briefing: null,
   view: null,
-  settings: { bgm: true, volume: 0.6, analysis: false, se: true },
+  settings: { bgm: true, volume: 0.6, analysis: false, se: true, motion: true },
   progress: { cleared: [], best: {}, worlds: 0, discovered: [], endless: [], ranking: [], achievements: [], abandoned: 0 },
   hasGame: false,
   lawFilter: { concept: null, query: '' },
@@ -61,6 +63,7 @@ export const useGame = create<UiState>(() => ({
   loadError: null,
   elsewhere: false,
   saveWarning: null,
+  justWrote: null,
 }));
 
 let runtime: GameRuntime | null = null;
@@ -252,6 +255,8 @@ export function editMessage(res: EditResult, text: string, fresh: boolean, onLaw
   return `${noiseText(res.noise)}。${NOISE_EFFECT}${onLaw ? '（この行の意味は、書き換える前のまま）' : ''}`;
 }
 
+let justTimer: ReturnType<typeof setTimeout> | null = null;
+
 /** 書いた文章で世界を書き換える。結果は時間を進めるまでわからない */
 export function writeWorld(target: EditTarget, text: string): boolean {
   const rt = getRuntime();
@@ -261,7 +266,12 @@ export function writeWorld(target: EditTarget, text: string): boolean {
     return false;
   }
   const fresh = rt.fresh.some((id) => id.startsWith('r:') || id.startsWith('p:'));
-  useGame.setState({ sheet: null });
+  // 書いた行：法則の行はその行、書き足した行は最後の行（ほかの行の書き換えとして読んだときは、その行）
+  const g = rt.state;
+  const wrote = res.redirect ?? (target.kind === 'new' ? (g?.extras[g.extras.length - 1]?.id ?? null) : target.id);
+  useGame.setState({ sheet: null, justWrote: wrote });
+  if (justTimer) clearTimeout(justTimer);
+  justTimer = setTimeout(() => useGame.setState({ justWrote: null }), 2600);
   refreshView();
   const got = rt.fresh.filter((id) => id.startsWith('ach:'));
   const msg = editMessage(res, text, fresh, target.kind === 'law');
@@ -281,10 +291,19 @@ function reducedMotion(): boolean {
 }
 
 let passTimer: ReturnType<typeof setTimeout> | null = null;
+/** 時間の流れる演出が終わったら結果を開く（演出を飛ばしたときも同じ） */
+let passDone: (() => void) | null = null;
 
 /** 時間の流れる演出の長さ（ミリ秒）。進めた年数が多いほど少し長い */
 export function passDuration(years: number): number {
-  return Math.min(1100, 380 + 150 * years);
+  return Math.min(1200, 520 + 180 * years);
+}
+
+/** 時間の流れる演出を飛ばして、すぐに結果を開く（演出の画面をタップしたとき） */
+export function skipPassing(): void {
+  if (!passDone) return;
+  if (passTimer) clearTimeout(passTimer);
+  passDone();
 }
 
 /** years 年進める。instant なら演出なしで結果を開く（テスト・デバッグ用） */
@@ -296,6 +315,7 @@ export function advanceYears(years: number, instant = false): void {
   refreshView();
   const done = () => {
     passTimer = null;
+    passDone = null;
     useGame.setState({ passing: null, sheet: { kind: 'report' }, fresh: [...rt.fresh] });
   };
   const span = report.to - report.from;
@@ -306,6 +326,7 @@ export function advanceYears(years: number, instant = false): void {
   // YEAR が数え上がるのを見せてから、結果を開く
   useGame.setState({ passing: { from: report.from, to: report.to }, sheet: null });
   if (passTimer) clearTimeout(passTimer);
+  passDone = done;
   passTimer = setTimeout(done, passDuration(span));
 }
 

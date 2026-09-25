@@ -73,6 +73,12 @@ async function start(): Promise<void> {
     if (e.key === SAVE_KEY) markElsewhere();
   });
 
+  // 開発中だけ：情景の要素を並べて見る（?gallery=1。公開用のビルドには入らない）
+  if (import.meta.env.DEV && params.get('gallery') === '1') {
+    const { SceneGallery } = await import('./ui/SceneGallery');
+    createRoot(document.getElementById('root')!).render(<SceneGallery />);
+    return;
+  }
   createRoot(document.getElementById('root')!).render(<App />);
 
   if (debug) {
@@ -91,6 +97,15 @@ async function start(): Promise<void> {
         rewrite: (lawId: string, text: string) => writeWorld({ kind: 'law', id: lawId }, text),
         add: (text: string) => writeWorld({ kind: 'new' }, text),
         goStages: () => goStages(),
+        // 試しに多くを書き換えるため、書換の力と世界容量に余裕を持たせる（開発とテストだけ）
+        boost: () => {
+          const g = getRuntime().state;
+          if (g) {
+            g.edits.left = 99;
+            g.sim.capacityMax += 3000;
+          }
+          refreshView();
+        },
         ui: () => {
           const s = useGame.getState();
           return { screen: s.screen, tab: s.tab, sheet: s.sheet };

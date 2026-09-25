@@ -8,6 +8,7 @@ import { Curve } from '../Curve';
 import { EMOJI, Icon } from '../icons';
 import { CauseLine } from '../parts';
 import { renderCard } from '../shareImage';
+import { WorldScene } from '../WorldScene';
 
 /** 終わった世界のカード（SNSで共有できる形） */
 export function Result() {
@@ -109,6 +110,8 @@ export function Result() {
   return (
     <div className="page result" data-testid="result">
       <div className={cleared ? 'result-status good' : 'result-status bad'}>{cleared ? 'MISSION COMPLETE' : endless ? 'THE END OF THE WORLD' : 'WORLD COLLAPSED'}</div>
+      {/* 世界の最後の姿（結末の情景） */}
+      <WorldScene scene={view.scene} compact testId="result-scene" />
       {view.ending && (
         <section className={`ending ending-${view.ending.kind}`} data-testid="ending">
           <div className="ending-label">結末</div>

@@ -175,6 +175,258 @@ export const ICON_KEYS = [
 export type IconKey = (typeof ICON_KEYS)[number];
 export const IconKeySchema = z.enum(ICON_KEYS);
 
+// ---------------------------------------------------------------- 世界の情景（世界のタブの絵）
+
+/**
+ * 情景に描く要素。書き換えた法則・書き足した概念・副作用・危機・結末が、それぞれどの要素をどれだけ描くかを持つ（0〜1）。
+ * 要素の絵は src/ui/scene にある。書き換えから来た要素はインクの色で描く
+ */
+export const SCENE_MOTIFS = [
+  // 空と宇宙
+  'twoSuns', // 二つ目の太陽
+  'noSun', // 太陽が照らさない
+  'sunDim', // 太陽が暗い
+  'sunBright', // 太陽が明るい
+  'sunFlicker', // 太陽が揺らぐ
+  'sunNear', // 太陽が大きい（近い）
+  'sunFar', // 太陽が小さい（遠い）
+  'sunHole', // 太陽がブラックホールになった
+  'blackHole', // 空のブラックホール
+  'eternalDay', // 夜が来ない
+  'eternalNight', // 夜が明けない
+  'halfNight', // 昼と夜が分かれたまま（自転が止まった）
+  'noMoon', // 月がない
+  'ozone', // 紫の日差し（オゾン層がない）
+  'aurora', // オーロラ
+  'meteors', // 降る隕石
+  'meteorMiss', // それていく隕石
+  'ufo', // 宇宙人の船
+  'rockets', // 星々へ向かうロケット
+  'starsDim', // 星が減る
+  'starsMore', // 星が増える
+  'lightTrails', // 光の尾（光が遅い）
+  'sparkles', // ふしぎな光（魔法）
+  'godLight', // 天からの光
+  'eye', // 空の目（機械・監視）
+  'ghosts', // 淡い影（幽霊・魂）
+  'grid', // 世界の格子（シミュレーション）
+  'clock', // 空の時計（時間の書き換え）
+  'frozen', // 止まった時間
+  'reverse', // 逆さの時間
+  'loop', // くり返す時間
+  'fast', // 速い時間
+  'parallel', // もう一つの町（並行世界）
+  'void', // ほどけていく世界
+  'strings', // 空から垂れる糸（運命・水槽の脳）
+  'dreams', // 夢の泡
+  'flash', // 光の炸裂（反物質・原子炉）
+  'mushroom', // きのこ雲
+  'glitch', // 世界の揺らぎ
+  'skyCrack', // 空の亀裂
+  // 天気
+  'clouds', // 雲が多い
+  'noClouds', // 雲がない・空が澄む
+  'rain', // 雨
+  'acidRain', // 酸性の雨
+  'drought', // 干上がった大地
+  'snow', // 雪
+  'ice', // 氷（氷河・凍った海）
+  'heatHaze', // 陽炎
+  'wind', // 強い風
+  'still', // 風が止まる
+  'smog', // 汚れた空気
+  'storm', // 嵐と雷
+  'rainbow', // 虹
+  'volcano', // 噴火
+  'quake', // 地割れ
+  'stones', // 降る白い石（二酸化炭素が石になる）
+  'pollenWind', // 風に舞う花粉
+  'crows', // 不吉な鳥
+  'miasma', // 病の瘴気
+  // 大地と生き物
+  'forest', // 森が茂る
+  'noForest', // 切り株
+  'wildfire', // 山火事
+  'desert', // 砂丘
+  'greenDesert', // 緑の砂丘
+  'moreLand', // 新しい陸地
+  'fieldsEverywhere', // どこでも畑
+  'seaFields', // 海の上の畑
+  'barren', // 耕されない畑
+  'tallCrops', // 高く伸びる作物
+  'withered', // 枯れた草木
+  'glowPlants', // 光る草木
+  'harvest', // 黄金の実り
+  'manna', // 空から降る食べ物
+  'granary', // 蔵
+  'animals', // 獣の群れ
+  'noAnimals', // 獣がいない
+  'noLivestock', // 牧場の家畜がいない
+  'bees', // ハチ
+  'noBees', // ハチがいない
+  'birds', // 鳥の群れ
+  'insects', // 蚊や害虫の群れ
+  'noInsects', // 害虫がいない（蝶だけ）
+  'rats', // ネズミ
+  'dinosaurs', // 恐竜
+  'mammoth', // よみがえった生き物
+  'animalKing', // 獣の王
+  'talk', // 人と動物の会話
+  'ruins', // 苔むした廃墟
+  // 海と水
+  'seaHigh', // 海面が高い
+  'noSea', // 干上がった海
+  'freshSea', // 澄んだ海
+  'saltSea', // 塩の浜
+  'seaBubbles', // 海から湧く泡
+  'seaCity', // 海底の町
+  'springs', // 湧き水
+  // 町と技術と社会
+  'megacity', // 巨大な塔
+  'villages', // 小さな村
+  'walls', // 国境の壁
+  'noBorders', // 国境がない
+  'oneFlag', // 一つの旗
+  'statue', // 独裁者の像
+  'flags', // たくさんの旗
+  'queue', // 人の列
+  'robots', // ロボット
+  'robotRevolt', // 牙をむく機械
+  'aiCore', // 光る機械の塔
+  'dna', // 遺伝子の螺旋
+  'screensOff', // 消えた電波塔
+  'wireless', // 導線のない送電塔
+  'noPower', // 電気のない町
+  'battery', // 尽きない電池
+  'freeEnergy', // 無から生まれる光
+  'fusion', // 核融合の炉
+  'reactor', // 原子炉が盛ん
+  'noReactor', // 原子炉がない
+  'oilDry', // 止まった油井
+  'oilGush', // 噴き出す油井
+  'steam', // 煙が白い湯気
+  'factoryIdle', // 止まった工場
+  'autoCars', // ひとりでに走る車
+  'portals', // 瞬間移動の輪
+  'cureAll', // 光る病院
+  'noMedicine', // 灯りの消えた病院
+  'noSchool', // 鐘の鳴らない学校
+  'lab', // 光る研究所
+  'labDark', // 灯りの消えた研究所
+  'coins', // 金貨
+  'noMoney', // 物々交換
+  'moneyRain', // 湧き出す金貨
+  'paperMoney', // 舞う紙幣
+  'gold', // 金のきらめき
+  'cashless', // 光る支払い端末
+  'papers', // 舞う紙
+  'crime', // 夜の影
+  'lanterns', // 灯籠
+  'cameras', // 見張りのカメラ
+  'graves', // 墓標
+  'temple', // 光る祠
+  'noTemple', // 灯りの消えた祠
+  'stadium', // 競技場
+  'doves', // 鳩
+  'soldiers', // 兵士
+  'noWeapons', // 置かれた武器
+  'marketEmpty', // 人のいない市場
+  'marketBusy', // にぎわう市場
+  'marketClosed', // 閉ざされた市場
+  // 人々
+  'flyers', // 空を飛ぶ人
+  'float', // 宙に浮くもの
+  'heavy', // 重い体
+  'slide', // すべる人
+  'tiny', // 小さな人
+  'giant', // 巨人
+  'green', // 緑の人（光合成）
+  'sleepers', // 眠る人
+  'sleepless', // 眠らない町
+  'blink', // 消えては現れる人
+  'linked', // つながる心
+  'invisible', // 透明な人
+  'zombies', // 歩く死者
+  'cyborgs', // 機械の体
+  'beasts', // 獣に戻った人
+  'naked', // 服を着ない人
+  'fight', // 殴り合い
+  'cannibal', // 人を食べる人
+  'babies', // たくさんの子ども
+  'noChildren', // 子どもがいない
+  'elders', // 老いた人
+  'young', // 若い人
+  'halo', // 死なない人
+  'joy', // 笑う人
+  'blank', // 表情のない人
+  'canes', // 杖の人
+  'signs', // 手の言葉
+  'divers', // 海で暮らす人
+  'lying', // 横たわる人
+  'noPeople', // 人がいない
+  'clones', // 同じ顔の人
+  'couples', // 寄り添う二人
+  'apart', // 離れて立つ人
+  'masks', // 仮面・マスクの人
+  'fading', // 倒れていく人
+  'crowd', // 群衆と松明
+  'genius', // ひらめき
+  'forget', // 忘れる人
+  'thoughts', // 心の声
+  'speech', // 通じる言葉
+  'handshake', // 握手
+  'bandage', // 包帯の人
+  'daring', // 屋根の上の人
+  'grazers', // 何でも食べる人
+] as const;
+export type SceneMotif = (typeof SCENE_MOTIFS)[number];
+export const SceneMotifSchema = z.enum(SCENE_MOTIFS);
+
+/** 種類ごとの読み取り（「猫がいなくなる」など）で、言葉を描く小さな絵の形 */
+export const SPECIMEN_SHAPES = [
+  'animal',
+  'plant',
+  'food',
+  'drink',
+  'machine',
+  'disease',
+  'matter',
+  'star',
+  'weather',
+  'place',
+  'job',
+  'feeling',
+  'body',
+  'clothes',
+  'culture',
+  'study',
+  'system',
+  'person',
+  'thing',
+] as const;
+export type SpecimenShape = (typeof SPECIMEN_SHAPES)[number];
+
+/** その言葉を、世界がどう変えたか：消えた・増えた・世界を治める・ふしぎな力を持つ */
+export const SPECIMEN_MODES = ['gone', 'more', 'rule', 'wonder'] as const;
+export type SpecimenMode = (typeof SPECIMEN_MODES)[number];
+
+/**
+ * 情景での描き方。motifs：描く要素と強さ。specimen：言葉そのものを小さな絵と名前で描く（「{X}がいなくなる」など。label がなければ書いた文の主語）。
+ * stele：絵にしにくい決まり（エネルギー保存など）を、その概念の印を刻んだ石碑として描く
+ */
+export const SceneSpecSchema = z.object({
+  motifs: z.partialRecord(SceneMotifSchema, z.number().min(0).max(1)).default({}),
+  specimen: z
+    .object({
+      shape: z.enum(SPECIMEN_SHAPES),
+      mode: z.enum(SPECIMEN_MODES),
+      label: z.string().max(12).optional(),
+    })
+    .optional(),
+  stele: z.boolean().default(false),
+});
+export type SceneSpec = z.infer<typeof SceneSpecSchema>;
+
 export const TONES = ['good', 'ok', 'warn', 'bad', 'critical'] as const;
 export type Tone = (typeof TONES)[number];
 
@@ -282,6 +534,10 @@ export const LawOptionSchema = z.object({
   twists: z.array(TwistRefSchema).default([]),
   /** この読み取りになる文章の特徴 */
   match: MatchSchema.optional(),
+  /** この読み取りが効き始めた年の知らせ（世界がそのとおりに変わった姿。元の文にはない） */
+  onset: z.string().max(80).optional(),
+  /** 情景での描き方（元の文にはない） */
+  scene: SceneSpecSchema.optional(),
 });
 export type LawOption = z.infer<typeof LawOptionSchema>;
 
@@ -340,6 +596,10 @@ export const PhraseSchema = z.object({
   keeps: z.array(z.string()).default([]),
   /** 例文（テスト用） */
   example: z.string(),
+  /** この概念が効き始めた年の知らせ（世界がそのとおりに変わった姿。{X} は書いた文の主語） */
+  onset: z.string().max(80),
+  /** 情景での描き方 */
+  scene: SceneSpecSchema,
 });
 export type Phrase = z.infer<typeof PhraseSchema>;
 
@@ -920,5 +1180,33 @@ export const BalanceSchema = z.object({
   }),
   forecast: z.object({ years: z.number().int().positive(), fast: pos, slow: pos }),
   news: z.object({ perYear: z.number().int().positive(), historyMax: z.number().int().positive() }),
+  /**
+   * 書き換えの勢い：世界の定義を書き換えると、ゆっくり動く量（産業・社会・心・気温など）の向かう先が動く。
+   * その動いた分のこの割合だけ、次の1年ですぐに動く（残りは、ふだんの速さで追いつく）
+   */
+  impulse: z.record(z.enum(['industry', 'unemployment', 'eco', 'stability', 'happiness', 'tension', 'mind', 'coherence', 'temp']), unit),
 });
 export type Balance = z.infer<typeof BalanceSchema>;
+
+/** 書き換えの勢いが効く量 */
+export const IMPULSE_KEYS = ['industry', 'unemployment', 'eco', 'stability', 'happiness', 'tension', 'mind', 'coherence', 'temp'] as const;
+export type ImpulseKey = (typeof IMPULSE_KEYS)[number];
+
+// ---------------------------------------------------------------- 世界の情景（scene.json）
+
+const SceneMotifsSchema = z.partialRecord(SceneMotifSchema, z.number().min(0).max(1));
+
+/**
+ * 法則・概念のほかに情景を動かすもの。
+ * twists：副作用（育ち具合を掛ける）／crises：知らされた危機の兆し（襲う年が近いほど強い）／endings：世界の結末／
+ * anomalies・eventIcons：その年に起きた世界異常と、重大な出来事（アイコンごと）／kinds：言葉の種類ごとの小さな絵の形
+ */
+export const SceneDataSchema = z.object({
+  twists: z.record(z.string(), SceneMotifsSchema),
+  crises: z.record(z.string(), SceneMotifsSchema),
+  endings: z.record(z.string(), SceneMotifsSchema),
+  anomalies: z.record(z.string(), SceneMotifsSchema),
+  eventIcons: z.partialRecord(IconKeySchema, SceneMotifsSchema),
+  kinds: z.record(z.string(), z.enum(SPECIMEN_SHAPES)),
+});
+export type SceneData = z.infer<typeof SceneDataSchema>;

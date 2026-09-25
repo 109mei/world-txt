@@ -20,6 +20,8 @@ export function App() {
   const toast = useGame((s) => s.toast);
   const elsewhere = useGame((s) => s.elsewhere);
   const saveWarning = useGame((s) => s.saveWarning);
+  // 情景を動かさない設定（電池を節約したい・動きが気になる人のため）
+  const motion = useGame((s) => s.settings.motion);
   // 閉じた知らせ（同じ知らせは、この画面ではもう出さない。別の知らせが来たら出す）
   const [hiddenWarning, setHiddenWarning] = useState<string | null>(null);
   // 画面を移ったら、新しい画面を先頭から見せる（前の画面のスクロール位置を持ち越さない）
@@ -27,7 +29,7 @@ export function App() {
     window.scrollTo(0, 0);
   }, [screen]);
   return (
-    <div className={`app screen-${screen}`}>
+    <div className={`app screen-${screen}${motion ? '' : ' motion-off'}`}>
       {screen === 'title' && <Title />}
       {screen === 'stages' && <Stages />}
       {screen === 'briefing' && <Briefing />}
@@ -64,7 +66,8 @@ export function App() {
       )}
 
       {toast && (
-        <div className="toast" role="status" data-testid="toast">
+        // 世界を見ているときは、情景と見出しを覆わないよう下に出す（シートの上では、これまでどおり上に）
+        <div className={screen === 'game' && !sheet ? 'toast toast-low' : 'toast'} role="status" data-testid="toast">
           {toast}
         </div>
       )}

@@ -9,6 +9,9 @@ test.describe('390×844 のスマホ縦画面', () => {
     await expect(page.getByTestId('capacity')).toContainText('字');
     await expect(page.getByTestId('capacity')).toBeVisible();
     await expect(page.getByTestId('headline')).toContainText('人類文明は現在');
+    // 世界の情景（挿し絵）と、まだ何も書いていないことの添え書き
+    await expect(page.getByTestId('scene')).toBeVisible();
+    await expect(page.getByTestId('scene-ink')).toContainText('まだ書き換えられていない');
     // 横にはみ出さない
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
@@ -45,6 +48,10 @@ test.describe('390×844 のスマホ縦画面', () => {
     await page.getByTestId('write').click();
     await expect(page.getByTestId('toast')).toContainText('人間が空を飛ぶ');
     await expect(page.getByTestId('law-x1')).toContainText('人間は空を飛べる。');
+    // 世界のタブの挿し絵に、最後に書いた一文がインクで添えられる
+    await page.getByTestId('tab-world').click();
+    await expect(page.getByTestId('scene-ink')).toContainText('人間は空を飛べる。');
+    await page.getByTestId('tab-laws').click();
 
     await page.getByTestId('add-line').click();
     await page.getByTestId('editor').fill('世界はうつくしい。');
@@ -57,27 +64,54 @@ test.describe('390×844 のスマホ縦画面', () => {
     await page.getByTestId('tab-laws').click();
     await page.getByTestId('law-human_food').click();
     const editor = page.getByTestId('editor');
-    await expect(editor).toHaveValue('人間は毎日食事を必要とする。');
+    // 文の終わりの「。」は外して開く（書き込むときに世界が付ける）
+    await expect(editor).toHaveValue('人間は毎日食事を必要とする');
     await page.getByTestId('assist-negate').click();
-    await expect(editor).toHaveValue('人間は毎日食事を必要としない。');
+    await expect(editor).toHaveValue('人間は毎日食事を必要としない');
     // 「人間は」の後ろにカーソルを置いて「少し」を差し込む
     await editor.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(3, 3));
     await page.getByTestId('assist').getByRole('button', { name: '少し', exact: true }).click();
-    await expect(editor).toHaveValue('人間は少し毎日食事を必要としない。');
+    await expect(editor).toHaveValue('人間は少し毎日食事を必要としない');
     // 押せる物は44px以上
     const box = await page.getByTestId('assist-negate').boundingBox();
     expect(box!.height).toBeGreaterThanOrEqual(44);
   });
 
-  test('時間を進めると、結果とニュースが出る', async ({ page }) => {
+  test('時間は1回で1年進み、結果の画面からそのまま次の1年へ進める', async ({ page }) => {
     await startFood(page);
-    await page.getByTestId('advance-5').click();
-    await expect(page.getByTestId('report-sheet')).toBeVisible();
+    // 時間を進めるボタンは1つだけ（1年）
+    await expect(page.getByTestId('advance')).toContainText('1年');
+    await expect(page.getByTestId('advance-5')).toHaveCount(0);
+    await page.getByTestId('advance').click();
+    await expect(page.getByTestId('report-sheet')).toContainText('1年経過');
+    await page.getByTestId('report-next').click();
+    await expect(page.getByTestId('report-sheet')).toContainText('YEAR 1 → 2');
     await page.getByTestId('report-ok').click();
-    const year = Number(await page.getByTestId('year').getAttribute('data-value'));
-    expect(year).toBeGreaterThan(0);
+    await expect(page.getByTestId('year')).toHaveAttribute('data-value', '2');
     await page.getByTestId('tab-history').click();
     await expect(page.getByTestId('history-tab')).toContainText('MISSION');
+  });
+
+  test('書いた一文は、時間を進めた年に世界の姿になる（情景に描かれ、「世界が書き換わった」と知らせる）', async ({ page }) => {
+    await startFood(page);
+    await page.getByTestId('tab-laws').click();
+    await page.getByTestId('add-line').click();
+    await page.getByTestId('editor').fill('人間は空を飛べる');
+    await page.getByTestId('write').click();
+    // 定義の一覧には、世界がどう読み取ったかが添えられる
+    await expect(page.getByTestId('law-x1')).toContainText('人間が空を飛ぶ');
+    // 書いただけでは、情景は変わらない（結果は時間を進めて初めてわかる）
+    await page.getByTestId('tab-world').click();
+    await expect(page.getByTestId('scene')).not.toHaveAttribute('data-motifs', /flyers/);
+    await page.getByTestId('advance').click();
+    const sheet = page.getByTestId('report-sheet');
+    await expect(sheet.getByTestId('onset')).toContainText('空を飛び始めた');
+    await expect(sheet.getByTestId('onset')).toContainText('人間は空を飛べる。');
+    await expect(sheet.getByTestId('report-scene')).toHaveAttribute('data-motifs', /flyers/);
+    // 結果の画面のボタンは、読み進めなくても見えている
+    await expect(page.getByTestId('report-next')).toBeInViewport();
+    await page.getByTestId('report-ok').click();
+    await expect(page.getByTestId('scene')).toHaveAttribute('data-motifs', /flyers/);
   });
 
   test('再読み込みしても、書き換えた世界の続きから遊べる', async ({ page }) => {
@@ -86,7 +120,7 @@ test.describe('390×844 のスマホ縦画面', () => {
     await page.getByTestId('law-crime').click();
     await page.getByTestId('editor').fill('');
     await page.getByTestId('write').click();
-    await page.getByTestId('advance-1').click();
+    await page.getByTestId('advance').click();
     await page.getByTestId('report-ok').click();
     await page.reload();
     await page.getByTestId('continue').click();
@@ -114,8 +148,8 @@ test.describe('390×844 のスマホ縦画面', () => {
     await page.getByTestId('law-human_food').click();
     await page.getByTestId('editor').fill('人間は週に一度食事を必要とする。');
     await page.getByTestId('write').click();
-    for (let i = 0; i < 3; i++) {
-      await page.getByTestId('advance-5').click();
+    for (let i = 0; i < 15; i++) {
+      await page.getByTestId('advance').click();
       await page.getByTestId('report-ok').click();
     }
     await page.getByTestId('tab-history').click();
@@ -240,7 +274,7 @@ test.describe('390×844 のスマホ縦画面', () => {
     await page.getByTestId('editor').fill('宇宙は消滅する。');
     await page.getByTestId('write').click();
     await expect(page.getByTestId('toast')).toContainText('宇宙が消える');
-    await page.getByTestId('advance-1').click();
+    await page.getByTestId('advance').click();
     await expect(page.getByTestId('end-banner')).toContainText('無');
     await page.getByTestId('report-ok').click();
     await expect(page.getByTestId('result')).toBeVisible();
@@ -265,7 +299,7 @@ test.describe('390×844 のスマホ縦画面', () => {
     await page.getByTestId('add-line').click();
     await page.getByTestId('editor').fill('人間は空を飛べる。');
     await page.getByTestId('write').click();
-    await page.getByTestId('advance-5').click();
+    await page.getByTestId('advance').click();
     await expect(page.getByTestId('report-sheet')).toBeVisible();
     await page.getByTestId('report-ok').click();
     // 書体（Google Fonts）も読み込めている

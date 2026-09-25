@@ -112,6 +112,8 @@ const REWRITES: [string, string, string][] = [
   ["life_heat", "生き物は暑さにもっと強い", "law:life_heat.hardy"],
   ["life_heat", "生き物は暑さにすぐ弱る", "law:life_heat.more"],
   ["death", "人工知能は死なない", "noise:unclear"],
+  ["death", "人は死を望まない", "noise:unclear"],
+  ["death", "人は死を望む", "law:death.original +death_wish"],
   ["death", "宇宙人は死なない", "noise:unclear"],
   ["death", "猫は死なない", "noise:unclear"],
   ["death", "命は永遠に続く", "law:death.delete"],
@@ -162,6 +164,10 @@ const REWRITES: [string, string, string][] = [
 
 // 新しい一文を書き足す
 const ADDITIONS: [string, string, string][] = [
+  // 「巨大な都市」は人の体の大きさではなく、都市の行の話
+  ["+", "人間は巨大な都市に集まって暮らす", "law:density.megacity"],
+  ["+", "人間は巨大になる", "phrase:giant_humans"],
+  ["+", "人は巨人になる", "phrase:giant_humans"],
   ["+", "地震が起きる", "noise:unclear"],
   ["+", "地震は起きない", "phrase:no_quake"],
   ["+", "永久機関は存在しない", "noise:unclear"],
@@ -378,6 +384,16 @@ const ADDITIONS: [string, string, string][] = [
   ["+", "お茶は存在しない", "phrase:gen_gone_food"],
   ["+", "うつ病は存在しない", "phrase:gen_gone_disease"],
   ["+", "人間は眠らない", "law:human_sleep.delete"],
+  // 死を望む（すぐに人が絶える）。「望まない」は、いまの世界のまま
+  ["+", "人は死を望む", "phrase:death_wish"],
+  ["+", "人間は死にたがる", "phrase:death_wish"],
+  ["+", "人は生きることを望まない", "phrase:death_wish"],
+  ["+", "人類は滅びを望む", "phrase:death_wish"],
+  ["+", "人は消えたい", "phrase:death_wish"],
+  ["+", "誰もが死を望む", "phrase:death_wish"],
+  ["+", "人は死を望まない", "noise:unclear"],
+  ["+", "人は消えたくない", "noise:unclear"],
+  ["+", "人類は滅びを望まない", "noise:unclear"],
   // 人が書きそうな言い方（体・暮らし・社会・宇宙・天変地異・よみがえり）
   ["+", "人間は裸で生きる", "phrase:no_clothes"],
   ["+", "誰も服を着ない", "phrase:no_clothes"],

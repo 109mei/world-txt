@@ -6,7 +6,7 @@ import type { EditTarget } from '../../store/runtime';
 import { Icon } from '../icons';
 import { Sheet } from '../parts';
 import { seWrite } from '../se';
-import { insertAt, keyWords, negate } from '../wording';
+import { insertAt, keyWords, negate, withoutPeriod } from '../wording';
 
 /** 入力の補助で差し込める言葉（量・限定・例外）。選択肢ではなく、打つ手間を減らすだけ */
 const HELPERS = ['少し', 'とても', 'だけ', 'なしで', 'ただし、'];
@@ -23,7 +23,8 @@ export function EditSheet({ target }: { target: EditTarget }) {
   const law = target.kind === 'law' ? gameData.lawById.get(target.id) : null;
   const original = law ? originalText(law) : '';
   const current = line ? (line.state === 'deleted' ? '' : line.text) : '';
-  const [text, setText] = useState(line ? line.text : '');
+  // 文の終わりの「。」は書かなくてよい（書き込むときに世界が付ける）。書き足しやすいよう、外して開く
+  const [text, setText] = useState(line ? withoutPeriod(line.text) : '');
   const ref = useRef<HTMLTextAreaElement>(null);
   // 補助の言葉を差し込んだあと、カーソルを置く位置
   const [cursor, setCursor] = useState<number | null>(null);
@@ -64,7 +65,7 @@ export function EditSheet({ target }: { target: EditTarget }) {
   // 書き足した文章が既存の行の書き換えとして読まれるときも、命令と同じ計算で世界容量を見積もる
   const after = costAfter(g, gameData, target, text);
   const over = after > g.sim.capacityMax && after > view.capacity.used;
-  const changed = text.trim() !== current.trim();
+  const changed = withoutPeriod(text) !== withoutPeriod(current);
   const noEdits = view.edits.left <= 0;
   const ended = view.status !== 'playing';
   const negated = negate(text);
@@ -109,7 +110,7 @@ export function EditSheet({ target }: { target: EditTarget }) {
         value={text}
         rows={3}
         maxLength={80}
-        placeholder={target.kind === 'new' ? '例：人間は空を飛べる。' : '文章を消すと、その法則は世界から消える'}
+        placeholder={target.kind === 'new' ? '例：人間は空を飛べる' : '文章を消すと、その法則は世界から消える'}
         onChange={(e) => setText(e.target.value)}
         data-testid="editor"
         spellCheck={false}
@@ -168,11 +169,11 @@ export function EditSheet({ target }: { target: EditTarget }) {
               文章を消す
             </button>
             {law ? (
-              <button className="btn" onClick={() => setText(original)} disabled={text === original} data-testid="restore">
+              <button className="btn" onClick={() => setText(withoutPeriod(original))} disabled={withoutPeriod(text) === withoutPeriod(original)} data-testid="restore">
                 元の文にする
               </button>
             ) : (
-              <button className="btn" onClick={() => setText(line?.text ?? '')} disabled={text === (line?.text ?? '')}>
+              <button className="btn" onClick={() => setText(withoutPeriod(line?.text ?? ''))} disabled={withoutPeriod(text) === withoutPeriod(line?.text ?? '')}>
                 書き直しをやめる
               </button>
             )}

@@ -1,10 +1,11 @@
-import { FastForward, Menu, Play, Search } from 'lucide-react';
-import { useEffect, useMemo, useRef } from 'react';
+import { Menu, Play, Search } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { advanceYears, openEdit, openSheet, setLawFilter, setTab, showResult, useGame, type Tab } from '../../store/game';
 import { ADDED_CONCEPT, type GameView } from '../../store/view';
 import { Icon, TrendArrow } from '../icons';
 import { CauseLine, CostPips, LawText, Meter, NewsLine } from '../parts';
 import { seTurn } from '../se';
+import { WorldScene } from '../WorldScene';
 
 export function Game() {
   const view = useGame((s) => s.view);
@@ -31,7 +32,11 @@ export function Game() {
           </div>
         </div>
         <div className="gh-year" data-testid="year" data-value={view.year}>
-          <span className="year-label">YEAR</span> <span className="year-num">{view.year}</span>
+          {/* 年が進むたびに、数字が浮かび上がる */}
+          <span className="year-label">YEAR</span>{' '}
+          <span className="year-num" key={view.year}>
+            {view.year}
+          </span>
           <span className="year-goal"> / {view.stage.endless ? '∞' : view.stage.goalYears}</span>
         </div>
         <div className="gh-right">
@@ -45,12 +50,7 @@ export function Game() {
       </header>
 
       <main className="game-body" ref={body}>
-        {firstHint && tab === 'world' && (
-          <p className="first-hint" data-testid="first-hint">
-            世界の兆候を読んだら、下の「定義」を開いて、世界の文章を書き換えてみよう。
-          </p>
-        )}
-        {tab === 'world' && <WorldTab view={view} />}
+        {tab === 'world' && <WorldTab view={view} firstHint={firstHint} />}
         {tab === 'laws' && <LawsTab view={view} />}
         {tab === 'history' && <HistoryTab view={view} />}
       </main>
@@ -81,25 +81,16 @@ export function Game() {
                 あと<b>{view.yearsLeft}</b>年
               </span>
             )}
-            <button
-              className="btn time-btn"
-              onClick={() => {
-                seTurn();
-                advanceYears(1);
-              }}
-              data-testid="advance-1"
-            >
-              <Play size={16} strokeWidth={1.6} /> 1年
-            </button>
+            {/* 時間は1回で1年だけ進める（ほとんどの年で、状態か知らせのどちらかが変わる） */}
             <button
               className="btn btn-primary time-btn"
               onClick={() => {
                 seTurn();
-                advanceYears(5);
+                advanceYears(1);
               }}
-              data-testid="advance-5"
+              data-testid="advance"
             >
-              <FastForward size={16} strokeWidth={1.6} /> 5年
+              <Play size={16} strokeWidth={1.6} /> 1年
             </button>
           </div>
         )}
@@ -130,11 +121,39 @@ export function Game() {
 
 // ---------------------------------------------------------------- 世界
 
-function WorldTab({ view }: { view: GameView }) {
+/** この年の変化を光らせ終えた世界と年（タブを切り替えるたびに光らせない） */
+const flashed = new Set<string>();
+
+/**
+ * 結果の画面を閉じて世界を見たとき、この年に変わった項目を一度だけ光らせる（シートの下では光らせない）
+ */
+function useYearFlash(view: GameView): Set<string> {
+  const sheetOpen = useGame((s) => s.sheet !== null || s.passing !== null);
+  const key = `${view.scene.seed}:${view.year}`;
+  const [on, setOn] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const rep = view.report;
+    if (sheetOpen || flashed.has(key) || !rep || rep.to !== view.year) return;
+    flashed.add(key);
+    setOn(new Set([...rep.changes.map((c) => c.id), ...(rep.moves ?? []).map((m) => m.id)]));
+    const t = setTimeout(() => setOn(new Set()), 1800);
+    return () => clearTimeout(t);
+  }, [sheetOpen, key, view.report, view.year]);
+  return on;
+}
+
+function WorldTab({ view, firstHint }: { view: GameView; firstHint: boolean }) {
   const analysis = useGame((s) => s.settings.analysis);
   const focus = new Set(view.focus);
+  const flash = useYearFlash(view);
   return (
     <div className="world" data-testid="world-tab">
+      <WorldScene scene={view.scene} />
+      {firstHint && (
+        <p className="first-hint" data-testid="first-hint">
+          世界の兆候を読んだら、下の「定義」を開いて、世界の文章を書き換えてみよう。
+        </p>
+      )}
       {view.loop && !view.loop.done && (
         <div className={view.loop.left <= 1 ? 'crisis crisis-near' : 'crisis'} data-testid="loop" role="status">
           <Icon name="cycle" size={20} />
@@ -187,7 +206,7 @@ function WorldTab({ view }: { view: GameView }) {
         {view.indicators.map((it) => (
           <button
             key={it.id}
-            className={focus.has(it.id) ? 'ind focus' : 'ind'}
+            className={['ind', focus.has(it.id) ? 'focus' : '', flash.has(it.id) ? 'ind-flash' : ''].filter(Boolean).join(' ')}
             onClick={() => openSheet({ kind: 'indicator', id: it.id })}
             data-testid={`ind-${it.id}`}
             data-word={it.word}
@@ -263,6 +282,7 @@ function WorldTab({ view }: { view: GameView }) {
 
 function LawsTab({ view }: { view: GameView }) {
   const filter = useGame((s) => s.lawFilter);
+  const justWrote = useGame((s) => s.justWrote);
   const lines = useMemo(() => {
     const q = filter.query.trim();
     return view.laws.filter((l) => {
@@ -324,13 +344,17 @@ function LawsTab({ view }: { view: GameView }) {
                 </div>
               )}
               <button
-                className={`line line-${l.state}`}
+                className={`line line-${l.state}${justWrote === l.id ? ' line-fresh' : ''}`}
                 onClick={() => openEdit({ kind: l.kind, id: l.id })}
                 data-testid={`law-${l.id}`}
                 data-state={l.state}
               >
                 <span className="ln">{String(l.no).padStart(2, '0')}</span>
-                <LawText line={l} />
+                {/* 書き換えた行・書き足した行には、世界がどう読み取ったかを小さく添える */}
+                <span className="line-body">
+                  <LawText line={l} />
+                  {l.reading && l.state !== 'original' && <span className="line-reading">→ {l.reading}</span>}
+                </span>
                 <span className="line-end">
                   {!l.understood && l.state !== 'deleted' && <span className="noise-tag">意味なし</span>}
                   <CostPips cost={l.state === 'deleted' ? 0 : l.cost} />

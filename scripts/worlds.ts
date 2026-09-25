@@ -75,6 +75,8 @@ export const SCENARIOS: Scenario[] = [
   { name: 'button', stage: 'energy', edits: [{ text: '5億年ボタンを押すと100万円もらえる。' }] },
   { name: 'button_memory', stage: 'energy', edits: [{ text: '5億年ボタンを押すと100万円もらえる。' }, { text: '人は何も忘れない。' }] },
   { name: 'no_emotion', stage: 'war', edits: [{ text: '人は感情を持たない。' }] },
+  // 人が死を望む：生きる力が尽き、数年のうちに人が絶える（心の尽きた星）
+  { name: 'death_wish', stage: 'food', edits: [{ text: '人は死を望む。' }], expect: ['mind_collapse'] },
   { name: 'precog', stage: 'war', edits: [{ text: '人は未来がわかる。' }] },
   { name: 'unknowable', stage: 'food', edits: [{ text: 'この世界はシミュレーションだ。' }] },
   { name: 'no_sea', stage: 'food', edits: [{ text: '海は存在しない。' }] },

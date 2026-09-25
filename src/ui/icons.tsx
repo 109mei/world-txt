@@ -211,6 +211,12 @@ export function Icon({ name, size = 18, className }: { name: IconKey; size?: num
   return <C size={size} strokeWidth={1.6} className={className} aria-hidden="true" />;
 }
 
+/** 情景（SVG）の中に置くアイコン。色は親の color を使う */
+export function SvgIcon({ name, size }: { name: IconKey; size: number }) {
+  const C = ICONS[name] ?? Globe2;
+  return <C width={size} height={size} strokeWidth={2} aria-hidden="true" />;
+}
+
 export function ToneIcon({ name, tone, size = 18 }: { name: IconKey; tone: Tone; size?: number }) {
   return <Icon name={name} size={size} className={`tone-${tone}`} />;
 }

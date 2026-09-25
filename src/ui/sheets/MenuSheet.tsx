@@ -42,6 +42,9 @@ export function MenuSheet() {
         <button className="menu-item" onClick={() => updateSettings({ se: !settings.se })} data-testid="menu-se">
           効果音 <b>{settings.se ? 'ON' : 'OFF'}</b>
         </button>
+        <button className="menu-item" onClick={() => updateSettings({ motion: !settings.motion })} data-testid="menu-motion">
+          情景を動かす <b>{settings.motion ? 'ON' : 'OFF'}</b>
+        </button>
         <button className="menu-item" onClick={() => updateSettings({ analysis: !settings.analysis })} data-testid="menu-analysis">
           詳細分析モード <b>{settings.analysis ? 'ON' : 'OFF'}</b>
         </button>

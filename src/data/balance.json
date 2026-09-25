@@ -687,5 +687,16 @@
   "news": {
     "perYear": 4,
     "historyMax": 400
+  },
+  "impulse": {
+    "industry": 0.35,
+    "unemployment": 0.35,
+    "eco": 0.35,
+    "stability": 0.45,
+    "happiness": 0.45,
+    "tension": 0.45,
+    "mind": 0.45,
+    "coherence": 0.3,
+    "temp": 0.12
   }
 }

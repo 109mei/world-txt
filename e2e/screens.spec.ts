@@ -37,8 +37,17 @@ test('主な画面', async ({ page }) => {
   await quiet(page);
   await page.screenshot({ path: shot('06_laws') });
 
-  await page.getByTestId('advance-5').click();
-  await expect(page.getByTestId('report-sheet')).toBeVisible();
+  // 1回で1年。最初の年：書いた一文が世界の姿になる（情景と「世界が書き換わった」）
+  await page.getByTestId('advance').click();
+  await expect(page.getByTestId('onset')).toBeVisible();
+  await page.waitForTimeout(2200);
+  await page.screenshot({ path: shot('07a_report_onset') });
+  // 結果の画面から、そのまま次の1年へ（5年ぶん進める）
+  for (let i = 0; i < 4; i++) {
+    await expect(page.getByTestId('report-sheet')).toBeVisible();
+    await page.getByTestId('report-next').click();
+  }
+  await expect(page.getByTestId('report-sheet')).toContainText('YEAR 4 → 5');
   await page.screenshot({ path: shot('07_report') });
   await page.getByTestId('report-ok').click();
   await page.getByTestId('tab-world').click();
@@ -151,6 +160,17 @@ test('主な画面', async ({ page }) => {
   await expect(page.getByTestId('toast')).toContainText('世界は何も変わらない');
   await page.screenshot({ path: shot('23_noise') });
   await quiet(page);
+
+  // たくさん書き換えた世界の情景（空を飛ぶ人・二つの太陽・ロボット・宇宙人・恐竜・猫・巨大な像・虹）
+  await debug(page, "start('food')");
+  await debug(page, 'boost()');
+  for (const t of ['人間は空を飛べる。', '空には太陽が二つある。', 'ロボットが人の代わりに働く。', '宇宙人が現れる。', '恐竜がよみがえる。', '猫が増える。', '独裁者が世界を治める。', '災害は起きない。']) await debug(page, `add('${t}')`);
+  await debug(page, 'advance(1)');
+  await page.getByTestId('report-ok').click();
+  await page.getByTestId('tab-world').click();
+  await quiet(page);
+  await page.waitForTimeout(2600);
+  await page.screenshot({ path: shot('26_scene_rich') });
 
   // 無限の世界の記録簿（この端末のランキング）
   await debug(page, 'goStages()');
