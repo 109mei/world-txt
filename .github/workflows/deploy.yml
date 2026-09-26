@@ -24,6 +24,19 @@ jobs:
         with:
           # 取り出したあとの手順に、リポジトリの鍵（GITHUB_TOKEN）を残さない
           persist-credentials: false
+          # 更新のお知らせの確かめで、このプッシュの前との差を見る
+          fetch-depth: 0
+
+      - name: 更新のお知らせがあるか確かめる（ゲームを変えたプッシュには、src/data/updates.json にお知らせを1つ足す）
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          changed=$(git diff --name-only "$BEFORE" "$GITHUB_SHA")
+          if echo "$changed" | grep -q '^src/' && ! echo "$changed" | grep -qx 'src/data/updates.json'; then
+            echo "ゲーム（src）を変えたのに、src/data/updates.json に更新のお知らせがない。いちばん上に、遊ぶ人に向けたお知らせを1つ足してからプッシュする"
+            exit 1
+          fi
 
       - uses: actions/setup-node@v7
         with:

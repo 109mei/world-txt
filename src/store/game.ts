@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { signsOf, type EditBlock, type EditResult, type Need, type NoiseInfo } from '../core';
-import type { IndicatorId, StageId } from '../data/schema';
+import type { IndicatorId, StageId, Update } from '../data/schema';
 import { DEFAULT_SETTINGS, EMPTY_PROGRESS, type Progress, type Settings } from '../save';
 import type { EditTarget, GameRuntime } from './runtime';
 import { buildView, type GameView, type SceneView } from './view';
@@ -19,7 +19,8 @@ export type Sheet =
   | { kind: 'pillar'; id: string }
   | { kind: 'life' }
   | { kind: 'menu' }
-  | { kind: 'meta'; which: 'capacity' | 'coherence' | 'civ' };
+  | { kind: 'meta'; which: 'capacity' | 'coherence' | 'civ' }
+  | { kind: 'updates' };
 
 interface UiState {
   screen: Screen;
@@ -54,6 +55,8 @@ interface UiState {
   sceneFocus: string | null;
   /** すべて開いた状態で遊んでいるか（設定の「すべて開いた状態で始める」が ON で、しかもすべてを一度開いている） */
   everything: boolean;
+  /** まだ見ていない更新のお知らせ（新しい順。タイトルに出す） */
+  unseenUpdates: Update[];
 }
 
 export const useGame = create<UiState>(() => ({
@@ -71,6 +74,7 @@ export const useGame = create<UiState>(() => ({
   recordsFrom: 'title',
   passing: null,
   loadError: null,
+  unseenUpdates: [],
   elsewhere: false,
   saveWarning: null,
   justWrote: null,
@@ -117,6 +121,7 @@ export function refreshView(): void {
       words: { known: [...p.words.known], unknown: [...p.words.unknown] },
     },
     hasGame: !!g && g.status === 'playing',
+    unseenUpdates: runtime.unseenUpdates,
     loadError: runtime.loadError,
     saveWarning: runtime.saveWarning,
     rankUp: runtime.rankUp,
@@ -510,10 +515,19 @@ export function advanceYears(years: number, instant = false): void {
   passTimer = setTimeout(done, ms);
 }
 
-/** 書こうとしたが書き込まなかった文を、世界の辞書に集める（書く画面を閉じたとき） */
-export function noticeTried(text: string): void {
+/** 書こうとしたが書き込まなかった文を、世界の辞書に集める（書く画面を閉じたとき）。得た実績があれば知らせる */
+export function noticeTried(target: EditTarget, text: string): void {
   if (!runtime) return;
-  runtime.tried(text);
+  runtime.tried(target, text);
+  refreshView();
+  const got = runtime.fresh.filter((id) => id.startsWith('ach:'));
+  if (got.length > 0) showToast(achievementToast(got));
+}
+
+/** 更新のお知らせを見た（タイトルのお知らせを閉じた・お知らせのシートを閉じた） */
+export function dismissUpdates(): void {
+  if (!runtime) return;
+  runtime.markUpdatesSeen();
   refreshView();
 }
 

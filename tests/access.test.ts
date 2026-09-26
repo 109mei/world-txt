@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { accessFor, addLine, advance, createGame, crisisConcepts, isSealed, rankOf, rewriteLaw, rewriteLine, upgradeState, type GameState } from '../src/core';
+import { accessFor, addLine, advance, createGame, crisisConcepts, isSealed, rankOf, rewriteLaw, rewriteLine, type GameState } from '../src/core';
 import { gameData } from '../src/data';
 import { STAGE_IDS } from '../src/data/schema';
 import { penOf } from '../src/store/pen';
@@ -157,19 +157,5 @@ describe('筆の位（救った世界の数で、書き換えられる範囲が�
     expect(pen.next?.left).toBe(ranks[1]!.clears);
     expect(pen.next?.gains.length).toBeGreaterThan(0);
     expect(penOf(gameData, ranks[last]!.clears).free).toBe(true);
-  });
-
-  it('古いセーブ（範囲のない世界）は、すべて自由なまま遊べる。同じ位・同じ種なら同じ世界', () => {
-    const g = world('plague', 2);
-    const old = JSON.parse(JSON.stringify(g)) as Record<string, unknown>;
-    delete old.access;
-    old.schema = 7;
-    const up = upgradeState(old as unknown as GameState, gameData);
-    expect(up.access).toBeNull();
-    const a = world('climate', 1, 9);
-    const b = world('climate', 1, 9);
-    advance(a, gameData, 3);
-    advance(b, gameData, 3);
-    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 });

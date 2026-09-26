@@ -1,5 +1,7 @@
 import { checkAll, GENERIC_ENDINGS, knownRules, type GameData, type GameState } from '../core';
+import { PROGRESS_CONDITION } from '../data/schema';
 import type { Progress } from '../save';
+import { buildCausalMap } from './causal';
 import { journeyOf } from './journey';
 
 /**
@@ -7,15 +9,13 @@ import { journeyOf } from './journey';
  * 得た実績は progress.achievements に残る（世界をまたいで集まる）
  */
 
-const PROGRESS = /^(cleared|worlds|discovered|endlessBest|endings|achievements|abandoned|modes|rules|marks3|numbered|trials)\s*(<=|>=|==|<|>)\s*(\d+)$/;
-
 /** 観測記録のうち、世界の中身ではない記録（開いていく順番の h:・使った読まれ方の m:） */
 export function metaRecord(id: string): boolean {
   return id.startsWith('h:') || id.startsWith('m:');
 }
 
-/** 進み具合の量 */
-export function progressValue(data: GameData, p: Progress, key: string): number {
+/** 進み具合の量（prevBeaten だけは、いま終わった世界 g と前回の線を比べる） */
+export function progressValue(data: GameData, p: Progress, key: string, g: GameState | null = null): number {
   switch (key) {
     // 無限の世界のほかの、救った世界の数
     case 'cleared':
@@ -50,15 +50,27 @@ export function progressValue(data: GameData, p: Progress, key: string): number 
     // 救った改稿者の試練の数
     case 'trials':
       return p.trials.length;
+    // 世界の辞書に集めた、世界に通じた言葉の数
+    case 'words':
+      return p.words.known.length;
+    // 因果の地図で見つけた線の数（見つけた読み取りから、見つけた想定外の変化・組み合わせへ）
+    case 'links':
+      return buildCausalMap(data, p.discovered).found;
+    // 前回は救えなかった同じ世界（ステージと世界番号が同じ）で、前回より長く世界を保った（前回の線は次の世界を開くまで残る）
+    case 'prevBeaten': {
+      const prev = p.prevRun;
+      if (!g || !prev || prev.key !== `${g.stageId}:${g.seed}`) return 0;
+      return g.trace.pop.length > prev.pop.length ? 1 : 0;
+    }
     default:
       return 0;
   }
 }
 
-function progressCheck(data: GameData, p: Progress, src: string): boolean {
-  const m = PROGRESS.exec(src.trim());
+function progressCheck(data: GameData, p: Progress, src: string, g: GameState | null): boolean {
+  const m = PROGRESS_CONDITION.exec(src.trim());
   if (!m) return false;
-  const a = progressValue(data, p, m[1]!);
+  const a = progressValue(data, p, m[1]!, g);
   const b = Number(m[3]);
   switch (m[2]) {
     case '<':
@@ -87,7 +99,7 @@ export function newAchievements(data: GameData, g: GameState | null, p: Progress
       }
       if (!checkAll(g, a.world)) continue;
     }
-    if (!a.progress.every((c) => progressCheck(data, p, c))) continue;
+    if (!a.progress.every((c) => progressCheck(data, p, c, g))) continue;
     out.push(a.id);
   }
   return out;

@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { Chain } from '../store/chain';
 import { useGame } from '../store/game';
 import { fxShock, fxTrail } from './fx';
+import type { TrailFrame } from './fx/host';
 import { Icon } from './icons';
 import { seDissonant, seString } from './se';
 
@@ -19,19 +20,40 @@ function reducedMotion(): boolean {
   }
 }
 
-/** 線（SVG の道）の上の点を、画面の座標で等間隔に取る（見えていなければ null） */
-function screenPoints(p: SVGPathElement): { x: number; y: number }[] | null {
-  const m = p.getScreenCTM();
-  const r = p.getBoundingClientRect();
-  if (!m || r.bottom < 0 || r.top > window.innerHeight || typeof p.getTotalLength !== 'function') return null;
+/** 線（SVG の道）の上の点を、道の座標で等間隔に取る */
+function pathPoints(p: SVGPathElement): DOMPoint[] | null {
+  if (typeof p.getTotalLength !== 'function') return null;
   const len = p.getTotalLength();
-  const out: { x: number; y: number }[] = [];
+  const out: DOMPoint[] = [];
   for (let k = 0; k <= TRAIL_POINTS; k++) {
     const q = p.getPointAtLength((len * k) / TRAIL_POINTS);
-    const s = new DOMPoint(q.x, q.y).matrixTransform(m);
-    out.push({ x: s.x, y: s.y });
+    out.push(new DOMPoint(q.x, q.y));
   }
   return out;
+}
+
+/** 要素が見えている上下の範囲（画面と、シートの本文の見えている所の重なり）。見えていなければ null */
+function clipOf(el: Element): { top: number; bottom: number } | null {
+  const body = el.closest('.sheet-body')?.getBoundingClientRect();
+  const top = Math.max(0, body?.top ?? 0);
+  const bottom = Math.min(window.innerHeight, body?.bottom ?? window.innerHeight);
+  const r = el.getBoundingClientRect();
+  if (bottom <= top || r.bottom < top || r.top > bottom) return null;
+  return { top, bottom };
+}
+
+/** 光の粒がたどる道を、いまの画面の座標で返す（シートがせり上がる途中・読み進めたあとも、線に合わせる） */
+function trailFrame(p: SVGPathElement, local: readonly DOMPoint[]): TrailFrame | null {
+  const m = p.getScreenCTM();
+  const clip = clipOf(p);
+  if (!m || !clip) return null;
+  return {
+    points: local.map((q) => {
+      const s = q.matrixTransform(m);
+      return { x: s.x, y: s.y };
+    }),
+    ...clip,
+  };
 }
 
 /**
@@ -43,6 +65,8 @@ export function ChainView({ chain }: { chain: Chain }) {
   const motion = useGame((s) => s.settings.motion);
   const root = useRef<HTMLDivElement>(null);
   const anims = useRef<Animation[]>([]);
+  // 結果のシートは描き直されるたびに連鎖を作り直すので、中身が同じなら演出をやり直さない（線・音・光の粒が二度走らない）
+  const same = useMemo(() => JSON.stringify(chain), [chain]);
   useEffect(() => {
     const el = root.current;
     if (!el || !motion || reducedMotion() || typeof el.animate !== 'function') return;
@@ -52,8 +76,8 @@ export function ChainView({ chain }: { chain: Chain }) {
       list.push(p.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: LINE_MS, delay: i * LINE_MS, easing: 'ease-out', fill: 'both' }));
       const surprise = p.dataset.kind === 'surprise';
       // PixiJS の演出：伸びていく線の先を、光の粒がたどる
-      const pts = screenPoints(p);
-      if (pts) fxTrail(pts, i * LINE_MS, LINE_MS, surprise);
+      const local = pathPoints(p);
+      if (local) fxTrail(() => trailFrame(p, local), i * LINE_MS, LINE_MS, surprise);
       timers.push(setTimeout(() => (surprise ? seDissonant() : seString(i + 1)), i * LINE_MS + LINE_MS * 0.8));
     });
     el.querySelectorAll<HTMLElement>('.chain-node').forEach((node, i) => {
@@ -62,15 +86,22 @@ export function ChainView({ chain }: { chain: Chain }) {
     el.querySelectorAll<SVGCircleElement>('.chain-shock').forEach((c) => {
       const at = Number(c.dataset.at ?? 0);
       list.push(c.animate([{ opacity: 0.9, transform: 'scale(0.2)' }, { opacity: 0, transform: 'scale(1.6)' }], { duration: 420, delay: at * LINE_MS + LINE_MS, easing: 'ease-out', fill: 'both' }));
-      // 想定外の変化に着いた所で、小さな衝撃の輪と色ずれ
-      timers.push(setTimeout(() => fxShock(`chain:${chain.root.text}:${at}`, c.getBoundingClientRect(), true), at * LINE_MS + LINE_MS));
+      // 想定外の変化に着いた所で、小さな衝撃の輪と色ずれ（シートの本文の外に隠れていれば出さない）
+      timers.push(
+        setTimeout(() => {
+          const r = c.getBoundingClientRect();
+          const clip = clipOf(c);
+          const y = r.top + r.height / 2;
+          if (clip && y >= clip.top && y <= clip.bottom) fxShock(`chain:${chain.root.text}:${at}`, r, true);
+        }, at * LINE_MS + LINE_MS),
+      );
     });
     anims.current = list;
     return () => {
       timers.forEach(clearTimeout);
       list.forEach((a) => a.cancel());
     };
-  }, [chain, motion]);
+  }, [same, motion]);
   /** 押すと、線をすべて描き終える */
   const finish = () => anims.current.forEach((a) => a.finish());
   return (

@@ -61,11 +61,14 @@
   { "id": "guessed", "kind": "discovery", "name": "見立てが当たった", "text": "兆しから原因を見立て、原因に効く手を打った", "icon": "science", "world": ["countered >= 0"] },
   { "id": "three_modes", "kind": "discovery", "name": "三つの読まれ方", "text": "性質・制度・条件つきの3つの読まれ方をすべて使った", "icon": "edit", "progress": ["modes >= 3"] },
   { "id": "ten_rules", "kind": "discovery", "name": "世界の決まりを知る者", "text": "世界の決まりを10見つけた", "icon": "record", "progress": ["rules >= 10"] },
+  { "id": "words_30", "kind": "discovery", "name": "言葉を集める者", "text": "世界の辞書に、世界に通じた言葉を30集めた", "icon": "education", "progress": ["words >= 30"] },
+  { "id": "causal_10", "kind": "discovery", "name": "因果をたどる者", "text": "因果の地図で、想定外の変化への線を10本見つけた", "icon": "map", "progress": ["links >= 10"] },
   { "id": "three_marks", "kind": "skill", "name": "三つの印", "text": "1つの世界で、救った・少ない手で・早く見抜いたの3つの印をそろえた", "icon": "trophy", "progress": ["marks3 >= 1"] },
   { "id": "no_delete", "kind": "skill", "name": "消さずに救う", "text": "行を1つも消さずに世界を救った", "icon": "edit", "end": "clear", "world": ["stage:food|plague|climate|war|energy|tiny|loop", "deletes == 0"] },
   { "id": "no_rule", "kind": "skill", "name": "決まりに頼らずに", "text": "制度として読まれる文を使わずに世界を救った", "icon": "society", "end": "clear", "world": ["stage:food|plague|climate|war|energy|tiny|loop", "!found:m:rule"] },
   { "id": "no_hoard", "kind": "skill", "name": "棚の空かない世界", "text": "買いだめを起こさずに食料危機の世界を救った", "icon": "food", "end": "clear", "world": ["stage:food", "!found:h:hoard", "!found:e:f_hoard"] },
   { "id": "refill", "kind": "skill", "name": "消した行に書く", "text": "世界が消した行を埋めに来る前に、その行へ新しい文を書いた", "icon": "edit", "world": ["found:h:refill"] },
+  { "id": "rewritten_future", "kind": "skill", "name": "書き直した未来", "text": "前回は救えなかった同じ世界を、もう一度遊んで救った", "icon": "cycle", "end": "clear", "progress": ["prevBeaten >= 1"] },
   { "id": "numbered", "kind": "play", "name": "番号の世界", "text": "世界番号を入れて同じ世界を開いた", "icon": "earth", "progress": ["numbered >= 1"] },
   { "id": "trial", "kind": "play", "name": "改稿者の試練", "text": "改稿者の試練を1つ救った", "icon": "trophy", "progress": ["trials >= 1"] }
 ]

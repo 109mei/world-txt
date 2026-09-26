@@ -35,7 +35,8 @@ export function worldSummary(g: GameState, data: GameData): WorldSummary {
     if (opt?.kind === 'delete' && law.noun) missing.push(law.noun);
   }
   return {
-    number: String(g.seed % 10000).padStart(4, '0'),
+    // 世界番号は 1〜9999。よそで作られたセーブの番号でも、マイナスの記号や5桁を出さない
+    number: String(((Math.trunc(g.seed) % 10000) + 10000) % 10000).padStart(4, '0'),
     title,
     tags,
     missing,

@@ -23,8 +23,8 @@ function randomSeed(): number {
   return ((crypto.getRandomValues(new Uint32Array(1))[0]! >>> 0) % WORLD_NUMBERS) + 1;
 }
 
-/** ?seed=数字 で世界番号を固定する（テスト・再現用） */
-const fixedSeed = seedParam !== null && Number.isFinite(Number(seedParam)) ? Math.floor(Number(seedParam)) : null;
+/** ?seed=数字 で世界番号を固定する（テスト・再現用）。世界番号の範囲（1〜9999 の整数）の外は受け付けない */
+const fixedSeed = seedParam !== null && /^[0-9]{1,4}$/.test(seedParam) && Number(seedParam) >= 1 && Number(seedParam) <= WORLD_NUMBERS ? Number(seedParam) : null;
 
 function saveStore(): SaveStore {
   let storage: Storage;
@@ -76,7 +76,13 @@ async function start(): Promise<void> {
   });
   await runtime.boot();
   setRuntime(runtime);
-  refreshView();
+  try {
+    refreshView();
+  } catch {
+    // 読み込んだ世界を画面に出せない（壊れたセーブ）：その世界だけを手放して、まっ白な画面にしない
+    runtime.dropBrokenWorld();
+    refreshView();
+  }
   // 効果音は設定に合わせて鳴らす・止める
   syncSe(runtime.settings.se, runtime.settings.seVolume);
   useGame.subscribe((s) => syncSe(s.settings.se, s.settings.seVolume));

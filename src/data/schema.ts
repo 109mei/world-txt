@@ -843,6 +843,43 @@ export type Ending = z.infer<typeof EndingSchema>;
 /** 実績の4つの種類：発見・腕前・物語・遊び方（分析の17章） */
 export const ACHIEVEMENT_KINDS = ['discovery', 'skill', 'story', 'play'] as const;
 
+/** 実績の進み具合の条件で使える量（「words >= 30」の words。量の数え方は src/store/achievements.ts の progressValue） */
+export const PROGRESS_KEYS = [
+  'cleared',
+  'worlds',
+  'discovered',
+  'endlessBest',
+  'endings',
+  'achievements',
+  'abandoned',
+  'modes',
+  'rules',
+  'marks3',
+  'numbered',
+  'trials',
+  'words',
+  'links',
+  'prevBeaten',
+] as const;
+
+/** 実績の進み具合の条件の形（量・比べ方・数） */
+export const PROGRESS_CONDITION = new RegExp(`^(${PROGRESS_KEYS.join('|')})\\s*(<=|>=|==|<|>)\\s*(\\d+)$`);
+
+// ---------------------------------------------------------------- 更新のお知らせ（updates.json）
+
+/**
+ * 更新のお知らせ（プッシュのたびに1つ足す。新しい順）。遊ぶ人に向けて、何が変わったかを短く書く。
+ * id は日付と、同じ日の何回目か（a・b・c）
+ */
+export const UpdateSchema = z.object({
+  id: z.string().regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}[a-z]$/),
+  date: z.string().regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/),
+  title: z.string().min(1).max(40),
+  items: z.array(z.string().min(1).max(80)).min(1).max(10),
+});
+export const UpdatesSchema = z.array(UpdateSchema).min(1);
+export type Update = z.infer<typeof UpdateSchema>;
+
 export const AchievementSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -1328,9 +1365,6 @@ export const BalanceSchema = z.object({
     strainFrom: pos,
     strainCoef: pos,
     graceYears: z.number().int().positive(),
-    /** 版5までのセーブの世界容量（重さ）を文字数に直す：重さ × legacyChars − legacyShift */
-    legacyChars: pos,
-    legacyShift: pos,
   }),
   civ: z.object({ weights: z.object({ industry: unit, logistics: unit, science: unit, society: unit, humanity: unit }), graceYears: z.number().int().positive() }),
   /**

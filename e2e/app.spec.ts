@@ -186,6 +186,72 @@ test.describe('390×844 のスマホ縦画面', () => {
     await expect(page.locator('.scene-label')).toHaveCount(1);
   });
 
+  test('ノッチとホームバーのある端末：見出しとシートはノッチの下に、下の帯はホームバーの上に出す', async ({ page }) => {
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Emulation.setSafeAreaInsetsOverride' as never, { insets: { top: 59, bottom: 34, left: 0, right: 0 } } as never);
+    await startFood(page, true);
+    const head = await page.locator('.gh-logo').boundingBox();
+    expect(head!.y).toBeGreaterThanOrEqual(59);
+    const nav = await page.getByTestId('tab-world').boundingBox();
+    expect(nav!.y + nav!.height).toBeLessThanOrEqual(844 - 34);
+    await page.getByTestId('menu').click();
+    const sheet = await page.getByTestId('menu-sheet').boundingBox();
+    expect(sheet!.y).toBeGreaterThanOrEqual(59);
+  });
+
+  test('取り返しのつかない操作は、すばやい二度押しでは決まらない（確かめを出してから少し待って押し直す）', async ({ page }) => {
+    await startFood(page, true);
+    await page.getByTestId('menu').click();
+    await page.getByTestId('menu-abandon').dblclick();
+    await expect(page.getByTestId('menu-abandon')).toContainText('もう一度押すと');
+    await expect(page.getByTestId('menu-sheet')).toBeVisible();
+    await page.waitForTimeout(600);
+    await page.getByTestId('menu-abandon').click();
+    await expect(page.getByTestId('stages')).toBeVisible();
+  });
+
+  test('URL の世界番号は、世界番号の範囲（1〜9999）の外なら使わない', async ({ page }) => {
+    for (const bad of ['-1', '0', '99999999', '1.5', 'abc']) {
+      await page.goto(`./?seed=${bad}&debug=1`);
+      await page.evaluate(() => localStorage.clear());
+      await page.reload();
+      await debug(page, "start('food')");
+      const st = await debug<{ seed: number }>(page, 'state()');
+      expect(st.seed, bad).toBeGreaterThanOrEqual(1);
+      expect(st.seed, bad).toBeLessThanOrEqual(9999);
+    }
+  });
+
+  test('更新のお知らせ：前に遊んだ人にはタイトルに1度だけ出し、くわしく読める。閉じたら次から出ない。はじめて遊ぶ人には出さない', async ({ page }) => {
+    await startFood(page, true);
+    // はじめて遊ぶ人（セーブのない状態から始めた人）には出さない
+    await page.goto('./?seed=7&debug=1');
+    await expect(page.getByTestId('title')).toBeVisible();
+    await expect(page.getByTestId('update-card')).toHaveCount(0);
+    // 前に遊んだ人（まだお知らせを見ていないセーブ）
+    await page.evaluate(() => {
+      const save = JSON.parse(localStorage.getItem('world-txt/save')!);
+      save.progress.seenUpdate = null;
+      localStorage.setItem('world-txt/save', JSON.stringify(save));
+    });
+    await page.reload();
+    await expect(page.getByTestId('update-card')).toBeVisible();
+    await page.getByTestId('update-open').click();
+    await expect(page.getByTestId('updates-sheet')).toBeVisible();
+    await expect(page.getByTestId('update').first()).toContainText('新しいお知らせ');
+    await page.getByTestId('sheet-close').click();
+    await expect(page.getByTestId('update-card')).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByTestId('title')).toBeVisible();
+    await expect(page.getByTestId('update-card')).toHaveCount(0);
+    // メニューからいつでも読み返せる
+    await page.getByTestId('continue').click();
+    await page.getByTestId('menu').click();
+    await page.getByTestId('menu-updates').click();
+    await expect(page.getByTestId('updates-sheet')).toBeVisible();
+    await expect(page.getByTestId('update').first()).not.toContainText('新しいお知らせ');
+  });
+
   test('PixiJS の演出：書いた瞬間に描き場が動き、終われば止まる。「動きを減らす」ON では描き場を片づけて出さない', async ({ page }) => {
     await startFood(page, true);
     const layer = page.getByTestId('fx-layer');
@@ -215,6 +281,8 @@ test.describe('390×844 のスマホ縦画面', () => {
     await page.getByTestId('editor').fill('ポポポはピピピを食べる');
     await expect(page.getByTestId('write')).toBeDisabled();
     await page.getByTestId('sheet-close').click();
+    // 書き込めなくても、書こうとしたことは数える（実績「届かない言葉」）
+    await expect(page.getByTestId('toast')).toContainText('届かない言葉');
     await page.getByTestId('menu').click();
     await page.getByTestId('menu-records').click();
     await page.getByTestId('records-dictionary').click();
@@ -642,6 +710,8 @@ test.describe('390×844 のスマホ縦画面', () => {
     // すべての記録を消す：2度押しで確かめ、タイトルへ戻る（はじめから）
     await page.getByTestId('menu-reset').click();
     await expect(page.getByTestId('reset-note')).toContainText('元に戻せない');
+    // 確かめを出してから0.5秒より早い2回目は数えない（すばやい二度押しで決まらないように）
+    await page.waitForTimeout(600);
     await page.getByTestId('menu-reset').click();
     await expect(page.getByTestId('title')).toBeVisible();
     await expect(page.getByTestId('continue')).toHaveCount(0);

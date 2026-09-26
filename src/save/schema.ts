@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { StageIdSchema } from '../data/schema';
+import { IconKeySchema, StageIdSchema } from '../data/schema';
 
 /** 読み込んだセーブが壊れていないかを確かめる形 */
 
@@ -76,42 +76,89 @@ const SimSchema = z.looseObject({
   unemployment: num,
   coherence: num,
   capacityMax: num,
-  /** 人々の心（版14から。古いセーブにはないので、読み込むときに補う） */
-  ref: num.optional(),
-  peak: num.optional(),
-  trust: num.optional(),
-  anxiety: num.optional(),
-  caution: num.optional(),
-  overshoot: num.optional(),
+  mind: num,
+  prices: num,
+  /** 人々の心 */
+  ref: num,
+  peak: num,
+  trust: num,
+  anxiety: num,
+  caution: num,
+  overshoot: num,
+});
+
+/** 出来事などが世界に残す効き目（くり返しで重なっても、ふつうは数十まで） */
+const EffectsSchema = z.array(z.object({ source: id, mods: rec, remaining: num })).max(500);
+const CountersSchema = z.object({ civLow: num, capOver: num, peaceYears: num, warCooldown: num, warYears: num });
+
+/** ニュースと、それを育てた行 */
+const NewsSchema = z.object({
+  year: num,
+  category: z.string().max(40),
+  icon: IconKeySchema,
+  text: note,
+  why: note.nullable(),
+  severity: z.enum(['info', 'warn', 'critical']),
+  surprise: z.boolean(),
+  cause: z.object({ text: note, deleted: z.boolean(), year: num.nullable(), via: note.optional(), world: z.boolean().optional() }).nullable(),
+  onset: z.boolean().optional(),
+});
+
+/** 時間を進めた結果（結果の画面の写し） */
+const ReportSchema = z.object({
+  from: num,
+  to: num,
+  requested: num,
+  interrupted: note.nullable(),
+  changes: z.array(z.object({ id, from: z.string().max(40), to: z.string().max(40), trend: z.string().max(20), better: z.boolean() })).max(200),
+  moves: z
+    .array(z.object({ id, trend: z.string().max(20), better: z.boolean() }))
+    .max(200)
+    .optional(),
+  pop: z.object({ from: num, to: num }).optional(),
+  became: z.array(id).max(5000).optional(),
+  news: z.array(NewsSchema).max(2000),
+  quiet: z.boolean().optional(),
+});
+
+/** 巻き戻すときに戻す、世界の側の様子 */
+const SnapshotSchema = z.object({
+  sim: SimSchema,
+  charge: z.record(id, num),
+  twists: rec,
+  twistAge: rec,
+  effects: EffectsSchema,
+  flags: z.record(id, z.literal(true)),
+  fired: rec,
+  counters: CountersSchema,
+  endingYears: rec,
 });
 
 export const GameStateSchema = z.looseObject({
   schema: z.number().int(),
   seed: num,
-  /** 版8まで：遊んでいる間の乱数の内部状態（今は使わない。読み込むときに取り除く） */
-  rng: z.number().int().optional(),
-  /** 出来事の起きる力（版9から。古いセーブにはないので、読み込むときに補う） */
-  charge: z.record(id, num).optional(),
-  /** 空白の行・消し跡・世界が埋めた行（版10から） */
-  voids: z.record(id, num).optional(),
-  scars: z.record(id, num).optional(),
-  filled: z.record(id, num).optional(),
-  /** 原因の型・効きが落ちたと知らせた意味（版12から） */
-  cause: id.nullable().optional(),
-  adapted: z.array(z.string().max(200)).max(2000).optional(),
-  /** 言い切りの強さ・書き直した回数・短く言い換えた行（版11から） */
-  strength: z.record(id, num).optional(),
-  rewrites: z.record(id, num).optional(),
-  trims: z.record(id, z.literal(true)).optional(),
-  /** 書き方の読み分けの手がかり（版13から） */
-  modes: z.record(id, z.enum(['rule', 'conditional'])).optional(),
-  /** 考え方の広がり・締め出された振る舞い（版14から） */
-  spread: z.record(id, num).optional(),
-  crowded: z.record(id, z.literal(true)).optional(),
-  /** 棋譜（書いた手）・世界の決まりの強さ（版15から） */
-  moves: z.array(MoveSchema).max(400).optional(),
-  intro: z.record(id, num).optional(),
-  introStart: z.record(id, num).optional(),
+  /** 出来事の起きる力 */
+  charge: z.record(id, num),
+  /** 空白の行・消し跡・世界が埋めた行 */
+  voids: z.record(id, num),
+  scars: z.record(id, num),
+  filled: z.record(id, num),
+  /** 原因の型・効きが落ちたと知らせた意味 */
+  cause: id.nullable(),
+  adapted: z.array(z.string().max(200)).max(2000),
+  /** 言い切りの強さ・書き直した回数・短く言い換えた行 */
+  strength: z.record(id, num),
+  rewrites: z.record(id, num),
+  trims: z.record(id, z.literal(true)),
+  /** 書き方の読み分けの手がかり */
+  modes: z.record(id, z.enum(['rule', 'conditional'])),
+  /** 考え方の広がり・締め出された振る舞い */
+  spread: z.record(id, num),
+  crowded: z.record(id, z.literal(true)),
+  /** 棋譜（書いた手）・世界の決まりの強さ */
+  moves: z.array(MoveSchema).max(400),
+  intro: z.record(id, num),
+  introStart: z.record(id, num),
   stageId: StageIdSchema,
   year: z.number().int().nonnegative(),
   status: z.enum(['playing', 'cleared', 'failed']),
@@ -125,64 +172,63 @@ export const GameStateSchema = z.looseObject({
   texts: z.record(id, line),
   laws: z.record(id, id),
   understood: z.record(id, z.boolean()),
-  extras: z.array(z.object({ id, text: line, phrase: id.nullable().optional(), year: num })).max(1000),
-  /** 行が運ぶ意味（版3から。古いセーブにはない） */
-  carried: z.record(id, z.object({ phrases: z.array(id).max(100), law: z.object({ id, option: id }).nullable() })).default({}),
+  /** 書き足した行（id は x と番号。ほかの形の id は、行の意味を引くときにオブジェクトの仕組みの名前と取り違えうるので読まない） */
+  extras: z.array(z.object({ id: z.string().regex(/^x[0-9]{1,9}$/), text: line, year: num })).max(1000),
+  /** 行が運ぶ意味 */
+  carried: z.record(id, z.object({ phrases: z.array(id).max(100), law: z.object({ id, option: id }).nullable() })),
   nextExtra: num,
   lawYear: rec,
   edits: z.object({ left: num, used: num, nextAt: num }),
   twists: rec,
   twistAge: rec,
-  effects: z.array(z.object({ source: z.string(), mods: rec, remaining: num })),
+  effects: EffectsSchema,
   flags: z.record(id, z.literal(true)),
   fired: rec,
   combos: z.array(id).max(1000),
-  counters: z.object({ civLow: num, capOver: num, peaceYears: num, warCooldown: num, warYears: num }),
+  counters: CountersSchema,
   history: z.array(z.looseObject({ year: num, kind: id, icon: id, text: note, ref: id.optional() })).max(5000),
-  report: z.looseObject({ from: num, to: num }).nullable(),
-  stats: z.looseObject({ edits: num }),
-  found: z.array(id).max(20000).default([]),
-  /** 人口と文明の曲線（古いセーブにはないので、読み込むときに補う） */
-  trace: z
-    .object({
-      pop: z.array(num).max(100000),
-      civ: z.array(num).max(100000),
-      living: z.array(num).max(100000).optional(),
-      ref: z.array(num).max(100000).optional(),
-      laps: z.array(z.number().int().nonnegative().max(100000)).max(10000).optional(),
-    })
-    .optional(),
-  /** 無限の世界の危機（版4から。古いセーブにはない） */
-  crisis: z.object({ id, at: num, strength: num }).nullable().default(null),
-  nextCrisis: num.default(-1),
-  crises: z.object({ averted: num, softened: num, struck: num }).default({ averted: 0, softened: 0, struck: 0 }),
+  /** 去年の結果の写し（読めない形なら捨てる。世界は遊べる） */
+  report: ReportSchema.nullable().catch(null),
+  stats: z.object({ edits: num, wars: num, anomalies: num, minPop: num, maxPop: num, noise: num }),
+  found: z.array(id).max(20000),
+  /** 人口・文明・暮らしの水準・慣れた水準の曲線と、くり返す世界で巻き戻った位置 */
+  trace: z.object({
+    pop: z.array(num).max(100000),
+    civ: z.array(num).max(100000),
+    living: z.array(num).max(100000),
+    ref: z.array(num).max(100000),
+    laps: z.array(z.number().int().nonnegative().max(100000)).max(10000),
+  }),
+  /** 無限の世界の危機 */
+  crisis: z.object({ id, at: num, strength: num }).nullable(),
+  nextCrisis: num,
+  crises: z.object({ averted: num, softened: num, struck: num }),
   /** 今日の世界で遊んでいるなら、その日付 */
-  daily: z.string().max(20).nullable().default(null),
-  /** 結末（版5から） */
-  ending: id.nullable().optional(),
-  endingYears: rec.default({}),
-  /** くり返す世界（くり返す十年。古いセーブにはないので、読み込むときに補う） */
+  daily: z.string().max(20).nullable(),
+  /** 結末 */
+  ending: id.nullable(),
+  endingYears: rec,
+  /** くり返す世界（くり返す十年） */
   loop: z
     .object({
       start: z.number().int().nonnegative(),
-      snapshot: z.looseObject({ sim: SimSchema, rng: z.number().int().optional(), charge: z.record(id, num).optional() }),
+      snapshot: SnapshotSchema,
       count: z.number().int().nonnegative(),
       done: z.boolean(),
     })
-    .nullable()
-    .optional(),
-  /** 去年効いていた意味（版7から。古いセーブにはないので、読み込むときに補う） */
-  inEffect: z.array(id).max(5000).optional(),
-  /** 書き換えの勢い（版7から） */
-  impulse: z.record(id, num).optional(),
-  /** 書き換えられる範囲・筆の位（版8から。古いセーブにはないので、すべて自由として補う） */
-  access: AccessSchema.nullable().optional(),
-  /** 分かれ道からやり直した世界（印の「少ない手で」「早く見抜いた」を付けない）・分かれ道の年・原因に効く手の年（版15から） */
-  branched: z.boolean().optional(),
-  branch: z.object({ year: z.number().int().nonnegative(), id, pass: z.number().int().nonnegative().default(0) }).nullable().optional(),
-  countered: z.number().int().nonnegative().nullable().optional(),
-  /** 改稿者の試練（版15から） */
-  trial: z.object({ kind: z.enum(['double', 'late', 'few']), cause2: id.nullable(), late: z.number().int().min(0).max(100) }).nullable().optional(),
+    .nullable(),
+  /** 去年効いていた意味 */
+  inEffect: z.array(id).max(5000),
+  /** 書き換えの勢い */
+  impulse: z.record(id, num),
+  /** 書き換えられる範囲・筆の位 */
+  access: AccessSchema.nullable(),
+  /** 分かれ道からやり直した世界（印の「少ない手で」「早く見抜いた」を付けない）・分かれ道の年・原因に効く手の年 */
+  branched: z.boolean(),
+  branch: z.object({ year: z.number().int().nonnegative(), id, pass: z.number().int().nonnegative() }).nullable(),
+  countered: z.number().int().nonnegative().nullable(),
+  /** 改稿者の試練 */
+  trial: z.object({ kind: z.enum(['double', 'late', 'few']), cause2: id.nullable(), late: z.number().int().min(0).max(100) }).nullable(),
 });
 
 /**
@@ -286,6 +332,8 @@ export const ProgressSchema = z.object({
     .object({ key: z.string().max(40), pop: z.array(num).max(PREV_RUN_MAX) })
     .nullable()
     .catch(null),
+  /** 最後に見た更新のお知らせの id（まだなら null。読めない形なら null にする） */
+  seenUpdate: z.string().max(40).nullable().catch(null),
 });
 
 export const SaveDataSchema = z.object({
@@ -331,4 +379,5 @@ export const EMPTY_PROGRESS: Progress = {
   prompted: { home: false, exportRank: -1 },
   words: { known: [], unknown: [] },
   prevRun: null,
+  seenUpdate: null,
 };

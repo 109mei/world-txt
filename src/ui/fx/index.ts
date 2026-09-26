@@ -1,4 +1,5 @@
 import { useGame } from '../../store/game';
+import type { TrailFrame } from './host';
 
 /**
  * PixiJS の演出の窓口（P19）。PixiJS は演出の部品（./stage）だけが使い、はじめて演出を出す前に後から読み込む（動的 import）。
@@ -83,9 +84,12 @@ export function fxStreaks(key: string, rect: DOMRect, ms: number, active: () => 
   run((s) => s.streaks(key, rect, ms, active));
 }
 
-/** 因果の線：伸びていく線の先を、光の粒がたどる（points は画面の座標。delay と ms は線の伸び方に合わせる） */
-export function fxTrail(points: readonly { x: number; y: number }[], delay: number, ms: number, surprise: boolean): void {
-  run((s) => s.trail(points, delay, ms, surprise));
+/**
+ * 因果の線：伸びていく線の先を、光の粒がたどる（delay と ms は線の伸び方に合わせる）。
+ * sample はコマごとに、いまの線の道（画面の座標）と描いてよい範囲を返す（線が見えなければ null）
+ */
+export function fxTrail(sample: () => TrailFrame | null, delay: number, ms: number, surprise: boolean): void {
+  run((s) => s.trail(sample, delay, ms, surprise));
 }
 
 /** 衝撃：輪が広がり、色がずれる（想定外の変化・重大な出来事）。small は因果の線の着いた所 */

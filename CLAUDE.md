@@ -28,7 +28,7 @@
 5. 因果は現実の仕組みに沿わせる。想定外の変化（副作用・出来事）には、現実の根拠を「なぜ？」（why）として一文で添える。数字は「約」をつけ、確かなものだけを使い、出典を src/data/sources.json と docs/SOURCES.md に残す。どの行から来たか（cause）は core が付ける（敗因の振り返りと因果の連鎖は、この cause だけでつなぐ）
 6. 見つけたもの（読み取り・副作用・出来事・結末・初めて起きたこと h:・使った読まれ方 m: など）は core が GameState.found に残し、runtime が観測記録（progress.discovered）へ移す。新しい内容を足したら、観測記録にも自動で並ぶ
 7. 数値をコードに直接書かない。balance.json などのデータに置く
-8. セーブには版番号を入れ、古い版から新しい版へ変換する関数（src/save/migrations.ts）を用意する。GameState に項目を足したら、古い形を補う処理（core の upgradeState）と、src/save/schema.ts の上限つきの形も足す
+8. セーブには版番号を入れ、古い版から新しい版へ変換する関数（src/save/migrations.ts）を用意する（セーブは版7から始め直した。それより前の版は読まずに消す）。GameState に項目を足したら、古い形を補う処理（core の upgradeState）と、src/save/schema.ts の上限つきの形も足す
 9. 概念（phrases.json）や法則の読み取り（laws.json の options）を足したら、効き始めた年の知らせ（onset）と情景での描き方（scene）も書く。書いた一文は、時間を進めた最初の年に「世界が書き換わった」と知らせ、情景にそのとおりに描く（書いただけでは見せない）。描く要素（SCENE_MOTIFS）を足したら、src/ui/scene に絵を描き、現れ方（common.tsx の ENTER）を選ぶ。両立しない描き方は scene.json の exclusive・hides に足す（データの検査と tests/scene.test.ts・scene-render.test.ts が確かめる）
 10. 書き換えられる範囲（筆の位）は core の access.ts と access.json が決め、core の書き換え命令が確かめる（ロックされた行・書き足せる行の数・書ける概念の重さ）。概念（concepts.json）を足したら access.json のどれかの分野に、ステージを足したら access.json の stages に、その世界の危機に関わる概念を足す（npm run ranks と tests/access.test.ts で、どのステージの作戦もはじめて遊べる位で止まらないことを確かめる）
 11. 開いていく順番（src/data/unlocks.json・src/core/unlocks.ts）：学問の仕組み（世界の決まり）25は、どれもちょうど1つの段で紹介する。紹介する前は弱く（balance.intro.before）動かし、紹介した年から本来の強さへ上げる。1回のプレイで新しく覚える考えは1つ。開いたものは閉じない（tests/unlocks.test.ts）
@@ -57,11 +57,11 @@
 ## フォルダ
 
 - src/core：ルール本体（状態・進行・命令・読み取り・世界番号の式 hash・人々の心 people・世界の決まりの強さ intro・開いていく順番 unlocks・兆し signs・3つの印と原因の壁 marks・敗因の振り返り review・棋譜 kifu）
-- src/data：JSON と Zod のスキーマ（情景を動かすもの・情景の名前は scene.json、開いていく順番と世界の決まりは unlocks.json、出典は sources.json）
+- src/data：JSON と Zod のスキーマ（情景を動かすもの・情景の名前は scene.json、開いていく順番と世界の決まりは unlocks.json、出典は sources.json、更新のお知らせは updates.json と updates.ts）
 - src/store：Zustand と写し（view。世界の寿命 life・4つの柱 pillars・起きかけていること signs・世界の終わりまで limits を含む）、世界の情景の写し（scene）、筆の位（pen）、観測記録（records）、世界の辞書（dictionary）と因果の地図（causal）、図鑑と実績（codex）、開いていく順番の写し（journey）、因果の連鎖（chain）、再生（replay）、共有文（share）、無限の世界の記録簿（ranking）
 - src/ui：React の部品と CSS、タイトルの絵、世界の情景（WorldScene と scene/ の層。開発用の一覧は ?gallery=1）、計算の演出（Passing）、因果の連鎖（Chain）、音楽（audio）と効果音（se）、PixiJS の演出（fx。散り方の式は pattern、描き手は stage）、画面の明るさ（theme）、共有画像（shareImage）、入力の補助（wording）、あそびかた（Tutorial）、序章の手引き（Coach）、筆の位（PenPanel）、画面の言葉（terms）、画面を描けなかったときの受け止め役（ErrorBoundary）、共通の部品（parts・icons・Curve・touch）、シート（書く・結果・柱の中身と世界の寿命・メニュー など）
 - src/save：SaveStore・セーブの形・版の変換
-- tests：Vitest（決定性・棋譜・セーブ・読み取り・無茶な書き換え・総当たり・ルール・無限の世界・くり返す十年・結末・実績・印と試練（marks）・開いていく順番（unlocks）・人々の心・読み分け・情景・序章の手引き（prologue）・世界の終わりまで・筆の位・明るさの比・画面の言葉・手触りの目安・ルール本体の純粋さ（core-purity）・内容のデータ（data）・画面の呼び名（names）・言い切りの強さ（roles）・消した行（voids）・入力の補助（wording）・ノートの辞書と地図と前回の線（notes）・演出の散り方（fx））
+- tests：Vitest（決定性・棋譜・セーブ・読み取り・無茶な書き換え・総当たり・ルール・無限の世界・くり返す十年・結末・実績・印と試練（marks）・開いていく順番（unlocks）・人々の心・読み分け・情景・序章の手引き（prologue）・世界の終わりまで・筆の位・明るさの比・画面の言葉・手触りの目安・ルール本体の純粋さ（core-purity）・内容のデータ（data）・画面の呼び名（names）・言い切りの強さ（roles）・消した行（voids）・入力の補助（wording）・ノートの辞書と地図と前回の線（notes）・演出の散り方（fx）・更新のお知らせ（updates））
 - e2e：Playwright（app.spec.ts・screens.spec.ts・演出中のコマ数 perf.spec.ts）
 - scripts：シミュレーター（npm run sim）と作戦・ボット（strategies.ts・bots.ts・run.ts。無限の世界のボットは endless.ts）、結末の筋書き（worlds.ts）、読み取りの総当たり（fuzz.ts）、筆の位で遊べるかの確かめ（ranks.ts）、作り手の解（par.ts・designer.ts）、組み合わせの総当たり（combos.ts）、読み取りの穴（corpus.ts）と逆の読み取り（polarity.ts）、紹介用の PV（pv/：撮影 record.ts・舞台 stage.html・書き出し encode.ts と mp4.ts・コマの取り出し frames.ts・BGM の小節 beats.ts）
 - docs：SPEC.md、PLAN.md（企画書）、ANALYSIS.md、IMPROVE.md、PROMPTS.md、BASELINE.md（直す前の数字）、WORKPLAN.md（作業計画）、TERMS.md、SOURCES.md、design/（画面設計の見本）、screens/（スクリーンショット）
@@ -92,6 +92,7 @@
 ## 作業の進め方
 
 - 変更したら npm test と npm run e2e を通してから報告する
+- プッシュするときは、src/data/updates.json のいちばん上に、遊ぶ人に向けた更新のお知らせを1つ足す（id は日付と a・b・c、題と変わったことを短く。技術の言葉を使わない。1行ずつの文は「。」で終えない）。前に遊んだ人には、次に開いたときにタイトルに1度だけ出る。ゲーム（src）を変えたのにお知らせがないプッシュは、GitHub Actions の確かめで公開が止まる
 - 画面を変えたら npm run screens で撮り直し、崩れがないか自分で確かめる（docs/design/ の見本と見比べる）
 - 数値を変えたら npm run sim と見立てるボットで測り、SPEC 5章の目安から外れていないか確かめる。外れたら SPEC の実測値も直す
 - UI の文言と報告は日本語で書く

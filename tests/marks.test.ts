@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { advance, createGame, marksOf, replayKifu, kifuOf, reviewOf, wallsOf, type GameState } from '../src/core';
 import { gameData } from '../src/data';
 import type { StageId } from '../src/data/schema';
-import { EMPTY_PROGRESS, migrate, type Progress } from '../src/save';
+import { EMPTY_PROGRESS, type Progress } from '../src/save';
 import { newAchievements } from '../src/store/achievements';
 import { buildCodex } from '../src/store/codex';
 import { shareText } from '../src/store/share';
@@ -155,24 +155,6 @@ describe('改稿者の試練', () => {
     const again = replayKifu(gameData, kifuOf(g, gameData));
     expect(again.trial).toEqual(g.trial);
     expect(again.sim).toEqual(g.sim);
-  });
-});
-
-describe('セーブ（版6）', () => {
-  it('版5のセーブに、版6の記録（棋譜・印・書き出した日・案内・画面の明るさ）を補う', () => {
-    const save = migrate({
-      saveVersion: 5,
-      savedAt: 1,
-      settings: { bgm: true, volume: 0.6, analysis: false, se: true, motion: true },
-      progress: { cleared: [], best: {}, worlds: 0, discovered: [], endless: [], ranking: [], achievements: [], abandoned: 0 },
-      current: null,
-    });
-    expect(save.saveVersion).toBe(6);
-    expect(save.progress.kifu).toEqual({});
-    expect(save.progress.trials).toEqual([]);
-    expect(save.progress.exportedAt).toBeNull();
-    expect(save.progress.prompted).toEqual({ home: false, exportRank: -1 });
-    expect(save.settings).toMatchObject({ theme: 'auto', speed: 'auto', allOpen: false });
   });
 });
 

@@ -16,6 +16,7 @@ import { MenuSheet } from './sheets/MenuSheet';
 import { MetaSheet } from './sheets/MetaSheet';
 import { LifeSheet, PillarSheet } from './sheets/PillarSheet';
 import { ReportSheet } from './sheets/ReportSheet';
+import { UpdatesSheet } from './sheets/UpdatesSheet';
 
 export function App() {
   const screen = useGame((s) => s.screen);
@@ -58,6 +59,7 @@ export function App() {
       {sheet?.kind === 'life' && <LifeSheet />}
       {sheet?.kind === 'menu' && <MenuSheet />}
       {sheet?.kind === 'meta' && <MetaSheet which={sheet.which} />}
+      {sheet?.kind === 'updates' && <UpdatesSheet />}
 
       <Passing />
       <FxLayer />

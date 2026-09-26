@@ -30,7 +30,9 @@ import {
   type StepReport,
 } from '../core';
 import type { StageId } from '../data/schema';
-import { DEFAULT_SETTINGS, EMPTY_PROGRESS, exportText, importText, SAVE_VERSION, type Progress, type SaveData, type SaveStore, type Settings } from '../save';
+import { DEFAULT_SETTINGS, EMPTY_PROGRESS, exportText, importText, OldSaveError, SAVE_VERSION, type Progress, type SaveData, type SaveStore, type Settings } from '../save';
+import type { Update } from '../data/schema';
+import { UPDATES, unseenUpdates } from '../data/updates';
 import { PREV_RUN_MAX, WORD_MAX, WORDS_KNOWN, WORDS_UNKNOWN } from '../save/schema';
 import { newAchievements } from './achievements';
 import { insertRun } from './ranking';
@@ -60,6 +62,11 @@ export function dailySeed(date: string): number {
 
 /** 書き換える場所：既存の法則の行・書き足した行・新しい行 */
 export type EditTarget = WriteTarget;
+
+/** 始め直す前の版のセーブを消したときの知らせ（タイトルに出す） */
+export const LOAD_RESET = 'ゲームを始め直したので、これまでのセーブを消した（はじめから遊べる）';
+/** 遊んでいた世界だけが壊れていて手放したときの知らせ */
+export const LOAD_DROPPED = '遊んでいた世界が壊れていたのでその世界だけを手放した（記録は残っている）';
 
 export interface RuntimeOptions {
   data: GameData;
@@ -111,16 +118,59 @@ export class GameRuntime {
 
   async boot(): Promise<void> {
     if (!this.opts.store.persistent) this.setSaveWarning(SAVE_VOLATILE);
+    let save: SaveData | null;
     try {
-      const save = await this.opts.store.load();
-      if (save) {
-        this.apply(save);
-        if (save.restored) this.loadError = '最新のセーブが壊れていたのでひとつ前のセーブから読み込んだ（壊れたセーブは消さずに別に残してある）';
-        else if (save.droppedCurrent) this.loadError = '遊んでいた世界が壊れていたのでその世界だけを手放した（記録は残っている）';
-      }
+      save = await this.opts.store.load();
     } catch (e) {
-      this.loadError = `${(e as Error).message}。壊れたセーブは消さずに別に残してある`;
+      // 始め直す前の版のセーブは、保存の窓口が控えごと消している
+      this.loadError = e instanceof OldSaveError ? LOAD_RESET : `${(e as Error).message}。壊れたセーブは消さずに別に残してある`;
+      return;
     }
+    // はじめて遊ぶ人には、これまでの更新のお知らせは出さない（いちばん新しいお知らせを見たことにする）
+    if (!save) {
+      this.progress.seenUpdate = UPDATES[0]?.id ?? null;
+      return;
+    }
+    try {
+      this.apply(save);
+    } catch {
+      // 形は正しいのに世界を組み立てられなかった：元のセーブを上書きされる前に別に残し、遊んでいた世界だけを手放して記録を読む
+      this.opts.store.keepAside?.();
+      try {
+        this.apply({ ...save, current: null });
+        this.loadError = LOAD_DROPPED;
+      } catch {
+        this.loadError = 'セーブを読み込めなかった。壊れたセーブは消さずに別に残してある';
+      }
+      return;
+    }
+    if (save.restored) this.loadError = '最新のセーブが壊れていたのでひとつ前のセーブから読み込んだ（壊れたセーブは消さずに別に残してある）';
+    else if (save.droppedCurrent) this.loadError = LOAD_DROPPED;
+  }
+
+  /** まだ見ていない更新のお知らせ（新しい順。多くても3つ） */
+  get unseenUpdates(): Update[] {
+    return unseenUpdates(UPDATES, this.progress.seenUpdate);
+  }
+
+  /** 更新のお知らせを見た（閉じた・読んだ） */
+  markUpdatesSeen(): void {
+    const latest = UPDATES[0]?.id ?? null;
+    if (this.progress.seenUpdate === latest) return;
+    this.progress.seenUpdate = latest;
+    void this.save();
+  }
+
+  /**
+   * 読み込んだ世界を画面に出せなかった（よそで作られた壊れたセーブ など）：元のセーブを別に残し、その世界だけを手放す。
+   * 記録と設定は残る（まっ白な画面のまま動かなくならないように）
+   */
+  dropBrokenWorld(): void {
+    this.opts.store.keepAside?.();
+    this.state = null;
+    this.run += 1;
+    this.loadError = LOAD_DROPPED;
+    void this.save();
   }
 
   private setSaveWarning(warning: string | null): void {
@@ -318,13 +368,18 @@ export class GameRuntime {
 
   /**
    * 書こうとしたが書き込まなかった文（意味の伝わらない文は書き込めない）の言葉を、世界の辞書に集める。
-   * 世界が知らない言葉があれば、はじめてなら世界の辞書を開く（世界は何も変わらない）
+   * 世界に届かない文なら書こうとした回数を数え、世界が知らない言葉があれば、はじめてなら世界の辞書を開く。
+   * 世界は何も変わらない。数えたら、記録に移して実績を調べる（実績「届かない言葉」）
    */
-  tried(text: string): void {
+  tried(target: EditTarget, text: string): void {
     const g = this.state;
-    if (!g || text.trim() === '') return;
+    this.fresh = [];
+    if (!g || g.status !== 'playing' || text.trim() === '') return;
     this.collectWords(text);
-    if (noticeWords(g, text)) this.absorb(g);
+    if (noticeWords(g, this.data, target, text)) {
+      this.absorb(g);
+      this.unlock(g);
+    }
     void this.save();
   }
 
@@ -348,7 +403,8 @@ export class GameRuntime {
   /** ひとつ前の遊びの人口の線を覚える（同じ世界番号でもう一度・分かれ道で、前回の線を重ねて見せる） */
   private keepPrevRun(g: GameState | null): void {
     if (!g || g.trace.pop.length < 2) return;
-    this.progress.prevRun = { key: runKey(g), pop: g.trace.pop.slice(-PREV_RUN_MAX) };
+    // 前回の線は0年目から重ねるので、長い世界（無限の世界）でも、はじめの年から残す
+    this.progress.prevRun = { key: runKey(g), pop: g.trace.pop.slice(0, PREV_RUN_MAX) };
   }
 
   advance(years: number): StepReport | null {
@@ -520,11 +576,18 @@ export class GameRuntime {
   /** 書き出したものを読み込む。遊んでいた世界だけが壊れていて手放したときは、dropped が真 */
   async importSave(text: string): Promise<{ dropped: boolean }> {
     const save = importText(text);
-    this.apply(save);
+    let dropped = !!save.droppedCurrent;
+    try {
+      this.apply(save);
+    } catch {
+      // 形は正しいのに世界を組み立てられなかった：その世界だけを手放して、記録と設定を読む
+      this.apply({ ...save, current: null });
+      dropped = true;
+    }
     this.run += 1;
     this.loadError = null;
     await this.save();
-    return { dropped: !!save.droppedCurrent };
+    return { dropped };
   }
 
   async reset(): Promise<void> {
@@ -540,7 +603,8 @@ export class GameRuntime {
     this.run += 1;
     // 「すべて開いた状態で始める」は、すべてを一度開いた記録があってこそ（記録を消したら OFF に戻す）
     this.settings = { ...this.settings, allOpen: false };
-    this.progress = structuredClone(EMPTY_PROGRESS);
+    // 更新のお知らせは、記録を消しても見たまま（同じお知らせを、もう一度出さない）
+    this.progress = { ...structuredClone(EMPTY_PROGRESS), seenUpdate: this.progress.seenUpdate };
     this.fresh = [];
     this.rankUp = null;
     this.lastMarks = [];

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addLine, advance, createGame, rewriteLaw, upgradeState } from '../src/core';
+import { addLine, advance, createGame, rewriteLaw } from '../src/core';
 import { gameData } from '../src/data';
 import {
   DEFAULT_SETTINGS,
@@ -11,6 +11,7 @@ import {
   MAX_SAVE_CHARS,
   MemorySaveStore,
   migrate,
+  OldSaveError,
   SAVE_KEY,
   SAVE_VERSION,
   SaveFormatError,
@@ -21,7 +22,9 @@ import {
   type SaveStore,
 } from '../src/save';
 import { ENDLESS_POLICIES } from '../scripts/endless';
-import { GameRuntime, SAVE_FAILED, SAVE_VOLATILE } from '../src/store/runtime';
+import { GameRuntime, LOAD_DROPPED, LOAD_RESET, SAVE_FAILED, SAVE_VOLATILE } from '../src/store/runtime';
+import type { StageId } from '../src/data/schema';
+import { UPDATES } from '../src/data/updates';
 import { insertRun, rankTitle, RANKING_SIZE, type RankRun } from '../src/store/ranking';
 
 function sample(): SaveData {
@@ -119,7 +122,8 @@ describe('セーブ', () => {
     await rt.save();
     await rt.resetRecords();
     expect(rt.state).toBeNull();
-    expect(rt.progress).toEqual(EMPTY_PROGRESS);
+    // 見た更新のお知らせだけは、記録を消しても残す（同じお知らせを、もう一度出さない）
+    expect(rt.progress).toEqual({ ...EMPTY_PROGRESS, seenUpdate: UPDATES[0]!.id });
     expect(rt.settings.theme).toBe('dark');
     expect(rt.settings.textSize).toBe('large');
     // 読み直しても、記録は空で、設定は残っている
@@ -129,54 +133,6 @@ describe('セーブ', () => {
     expect(again.progress.cleared).toEqual([]);
     expect(again.progress.discovered).toEqual([]);
     expect(again.settings.seVolume).toBe(0.3);
-  });
-
-  it('古い版（版 0：設定と進み具合がない）のセーブも読める', () => {
-    const old = { current: null };
-    const up = migrate(old);
-    expect(up.saveVersion).toBe(SAVE_VERSION);
-    expect(up.settings).toEqual(DEFAULT_SETTINGS);
-    expect(up.progress.worlds).toBe(0);
-  });
-
-  it('版 1（観測記録がない）のセーブも読め、遊んでいた世界で見つけたものが観測記録に入る', () => {
-    const now = sample();
-    const found = [...now.current!.found];
-    expect(found.length).toBeGreaterThan(0);
-    // 版 1 の形：progress.discovered も current.found もない
-    const old = JSON.parse(JSON.stringify(now));
-    old.saveVersion = 1;
-    delete old.progress.discovered;
-    const keep = old.current.found;
-    delete old.current.found;
-    const up = migrate(old);
-    expect(up.saveVersion).toBe(SAVE_VERSION);
-    expect(up.progress.discovered).toEqual([]);
-    expect(up.current!.found).toEqual([]);
-    // 観測記録を持っていた版 1 の世界なら、その分は記録に入る
-    old.current.found = keep;
-    expect(migrate(old).progress.discovered).toEqual(found);
-  });
-
-  it('版 2（無限の世界の記録と危機の項目がない）のセーブも読め、足りない項目が補われる', () => {
-    const now = sample();
-    const old = JSON.parse(JSON.stringify(now));
-    old.saveVersion = 2;
-    delete old.progress.endless;
-    delete old.current.crisis;
-    delete old.current.nextCrisis;
-    delete old.current.crises;
-    delete old.current.daily;
-    old.current.schema = 3;
-    const up = migrate(old);
-    expect(up.saveVersion).toBe(SAVE_VERSION);
-    expect(up.progress.endless).toEqual([]);
-    expect(up.current!.crisis).toBeNull();
-    expect(up.current!.nextCrisis).toBe(-1);
-    expect(up.current!.crises).toEqual({ averted: 0, softened: 0, struck: 0 });
-    expect(up.current!.daily).toBeNull();
-    // 読み込んだ世界は、そのまま進められる
-    expect(() => advance(up.current!, gameData, 2)).not.toThrow();
   });
 
   it('無限の世界の途中（危機の知らせのあと）でも、保存して読み込めば同じ結果になる', () => {
@@ -237,6 +193,113 @@ describe('セーブ', () => {
   });
 });
 
+describe('始め直したセーブ（版7から）', () => {
+  it('始め直す前の版（版6まで・版のないもの）のセーブは読まない（書き出したテキストも）', () => {
+    const now = JSON.parse(serialize(sample()));
+    for (const v of [undefined, 0, 1, 5, 6]) expect(() => migrate({ ...now, saveVersion: v })).toThrow(OldSaveError);
+    expect(() => importText(JSON.stringify({ ...now, saveVersion: 6 }))).toThrow('始め直す前の版');
+    expect(() => importText(exportText({ ...sample(), saveVersion: 6 }))).toThrow(OldSaveError);
+    expect(migrate(now).saveVersion).toBe(SAVE_VERSION);
+  });
+
+  it('セーブの形でない JSON（{} など）は読み込まない（今の記録を上書きしない）', () => {
+    for (const s of ['{}', '{"hello":"world"}', '{"saveVersion":7}', '{"saveVersion":7,"__proto__":{"x":1}}', '[]']) expect(() => importText(s), s).toThrow(SaveFormatError);
+    expect(({} as Record<string, unknown>).x).toBeUndefined();
+  });
+
+  it('端末に残っていた始め直す前のセーブは、控えも壊れたときの控えも消して、はじめから始める（タイトルで知らせる）', async () => {
+    const storage = new MapStorage();
+    const old = JSON.stringify({ ...JSON.parse(serialize(sample())), saveVersion: 6 });
+    for (const k of [SAVE_KEY, `${SAVE_KEY}.prev`, `${SAVE_KEY}.broken`, `${SAVE_KEY}.broken2`]) storage.setItem(k, old);
+    const rt = new GameRuntime({ data: gameData, store: new LocalStorageSaveStore(storage), now: () => 1, newSeed: () => 1 });
+    await rt.boot();
+    expect(rt.loadError).toBe(LOAD_RESET);
+    expect(rt.state).toBeNull();
+    expect(rt.progress).toEqual(EMPTY_PROGRESS);
+    for (const k of [SAVE_KEY, `${SAVE_KEY}.prev`, `${SAVE_KEY}.broken`, `${SAVE_KEY}.broken2`]) expect(storage.getItem(k)).toBeNull();
+    // 最新がなく、控えだけが始め直す前の版なら、その控えを消す
+    const only = new MapStorage();
+    only.setItem(`${SAVE_KEY}.prev`, old);
+    expect(await new LocalStorageSaveStore(only).load()).toBeNull();
+    expect(only.getItem(`${SAVE_KEY}.prev`)).toBeNull();
+  });
+
+  it('どのステージの世界も、遊んだあと保存して読み込むと中身が変わらない（形の確かめで手放さない）', () => {
+    const stages: StageId[] = ['prologue', 'food', 'plague', 'climate', 'war', 'energy', 'tiny', 'loop', 'endless'];
+    for (const stage of stages) {
+      const g = createGame(gameData, stage, 11);
+      addLine(g, gameData, '人間は空を飛べる。');
+      advance(g, gameData, stage === 'loop' ? 25 : 12);
+      const back = deserialize(serialize({ saveVersion: SAVE_VERSION, savedAt: 1, settings: { ...DEFAULT_SETTINGS }, progress: structuredClone(EMPTY_PROGRESS), current: g }));
+      expect(back.droppedCurrent, stage).toBeFalsy();
+      expect(back.current, stage).toEqual(JSON.parse(JSON.stringify(g)));
+    }
+  });
+
+  it('壊れた去年の結果の写しは捨てて、世界はそのまま遊べる', () => {
+    const raw = JSON.parse(serialize(sample()));
+    raw.current.report = { from: 0, to: 1, news: [null] };
+    const back = deserialize(JSON.stringify(raw));
+    expect(back.droppedCurrent).toBeFalsy();
+    expect(back.current!.report).toBeNull();
+    expect(() => advance(back.current!, gameData, 2)).not.toThrow();
+  });
+
+  it('くり返しの控え・曲線・書き足した行の名前・効き目の数が壊れたセーブは、その世界だけを手放す', () => {
+    const g = createGame(gameData, 'loop', 7);
+    advance(g, gameData, 2);
+    expect(g.loop).not.toBeNull();
+    const text = serialize({ saveVersion: SAVE_VERSION, savedAt: 1, settings: { ...DEFAULT_SETTINGS }, progress: structuredClone(EMPTY_PROGRESS), current: g });
+    const broken = (f: (c: Record<string, any>) => void) => {
+      const r = JSON.parse(text);
+      f(r.current);
+      return deserialize(JSON.stringify(r));
+    };
+    expect(deserialize(text).droppedCurrent).toBeFalsy();
+    expect(broken((c) => delete c.loop.snapshot.effects).droppedCurrent).toBe(true);
+    expect(broken((c) => delete c.loop.snapshot.sim.trust).droppedCurrent).toBe(true);
+    expect(broken((c) => delete c.trace.laps).droppedCurrent).toBe(true);
+    // 書き足した行の id は x と番号だけ（hasOwnProperty などは、行の意味を引くときにオブジェクトの仕組みと取り違える）
+    expect(broken((c) => (c.extras = [{ id: 'hasOwnProperty', text: '人は歌う。', year: 0 }])).droppedCurrent).toBe(true);
+    expect(broken((c) => (c.effects = Array.from({ length: 600 }, () => ({ source: 'e:x', mods: {}, remaining: 1 })))).droppedCurrent).toBe(true);
+  });
+
+  it('形は正しいのに世界を組み立てられないセーブは、元のセーブを別に残し、その世界だけを手放す（記録は残る）', async () => {
+    const good = sample();
+    good.progress.worlds = 42;
+    const broken = { ...good, current: { ...good.current!, extras: null } } as unknown as SaveData;
+    let kept = 0;
+    const store: SaveStore = {
+      persistent: true,
+      load: async () => broken,
+      save: async () => {},
+      clear: async () => {},
+      keepAside: () => {
+        kept += 1;
+      },
+    };
+    const rt = new GameRuntime({ data: gameData, store, now: () => 1, newSeed: () => 1 });
+    await rt.boot();
+    expect(kept).toBe(1);
+    expect(rt.state).toBeNull();
+    expect(rt.progress.worlds).toBe(42);
+    expect(rt.loadError).toBe(LOAD_DROPPED);
+  });
+
+  it('画面に出せなかった世界は、元のセーブを別に残してから手放す（まっ白な画面にしない）', async () => {
+    const storage = new MapStorage();
+    const rt = new GameRuntime({ data: gameData, store: new LocalStorageSaveStore(storage), now: () => 1, newSeed: () => 1 });
+    await rt.boot();
+    rt.start('food');
+    await rt.save();
+    const before = storage.getItem(SAVE_KEY);
+    rt.dropBrokenWorld();
+    expect(rt.state).toBeNull();
+    expect(rt.loadError).toBe(LOAD_DROPPED);
+    expect(storage.getItem(`${SAVE_KEY}.broken`)).toBe(before);
+  });
+});
+
 describe('無限の世界の記録簿（ランキング）', () => {
   const run = (years: number, at: number, extra: Partial<RankRun> = {}): RankRun => ({ years, daily: null, at, title: '', ending: null, edits: 0, averted: 0, ...extra });
 
@@ -260,61 +323,6 @@ describe('無限の世界の記録簿（ランキング）', () => {
     expect(rankTitle(gameData, 0)).toBe(gameData.indicators.ranks[0]![1]);
     const [min, name] = gameData.indicators.ranks[gameData.indicators.ranks.length - 1]!;
     expect(rankTitle(gameData, min + 1)).toBe(name);
-  });
-
-  it('版 4（記録簿がない）のセーブも読め、無限の世界の記録から記録簿が作られる', () => {
-    const old = JSON.parse(serialize(sample()));
-    old.saveVersion = 4;
-    delete old.progress.ranking;
-    old.progress.endless = Array.from({ length: 12 }, (_, i) => ({ years: (i * 37) % 100, daily: null, at: i, title: `世界${i}` }));
-    const up = migrate(old);
-    expect(up.saveVersion).toBe(SAVE_VERSION);
-    expect(up.progress.ranking).toHaveLength(RANKING_SIZE);
-    const ys = up.progress.ranking.map((r) => r.years);
-    expect(ys).toEqual([...ys].sort((a, b) => b - a));
-    expect(ys[0]).toBe(Math.max(...old.progress.endless.map((r: { years: number }) => r.years)));
-  });
-});
-
-describe('古い形の世界', () => {
-  it('世界容量を「重さ」で数えていた世界（版5まで）は、文字数に直して読み込む', () => {
-    const g = createGame(gameData, 'food', 1);
-    const chars = g.sim.capacityMax;
-    const { legacyChars, legacyShift } = gameData.balance.capacity;
-    const old = structuredClone(g);
-    old.schema = 5;
-    old.sim.capacityMax = (chars + legacyShift) / legacyChars;
-    expect(upgradeState(old, gameData).sim.capacityMax).toBeCloseTo(chars, 6);
-    // 今の形の世界は、そのまま
-    expect(upgradeState(structuredClone(g), gameData).sim.capacityMax).toBe(chars);
-  });
-
-  it('心・物価・くり返す世界の項目がない世界も、ふだんの値で補って進められる', () => {
-    const g = createGame(gameData, 'food', 1);
-    const old = JSON.parse(JSON.stringify(g));
-    delete old.sim.mind;
-    delete old.sim.prices;
-    delete old.loop;
-    const up = upgradeState(old, gameData);
-    expect(up.sim.mind).toBe(gameData.balance.mind.base);
-    expect(up.sim.prices).toBe(1);
-    expect(up.loop).toBeNull();
-    expect(() => advance(up, gameData, 2)).not.toThrow();
-  });
-
-  it('去年効いていた意味と書き換えの勢いがない世界（版6まで）は、今の意味で補う（読み込んだだけで「効き始めた」と知らせない）', () => {
-    const g = createGame(gameData, 'food', 1);
-    addLine(g, gameData, '人間は空を飛べる。');
-    advance(g, gameData, 1);
-    const old = JSON.parse(JSON.stringify(g));
-    delete old.inEffect;
-    delete old.impulse;
-    old.schema = 6;
-    const up = upgradeState(old, gameData);
-    expect(up.inEffect).toEqual(['p:flight']);
-    expect(up.impulse).toEqual({});
-    const rep = advance(up, gameData, 1);
-    expect(rep.news.filter((n) => n.onset)).toEqual([]);
   });
 });
 

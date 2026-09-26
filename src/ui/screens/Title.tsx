@@ -2,10 +2,11 @@ import { BookOpen, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { gameData } from '../../data';
 import { metaRecord } from '../../store/achievements';
-import { continueGame, goStages, openRecords, updateSettings, useGame } from '../../store/game';
+import { continueGame, dismissUpdates, goStages, openRecords, openSheet, updateSettings, useGame } from '../../store/game';
 import { syncBgm } from '../audio';
 import { Icon } from '../icons';
 import { TERMS } from '../terms';
+import { updateDate } from '../sheets/UpdatesSheet';
 import { TitleArt } from '../TitleArt';
 import { Tutorial } from '../Tutorial';
 
@@ -15,6 +16,8 @@ let titlePopped = false;
 export function Title() {
   const hasGame = useGame((s) => s.hasGame);
   const loadError = useGame((s) => s.loadError);
+  // まだ見ていない更新のお知らせ（いちばん新しいもの）
+  const update = useGame((s) => s.unseenUpdates[0] ?? null);
   const settings = useGame((s) => s.settings);
   const worlds = useGame((s) => s.progress.worlds);
   const found = useGame((s) => s.progress.discovered.filter((id) => !metaRecord(id)).length);
@@ -60,6 +63,23 @@ export function Title() {
             <p className="load-error" role="alert" data-testid="load-error">
               {loadError}
             </p>
+          )}
+          {update && (
+            <section className="update-card" aria-label="更新のお知らせ" data-testid="update-card">
+              <div className="update-card-head">
+                <span className="update-card-label">更新のお知らせ</span>
+                <span className="update-card-date">{updateDate(update.date)}</span>
+              </div>
+              <p className="update-card-title">{update.title}</p>
+              <div className="update-card-actions">
+                <button className="btn" onClick={() => openSheet({ kind: 'updates' })} data-testid="update-open">
+                  くわしく
+                </button>
+                <button className="btn" onClick={dismissUpdates} data-testid="update-close">
+                  閉じる
+                </button>
+              </div>
+            </section>
           )}
           {hasGame && (
             <button className="btn btn-primary" onClick={start(continueGame)} data-testid="continue">

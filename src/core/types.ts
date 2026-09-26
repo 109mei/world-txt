@@ -449,10 +449,9 @@ export interface Carried {
 
 /** 書き足した一文 */
 export interface ExtraLine {
+  /** x と番号（x1 など） */
   id: string;
   text: string;
-  /** 古い形（版2まで）の読み取り。今は GameState.carried に入れる */
-  phrase?: string | null;
   year: number;
 }
 

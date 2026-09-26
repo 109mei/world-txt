@@ -37,6 +37,7 @@ import {
   LawSchema,
   LexiconSchema,
   PhraseSchema,
+  PROGRESS_CONDITION,
   SceneDataSchema,
   SourcesSchema,
   UnlocksSchema,
@@ -271,8 +272,7 @@ export function buildGameData(raw: RawData): GameData {
   }
   for (const a of data.achievements) {
     check(`実績 ${a.id}`, a.world);
-    for (const c of a.progress)
-      if (!/^(cleared|worlds|discovered|endlessBest|endings|achievements|abandoned|modes|rules|marks3|numbered|trials)\s*(<=|>=|==|<|>)\s*\d+$/.test(c)) problems.push(`実績 ${a.id}: 進み具合の条件が読めない ${c}`);
+    for (const c of a.progress) if (!PROGRESS_CONDITION.test(c.trim())) problems.push(`実績 ${a.id}: 進み具合の条件が読めない ${c}`);
   }
   for (const law of data.laws)
     for (const w of law.exists) if (!law.subject.includes(w) && !law.topic.includes(w) && !originalText(law).startsWith(w)) problems.push(`法則 ${law.id}: exists の ${w} が主語にも話題にもない`);

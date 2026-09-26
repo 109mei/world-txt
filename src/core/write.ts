@@ -392,13 +392,24 @@ function shortageAfter(g: GameState, data: GameData, next: Written): number {
 }
 
 /**
- * 書こうとした文に、世界が知らない言葉があった（意味の伝わらない文は書き込めないので、書く画面を閉じたときに知らせる）。
- * はじめてなら、開いていく順番で世界の辞書を開く。世界は何も変わらず、書換の力も使わない。知らない言葉があれば true
+ * 書こうとして書き込まなかった文（意味の伝わらない文は書き込めないので、書く画面を閉じたときに知らせる）。
+ * 世界に届かない文なら、書き込もうとしたときと同じく書こうとした回数を数える（実績「届かない言葉」）。
+ * 世界が知らない言葉があれば、はじめてなら開いていく順番で世界の辞書を開く。世界は何も変わらず、書換の力も使わない。
+ * 何か数えた・見つけたなら true
  */
-export function noticeWords(g: GameState, text: string): boolean {
-  if (dictionaryWords(text).unknown.length === 0) return false;
-  discover(g, 'h:unknown');
-  return true;
+export function noticeWords(g: GameState, data: GameData, target: WriteTarget, text: string): boolean {
+  if (text.trim() === '') return false;
+  let noticed = false;
+  if (dictionaryWords(text).unknown.length > 0) {
+    discover(g, 'h:unknown');
+    noticed = true;
+  }
+  const plan = planWrite(g, data, target, text);
+  if (!plan.block && !plan.result.understood) {
+    g.stats.noise += 1;
+    noticed = true;
+  }
+  return noticed;
 }
 
 /**

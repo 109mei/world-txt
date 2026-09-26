@@ -1,4 +1,4 @@
-import { deserialize, MAX_SAVE_CHARS, serialize, type SaveData } from './format';
+import { deserialize, MAX_SAVE_CHARS, OldSaveError, serialize, type SaveData } from './format';
 
 /**
  * 保存の窓口。ゲームからはこれだけを使う。
@@ -10,6 +10,8 @@ export interface SaveStore {
   load(): Promise<SaveData | null>;
   save(data: SaveData): Promise<void>;
   clear(): Promise<void>;
+  /** 読めたのに使えなかった最新のセーブ（形は正しいが世界を組み立てられない など）を、上書きされる前に別に残す */
+  keepAside?(): void;
 }
 
 /** localStorage と同じ形の入れ物（テストでは Map で代わりをする） */
@@ -28,6 +30,7 @@ export class SaveWriteError extends Error {}
  * localStorage に保存する。
  * - 最新のセーブのほかに、ひとつ前のセーブを控え（.prev）に残す。最新が壊れていたら、控えから読む
  * - 読めなかったセーブは消さずに .broken へ残す（次の保存で上書きされないように）
+ * - 始め直す前の版のセーブは、控えも含めてすべて消し、はじめから始める（OldSaveError を投げて知らせる）
  * - 空きが足りないときは、控えの分を空けてから、もう一度保存する
  */
 export class LocalStorageSaveStore implements SaveStore {
@@ -60,6 +63,11 @@ export class LocalStorageSaveStore implements SaveStore {
     try {
       data = deserialize(text);
     } catch (e) {
+      // 始め直す前の版のセーブ：控えも壊れたときの控えもすべて消して、はじめから
+      if (e instanceof OldSaveError) {
+        await this.clear();
+        throw e;
+      }
       // 最新のセーブが読めない：消さずに残し、ひとつ前のセーブがあればそれを使う
       this.keepBroken(text);
       const backup = this.fromBackup();
@@ -86,9 +94,16 @@ export class LocalStorageSaveStore implements SaveStore {
       const data = deserialize(text);
       this.lastGood = text;
       return { ...data, restored: true };
-    } catch {
+    } catch (e) {
+      // 始め直す前の版の控えは消す
+      if (e instanceof OldSaveError) this.remove(this.backupKey);
       return null;
     }
+  }
+
+  keepAside(): void {
+    const text = this.storage.getItem(this.key);
+    if (text !== null) this.keepBroken(text);
   }
 
   /**

@@ -3,7 +3,12 @@ import { MIGRATIONS } from './migrations';
 import { SaveDataSchema, type Progress, type Settings } from './schema';
 
 /** セーブの版番号。形を変えたら上げて、MIGRATIONS に古い版からの変換を足す */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
+/**
+ * 読み込めるいちばん古い版。セーブは版7（2026年9月27日）から始め直したので、それより前のセーブは読まない
+ * （端末に残っていたら、次に開いたときに消して、はじめから始める）
+ */
+export const FIRST_SAVE_VERSION = 7;
 
 /**
  * 読み込むセーブの大きさの上限（文字数）。ふつうのセーブは数十KB（何百もの世界を遊んでも100KBほど）。
@@ -27,6 +32,13 @@ export interface SaveData {
 
 export class SaveFormatError extends Error {}
 
+/** 始め直す前の版のセーブ（読まずに消す） */
+export class OldSaveError extends SaveFormatError {
+  constructor() {
+    super('ゲームを始め直す前の版のセーブなので読み込めない');
+  }
+}
+
 /** 読み込むときに取り除く鍵（オブジェクトの仕組みを書き換えられないように） */
 const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
@@ -40,6 +52,7 @@ export function migrate(raw: unknown): SaveData {
   if (typeof raw !== 'object' || raw === null) throw new SaveFormatError('セーブの形ではない');
   let data = raw as Record<string, unknown>;
   let version = typeof data.saveVersion === 'number' ? data.saveVersion : 0;
+  if (version < FIRST_SAVE_VERSION) throw new OldSaveError();
   if (version > SAVE_VERSION) throw new SaveFormatError(`新しすぎる版のセーブ（${version}）`);
   while (version < SAVE_VERSION) {
     const up = MIGRATIONS[version];

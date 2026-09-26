@@ -11,7 +11,7 @@ async function quiet(page: import('@playwright/test').Page): Promise<void> {
 
 test('主な画面', async ({ page }) => {
   test.setTimeout(120_000);
-  await page.goto('./?seed=20260924&debug=1');
+  await page.goto('./?seed=924&debug=1');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await ready(page);
@@ -254,7 +254,7 @@ test('主な画面', async ({ page }) => {
 test('明るい画面', async ({ page }) => {
   test.setTimeout(120_000);
   await page.emulateMedia({ colorScheme: 'light' });
-  await page.goto('./?seed=20260924&debug=1');
+  await page.goto('./?seed=924&debug=1');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await ready(page);
@@ -305,7 +305,7 @@ test('保存についての知らせ', async ({ page }) => {
       set.call(this, key, value);
     };
   });
-  await page.goto('./?seed=20260924&debug=1');
+  await page.goto('./?seed=924&debug=1');
   await ready(page);
   await page.getByTestId('start').click();
   await page.getByTestId('stage-prologue').click();

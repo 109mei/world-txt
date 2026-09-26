@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addLine, advance, createGame, rewriteLaw } from '../src/core';
 import { gameData } from '../src/data';
-import { EMPTY_PROGRESS, MemorySaveStore, migrate, SAVE_VERSION, type Progress } from '../src/save';
+import { EMPTY_PROGRESS, MemorySaveStore, type Progress } from '../src/save';
 import { newAchievements, progressValue } from '../src/store/achievements';
 import { GameRuntime } from '../src/store/runtime';
 import { playScenario, SCENARIOS } from '../scripts/worlds';
@@ -87,6 +87,62 @@ describe('実績', () => {
     expect(newAchievements(gameData, null, p)).toEqual(expect.arrayContaining(['endless_50', 'endless_100']));
   });
 
+  it('ノートの実績：世界の辞書に通じた言葉を30集めると「言葉を集める者」、因果の地図で線を10本見つけると「因果をたどる者」', () => {
+    const p = fresh();
+    p.words.known = Array.from({ length: 29 }, (_, i) => `言葉${i}`);
+    expect(newAchievements(gameData, null, p)).not.toContain('words_30');
+    p.words.known.push('言葉29');
+    expect(progressValue(gameData, p, 'words')).toBe(30);
+    expect(newAchievements(gameData, null, p)).toContain('words_30');
+    // 因果の地図の線は、見つけた読み取り（r:・p:）から見つけた想定外の変化・組み合わせへ引く
+    expect(progressValue(gameData, p, 'links')).toBe(0);
+    const all = [...gameData.laws.flatMap((l) => l.options.map((o) => `r:${l.id}.${o.id}`)), ...gameData.phrases.map((ph) => `p:${ph.id}`), ...gameData.twists.map((tw) => `t:${tw.id}`)];
+    p.discovered = all;
+    expect(progressValue(gameData, p, 'links')).toBeGreaterThanOrEqual(10);
+    expect(newAchievements(gameData, null, p)).toContain('causal_10');
+  });
+
+  it('前回は救えなかった同じ世界を、もう一度遊んで救うと「書き直した未来」（前回の線と比べる）', () => {
+    const g = createGame(gameData, 'food', 7);
+    g.trace.pop = Array.from({ length: 31 }, () => 80);
+    g.status = 'cleared';
+    const p = fresh();
+    // 前回の線がない・別の世界の線・前回のほうが長い（前回も救えた）ときは得ない
+    expect(newAchievements(gameData, g, p)).not.toContain('rewritten_future');
+    p.prevRun = { key: 'food:8', pop: [80, 79] };
+    expect(newAchievements(gameData, g, p)).not.toContain('rewritten_future');
+    p.prevRun = { key: 'food:7', pop: Array.from({ length: 31 }, () => 80) };
+    expect(newAchievements(gameData, g, p)).not.toContain('rewritten_future');
+    // 前回は途中で崩れた同じ世界（ステージと世界番号が同じ）を救った
+    p.prevRun = { key: 'food:7', pop: [80, 79, 77, 74] };
+    expect(newAchievements(gameData, g, p)).toContain('rewritten_future');
+    // 救えなかった世界では得ない
+    g.status = 'failed';
+    expect(newAchievements(gameData, g, p)).not.toContain('rewritten_future');
+  });
+
+  it('意味の伝わらない文を書こうとして書く画面を閉じても、書こうとした回数を数え「届かない言葉」を得る（世界は何も変わらない）', async () => {
+    const rt = runtime();
+    await rt.boot();
+    rt.start('food');
+    const before = JSON.stringify(rt.state!.laws);
+    // 世界に通じる文を閉じただけでは数えない
+    rt.tried({ kind: 'new' }, '人間は空を飛べる。');
+    expect(rt.state!.stats.noise).toBe(0);
+    expect(rt.progress.achievements).not.toContain('noise');
+    // 世界に届かない文（知らない言葉だけ・短すぎる）を閉じると数える
+    rt.tried({ kind: 'new' }, 'ポポポはピピピを食べる');
+    expect(rt.state!.stats.noise).toBe(1);
+    expect(rt.progress.achievements).toContain('noise');
+    expect(rt.fresh).toContain('ach:noise');
+    expect(rt.progress.discovered).toContain('h:unknown');
+    rt.tried({ kind: 'law', id: 'human_food' }, 'あ');
+    expect(rt.state!.stats.noise).toBe(2);
+    // 世界は何も変わらず、書換の力も使わない
+    expect(JSON.stringify(rt.state!.laws)).toBe(before);
+    expect(rt.state!.edits.used).toBe(0);
+  });
+
   it('一度得た実績は、もう一度は得ない', () => {
     const p = fresh();
     p.worlds = 1;
@@ -135,13 +191,3 @@ describe('世界は1つだけ', () => {
   });
 });
 
-describe('セーブ（版4）', () => {
-  it('版3のセーブ（実績と放棄の数がない）も読める', () => {
-    const old = { saveVersion: 3, savedAt: 0, settings: { bgm: true, volume: 0.6, analysis: false, se: true }, progress: { cleared: [], best: {}, worlds: 2, discovered: [], endless: [] }, current: null };
-    const up = migrate(old);
-    expect(up.saveVersion).toBe(SAVE_VERSION);
-    expect(up.progress.achievements).toEqual([]);
-    expect(up.progress.abandoned).toBe(0);
-    expect(up.progress.worlds).toBe(2);
-  });
-});

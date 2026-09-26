@@ -126,6 +126,16 @@ describe('前回と今回の線', () => {
     expect(rt.progress.prevRun?.pop).toHaveLength(2);
   });
 
+  it('前回の線は0年目から重ねるので、長い世界でも、はじめの年から1000年分を残す', async () => {
+    const rt = await runtime();
+    rt.start('endless', false, 3);
+    const long = Array.from({ length: 1500 }, (_, i) => 80 + (i % 7));
+    rt.state!.trace.pop = long;
+    rt.start('endless', false, 3);
+    expect(rt.progress.prevRun?.pop).toHaveLength(1000);
+    expect(rt.progress.prevRun?.pop).toEqual(long.slice(0, 1000));
+  });
+
   it('辞書の言葉と前回の線はセーブに残り、読めない形なら空にして読む', () => {
     const data: SaveData = {
       saveVersion: SAVE_VERSION,

@@ -57,13 +57,15 @@ export function EditSheet({ target }: { target: EditTarget }) {
   const current = line ? (line.state === 'deleted' ? '' : line.text) : '';
   // 文の終わりの「。」は書かなくてよい（書き込むときに世界が付ける）。書き足しやすいよう、外して開く
   const [text, setText] = useState(line ? withoutPeriod(line.text) : '');
-  // 書こうとした文に世界が知らない言葉があれば、書く画面を閉じたときに世界の辞書へ集める（意味の伝わらない文は書き込めないため）
+  // 書こうとした文が世界に届かない文か、世界が知らない言葉を含むなら、書く画面を閉じたときに知らせる
+  // （意味の伝わらない文は書き込めないので、書こうとした回数と世界の辞書の言葉は、閉じたときに数える）
   const latest = useRef(text);
   latest.current = text;
+  const unread = useRef(false);
   useEffect(
     () => () => {
       const t = latest.current;
-      if (t.trim() !== '' && wordMarks(t).some((m) => m.known === false)) noticeTried(t);
+      if (t.trim() !== '' && (unread.current || wordMarks(t).some((m) => m.known === false))) noticeTried(target, t);
     },
     [],
   );
@@ -117,6 +119,7 @@ export function EditSheet({ target }: { target: EditTarget }) {
   const marks = wordMarks(text);
   const plan = changed && text.trim() !== '' ? planWrite(g, gameData, target, text) : null;
   const noise = plan && !plan.block && !plan.result.understood ? (plan.result.noise ?? noiseOf(text)) : null;
+  unread.current = noise !== null;
 
   const title =
     target.kind === 'new' ? (

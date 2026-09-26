@@ -1,12 +1,14 @@
 import { Copy, Download, Share2, Smartphone, Upload } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { gameData } from '../../data';
-import { abandonGame, closeSheet, getRuntime, goTitle, openRecords, refreshView, resetRecords, showToast, updateSettings, useGame } from '../../store/game';
+import { UPDATES } from '../../data/updates';
+import { abandonGame, closeSheet, getRuntime, goTitle, openRecords, openSheet, refreshView, resetRecords, showToast, updateSettings, useGame } from '../../store/game';
 import { buildJourney } from '../../store/journey';
 import { syncBgm } from '../audio';
 import { Sheet } from '../parts';
 import { seChime } from '../se';
 import { Tutorial } from '../Tutorial';
+import { updateDate } from './UpdatesSheet';
 
 /** 書き出すファイルの名前（日付入り） */
 function saveFileName(now: number): string {
@@ -16,6 +18,9 @@ function saveFileName(now: number): string {
 }
 
 /** 経った時間を短く（たった今・5分前・3時間前・12日前） */
+/** 確かめを出してから、2回目を数えるまでの時間（ミリ秒） */
+const ARM_MS = 500;
+
 export function agoText(at: number | null, now: number): string {
   if (at === null) return 'まだ';
   const s = Math.max(0, Math.round((now - at) / 1000));
@@ -96,6 +101,13 @@ export function MenuSheet() {
   const [tour, setTour] = useState(false);
   // 取り返しのつかない操作は、2度押して確かめる
   const [sure, setSure] = useState<'import' | 'abandon' | 'reset' | null>(null);
+  // 確かめを出した時刻。これより ARM_MS 早い2回目は数えない（すばやい二度押しで、確かめを飛ばさない）
+  const armedAt = useRef(0);
+  const arm = (what: 'import' | 'abandon' | 'reset') => {
+    setSure(what);
+    armedAt.current = performance.now();
+  };
+  const settled = () => performance.now() - armedAt.current >= ARM_MS;
   const [about, setAbout] = useState(false);
   const [home, setHome] = useState(() => getRuntime().homePrompt && !standalone());
   const ended = useGame((s) => s.view?.status !== 'playing');
@@ -164,8 +176,15 @@ export function MenuSheet() {
 
   const load = async (t: string) => {
     try {
-      const { dropped } = await rt.importSave(t);
-      refreshView();
+      let { dropped } = await rt.importSave(t);
+      try {
+        refreshView();
+      } catch {
+        // 読み込んだ世界を画面に出せない（壊れたセーブ）：その世界だけを手放す
+        rt.dropBrokenWorld();
+        refreshView();
+        dropped = true;
+      }
       // 読み込んだ設定の音楽（ON/OFF と音量）に合わせる（効果音は設定の写しに合わせて変わる）
       syncBgm(rt.settings.bgm, rt.settings.volume);
       showToast(dropped ? '読み込んだ。遊んでいた世界は壊れていたので手放した（記録は読み込んだ）' : '読み込んだ');
@@ -252,10 +271,10 @@ export function MenuSheet() {
               disabled={text.trim() === ''}
               onClick={() => {
                 if (sure !== 'import') {
-                  setSure('import');
+                  arm('import');
                   return;
                 }
-                void load(text);
+                if (settled()) void load(text);
               }}
               data-testid="import"
             >
@@ -380,6 +399,9 @@ export function MenuSheet() {
             あそびかたをもう一度見る
           </button>
         </div>
+        <button className="menu-item" onClick={() => openSheet({ kind: 'updates' })} data-testid="menu-updates">
+          更新のお知らせ <b>{updateDate(UPDATES[0]!.date)}</b>
+        </button>
         <button className="menu-item" onClick={() => setAbout((v) => !v)} aria-expanded={about} data-testid="menu-about">
           このゲームについて <b>{about ? '閉じる' : '開く'}</b>
         </button>
@@ -392,10 +414,10 @@ export function MenuSheet() {
             className={sure === 'abandon' ? 'menu-item danger armed' : 'menu-item danger'}
             onClick={() => {
               if (sure !== 'abandon') {
-                setSure('abandon');
+                arm('abandon');
                 return;
               }
-              abandonGame();
+              if (settled()) abandonGame();
             }}
             data-testid="menu-abandon"
           >
@@ -412,10 +434,10 @@ export function MenuSheet() {
           className={sure === 'reset' ? 'menu-item danger armed' : 'menu-item danger'}
           onClick={() => {
             if (sure !== 'reset') {
-              setSure('reset');
+              arm('reset');
               return;
             }
-            void resetRecords();
+            if (settled()) void resetRecords();
           }}
           data-testid="menu-reset"
         >

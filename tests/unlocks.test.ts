@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { advance, createGame, introFor, introOf, knownRules, openHints, reviewOf, stageOpen, type Journey } from '../src/core';
 import { gameData } from '../src/data';
 import type { StageId } from '../src/data/schema';
-import { migrate } from '../src/save';
 import { playReader } from '../scripts/bots';
 import { FIRST_JOURNEY } from '../scripts/sim';
 
@@ -119,19 +118,4 @@ describe('開いていく順番', () => {
     expect(openHints(gameData, j(30), 'food')).toHaveLength(gameData.stageById.get('food')!.hints.length);
   });
 
-  it('版5のセーブを読むと、記録の残っている世界と序章を遊び終えたことにする（これまでの世界が開いたまま）', () => {
-    const old = {
-      saveVersion: 5,
-      savedAt: 1,
-      settings: { bgm: true, volume: 0.6, analysis: false, se: true, motion: true },
-      progress: { cleared: ['food'], best: { food: { years: 30, title: 't', cleared: true }, plague: { years: 12, title: 't', cleared: false } }, worlds: 3, discovered: [], endless: [], ranking: [], achievements: [], abandoned: 0 },
-      current: null,
-    };
-    const save = migrate(old);
-    expect(new Set(save.progress.played)).toEqual(new Set(['prologue', 'food', 'plague']));
-    expect(save.progress.losses).toEqual({});
-    expect(save.settings.theme).toBe('auto');
-    const j: Journey = { cleared: save.progress.cleared, played: save.progress.played, discovered: save.progress.discovered };
-    for (const s of ['food', 'plague', 'climate', 'war', 'energy', 'endless'] as StageId[]) expect(stageOpen(gameData, j, s), s).toBe(true);
-  });
 });

@@ -2,7 +2,7 @@
 import 'pixi.js/unsafe-eval';
 import 'pixi.js/graphics';
 import { Container, Graphics, Sprite, Ticker, WebGLRenderer, type Texture } from 'pixi.js';
-import { FX_HOST_ID } from './host';
+import { FX_HOST_ID, type TrailFrame } from './host';
 import { blotMotes, bloomMotes, emberMotes, inkMotes, MOTE_MAX, sparkMotes, streakLanes, type Mote } from './pattern';
 
 /**
@@ -49,6 +49,8 @@ interface Fx {
 let scale = 1;
 let renderer: WebGLRenderer | null = null;
 let starting: Promise<WebGLRenderer | null> | null = null;
+/** 描き場を作れなかった（WebGL を使えなかった）。この回は、もう作ろうとしない（SVG と CSS の演出だけにする） */
+let failed = false;
 let root: Container | null = null;
 let ticker: Ticker | null = null;
 let tex: { dot: Texture; streak: Texture } | null = null;
@@ -122,7 +124,13 @@ async function create(): Promise<WebGLRenderer | null> {
       powerPreference: 'low-power',
     });
   } catch {
-    r.destroy();
+    // 作りかけの描き場は片づけで例外を出すことがある。作れなかった端末では、この回は PixiJS の演出を出さない
+    try {
+      r.destroy();
+    } catch {
+      // 片づけられなかったものは、参照を手放して捨てる
+    }
+    failed = true;
     return null;
   }
   // 片づけが先に来ていたら、作った描き場は使わない
@@ -146,7 +154,11 @@ async function create(): Promise<WebGLRenderer | null> {
 
 async function ensure(): Promise<boolean> {
   if (renderer) return true;
-  starting ??= create();
+  if (failed) return false;
+  starting ??= create().catch(() => {
+    failed = true;
+    return null;
+  });
   const r = await starting;
   if (!r) starting = null;
   return r !== null;
@@ -211,7 +223,8 @@ export function dispose(): void {
   if (renderer) {
     renderer.canvas.removeEventListener('webglcontextlost', onLost);
     renderer.canvas.remove();
-    renderer.destroy();
+    // 描き場が失われたあとは片づけに触れない（PixiJS の片づけが、失われた描き場をもう一度失わせてブラウザが注意を出すため）。参照を手放して捨てる
+    if (!renderer.gl.isContextLost()) renderer.destroy();
     renderer = null;
   }
   const h = host();
@@ -444,9 +457,11 @@ export function streaks(key: string, rect: DOMRect, ms: number, active: () => bo
   });
 }
 
-/** 因果の線：伸びていく線の先を、光の粒が尾を引いてたどる（線の伸び方と同じ速さ。着いたらうすれて消える） */
-export function trail(points: readonly { x: number; y: number }[], delay: number, ms: number, surprise: boolean): void {
-  if (points.length < 2) return;
+/**
+ * 因果の線：伸びていく線の先を、光の粒が尾を引いてたどる（線の伸び方と同じ速さ。着いたらうすれて消える）。
+ * 道はコマごとに sample から受け取る（シートが動いても線に合わせる）。描いてよい範囲の外の粒は描かない
+ */
+export function trail(sample: () => TrailFrame | null, delay: number, ms: number, surprise: boolean): void {
   play((p, into) => {
     const N = TRAIL_TAIL;
     if (MOTE_MAX - motes < N) return null;
@@ -462,7 +477,7 @@ export function trail(points: readonly { x: number; y: number }[], delay: number
     });
     into.addChild(layer);
     motes += N;
-    const at = (k: number) => {
+    const at = (points: readonly { x: number; y: number }[], k: number) => {
       const f = Math.max(0, Math.min(1, k)) * (points.length - 1);
       const i = Math.floor(f);
       const a = points[i]!;
@@ -480,14 +495,20 @@ export function trail(points: readonly { x: number; y: number }[], delay: number
         // 線は ease-out で伸びる（Chain.tsx の Web Animations と同じ）
         const head = easeOut(Math.min(1, t / ms));
         const fade = t > ms ? 1 - (t - ms) / FADE : 1;
+        const frame = sample();
         for (let i = 0; i < N; i++) {
           const s = sprites[i]!;
           const k = head - i * 0.04;
-          if (k < 0) {
+          if (k < 0 || !frame || frame.points.length < 2) {
             s.visible = false;
             continue;
           }
-          const q = at(k);
+          const q = at(frame.points, k);
+          // シートの本文の外（頭の帯・下のボタンの帯）には描かない
+          if (q.y < frame.top || q.y > frame.bottom) {
+            s.visible = false;
+            continue;
+          }
           s.visible = true;
           s.position.set(q.x, q.y);
           s.scale.set((i === 0 ? 4.5 : 3.2 - i * 0.3) / DOT_R);

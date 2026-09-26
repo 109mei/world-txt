@@ -68,80 +68,13 @@ export function refresh(g: GameState, data: GameData): Channels {
   return ch;
 }
 
-/** 古い形の GameState（セーブ）に、あとから足した項目を補う */
+/**
+ * セーブから読んだ世界を、今の規則に合わせる。
+ * セーブは版7（2026年9月27日）から始め直したので、古い形の世界はない（それより前のセーブは読まずに消す）。
+ * GameState に項目を足したら、ここで古い形を補う（CLAUDE.md 設計の決まり8）
+ */
 export function upgradeState(g: GameState, data: GameData): GameState {
-  if (!Array.isArray(g.found)) g.found = [];
-  if (!g.trace || !Array.isArray(g.trace.pop) || !Array.isArray(g.trace.civ)) g.trace = { pop: [], civ: [], living: [], ref: [], laps: [] };
-  // 版15から：慣れの折れ線（暮らしの水準と、慣れた水準）
-  if (!Array.isArray(g.trace.living)) g.trace.living = [];
-  if (!Array.isArray(g.trace.ref)) g.trace.ref = [];
-  // くり返す世界の巻き戻った位置（前の周と今の周の線を重ねる。古い世界にはないので空）
-  if (!Array.isArray(g.trace.laps)) g.trace.laps = [];
-  // 版2まで：書き足した行の読み取りは extras[].phrase にあった
-  if (!g.carried || typeof g.carried !== 'object') g.carried = {};
-  for (const x of g.extras) {
-    if (x.phrase && !g.carried[x.id]) g.carried[x.id] = { phrases: [x.phrase], law: null };
-    delete x.phrase;
-  }
-  // 版3まで：危機（無限の世界）と今日の世界はなかった
-  if (g.crisis === undefined) g.crisis = null;
-  if (typeof g.nextCrisis !== 'number') g.nextCrisis = -1;
-  if (!g.crises || typeof g.crises !== 'object') g.crises = { averted: 0, softened: 0, struck: 0 };
-  if (g.daily === undefined) g.daily = null;
-  // 版4まで：結末はなかった（終わった世界は、ふつうの終わり方として補う）
-  if (g.ending === undefined) g.ending = g.status === 'playing' ? null : g.status === 'cleared' ? 'clear' : g.failReason;
-  if (!g.endingYears || typeof g.endingYears !== 'object') g.endingYears = {};
-  // 版5まで：世界容量は「重さ」で数えていた（初めの WORLD.txt が重さ93・552文字なので、空きを保って文字数に直す）
-  if (typeof g.schema === 'number' && g.schema < 6) g.sim.capacityMax = g.sim.capacityMax * data.balance.capacity.legacyChars - data.balance.capacity.legacyShift;
-  // 版5まで：心・物価・くり返す世界はなかった（ふだんの心、はじめの物価として補う）
-  if (typeof g.sim.mind !== 'number' || !Number.isFinite(g.sim.mind)) g.sim.mind = data.balance.mind.base;
-  if (typeof g.sim.prices !== 'number' || !Number.isFinite(g.sim.prices)) g.sim.prices = 1;
-  if (g.loop === undefined) g.loop = null;
-  // 版6まで：去年効いていた意味と、書き換えの勢いはなかった
-  if (!Array.isArray(g.inEffect)) g.inEffect = meaningKeys(meaningsInEffect(g, data));
-  if (!g.impulse || typeof g.impulse !== 'object') g.impulse = {};
-  // 版7まで：書き換えられる範囲はなかった（それまでの世界は、すべて書き換えられるまま遊べる）
-  if (g.access === undefined) g.access = null;
-  // 版8まで：遊んでいる間の乱数（rng）で出来事を決めていた。起きる力に置き換える（はじめのたまり具合は世界番号から決まる）
-  if (!g.charge || typeof g.charge !== 'object') g.charge = {};
-  delete (g as { rng?: unknown }).rng;
-  if (g.loop?.snapshot) {
-    const snap = g.loop.snapshot as WorldSnapshot & { rng?: unknown };
-    if (!snap.charge || typeof snap.charge !== 'object') snap.charge = {};
-    delete snap.rng;
-  }
-  if (typeof g.stats.noise !== 'number') g.stats.noise = 0;
-  // 版9まで：消した行は空白にならなかった。今消えている行は、読み込んだ年から空白として数える（消し跡はない）
-  if (!g.voids || typeof g.voids !== 'object') {
-    g.voids = {};
-    for (const law of data.laws) if ((g.texts[law.id] ?? '') === '') g.voids[law.id] = g.year;
-  }
-  if (!g.scars || typeof g.scars !== 'object') g.scars = {};
-  if (!g.filled || typeof g.filled !== 'object') g.filled = {};
-  // 版11まで：原因の型と、世界の適応はなかった（その世界は型のない世界として遊ぶ）
-  if (g.cause === undefined) g.cause = null;
-  if (!Array.isArray(g.adapted)) g.adapted = [];
-  // 版10まで：言い切りの強さ・上書きの傷・短く言い換えた行はなかった
-  if (!g.strength || typeof g.strength !== 'object') g.strength = {};
-  if (!g.modes || typeof g.modes !== 'object') g.modes = {};
-  if (!g.spread || typeof g.spread !== 'object') g.spread = {};
-  if (!g.crowded || typeof g.crowded !== 'object') g.crowded = {};
-  // 棋譜と、世界の決まりの強さ（版15から）
-  if (!Array.isArray(g.moves)) g.moves = [];
-  if (!g.intro || typeof g.intro !== 'object') g.intro = {};
-  if (!g.introStart || typeof g.introStart !== 'object') g.introStart = { ...g.intro };
-  if (typeof g.branched !== 'boolean') g.branched = false;
-  if (g.branch === undefined) g.branch = null;
-  if (g.countered === undefined) g.countered = null;
-  if (g.trial === undefined) g.trial = null;
-  // 人々の心（版14から）
-  const pp = data.balance.people.start;
-  for (const [k, v] of [['ref', 0], ['peak', 0], ['trust', pp.trust], ['anxiety', pp.anxiety], ['caution', 0], ['overshoot', 0]] as const) {
-    if (typeof g.sim[k] !== 'number' || !Number.isFinite(g.sim[k])) g.sim[k] = v;
-  }
-  if (!g.rewrites || typeof g.rewrites !== 'object') g.rewrites = {};
-  if (!g.trims || typeof g.trims !== 'object') g.trims = {};
-  // 画面の項目が増えたときは、足りない項目の点数だけを今の様子から求める
+  // 画面の項目が増えたときは、足りない項目の点数だけを今の様子から求める（内容の版が変わったとき）
   if (g.derived && INDICATOR_IDS.some((id) => typeof g.scores?.[id] !== 'number')) {
     const now = computeScores(g.sim, { ...g.derived, money: g.derived.money ?? 1 }, data.balance, g.startPop);
     g.scores = { ...now, ...g.scores };

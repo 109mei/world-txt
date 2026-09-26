@@ -223,9 +223,7 @@
   "capacity": {
     "strainFrom": 0.95,
     "strainCoef": 100,
-    "graceYears": 3,
-    "legacyChars": 6,
-    "legacyShift": 6
+    "graceYears": 3
   },
   "civ": {
     "weights": {
