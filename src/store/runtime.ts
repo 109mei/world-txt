@@ -1,7 +1,18 @@
 import {
   accessFor,
   advance,
+  allOpen,
+  canReplay,
   createGame,
+  replayKifu,
+  introFor,
+  kifuOf,
+  marksOf,
+  MARKS,
+  stageNeeds,
+  type Mark,
+  type Journey,
+  type Need,
   rankOf,
   lawTotals,
   refresh,
@@ -23,14 +34,17 @@ import { insertRun } from './ranking';
 /** 無限の世界の記録を残す数 */
 const ENDLESS_RUNS = 30;
 
-/** 日付から種を作る（同じ日付なら同じ種） */
+/** 世界番号の数（#0001〜#9999） */
+export const WORLD_NUMBERS = 9999;
+
+/** 日付から今日の世界の世界番号を作る（同じ日付なら同じ番号） */
 export function dailySeed(date: string): number {
   let h = 2166136261;
   for (const ch of `WORLD.txt:${date}`) {
     h ^= ch.codePointAt(0)!;
     h = Math.imul(h, 16777619) >>> 0;
   }
-  return h % 2147483647 || 1;
+  return (h % WORLD_NUMBERS) + 1;
 }
 
 /** 書き換える場所：既存の法則の行・書き足した行・新しい行 */
@@ -46,9 +60,9 @@ export interface RuntimeOptions {
 }
 
 /** 保存できなかったときの知らせ */
-export const SAVE_FAILED = '保存できなかった（端末の保存領域に空きがないなど）。メニューの「セーブを書き出す」で控えをとっておく';
+export const SAVE_FAILED = '保存できなかった（端末の保存領域に空きがないなど）。メニューの「記録（セーブ）」の「ファイルに保存」で控えをとっておく';
 /** 画面を閉じると消える入れ物しか使えないときの知らせ */
-export const SAVE_VOLATILE = 'この画面では保存できない（プライベートブラウズなど）。画面を閉じると、遊んだ記録は消える';
+export const SAVE_VOLATILE = 'この画面では保存できない（プライベートブラウズなど）。画面を閉じると遊んだ記録は消える';
 
 /**
  * ルール本体（core）と保存の窓口をつなぐ。ゲームの状態の持ち主は core で、
@@ -64,10 +78,14 @@ export class GameRuntime {
   fresh: string[] = [];
   /** 直前に終わった世界で筆の位が上がったなら、その新しい位（結果の画面で知らせる） */
   rankUp: number | null = null;
+  /** 直前に終わった世界で付いた印（結果の画面で知らせる） */
+  lastMarks: Mark[] = [];
   /** 別の画面で同じセーブが書き換えられたので、もう保存しない */
   private frozen = false;
   /** 保存についての知らせ（保存できなかった・保存できない画面） */
   saveWarning: string | null = null;
+  /** 最後に保存できた時刻（まだなら null） */
+  savedAt: number | null = null;
 
   constructor(private readonly opts: RuntimeOptions) {}
 
@@ -81,8 +99,8 @@ export class GameRuntime {
       const save = await this.opts.store.load();
       if (save) {
         this.apply(save);
-        if (save.restored) this.loadError = '最新のセーブが壊れていたので、ひとつ前のセーブから読み込んだ（壊れたセーブは消さずに別に残してある）';
-        else if (save.droppedCurrent) this.loadError = '遊んでいた世界が壊れていたので、その世界だけを手放した（記録は残っている）';
+        if (save.restored) this.loadError = '最新のセーブが壊れていたのでひとつ前のセーブから読み込んだ（壊れたセーブは消さずに別に残してある）';
+        else if (save.droppedCurrent) this.loadError = '遊んでいた世界が壊れていたのでその世界だけを手放した（記録は残っている）';
       }
     } catch (e) {
       this.loadError = `${(e as Error).message}。壊れたセーブは消さずに別に残してある`;
@@ -160,6 +178,7 @@ export class GameRuntime {
     if (this.frozen) return;
     try {
       await this.opts.store.save(this.snapshot());
+      this.savedAt = this.opts.now();
       // 保存できた（保存できない画面の知らせは、そのまま）
       if (this.opts.store.persistent) this.setSaveWarning(null);
     } catch {
@@ -168,20 +187,90 @@ export class GameRuntime {
     }
   }
 
-  /** 世界を始める。daily なら今日の世界（日付から決まる種。同じ日なら誰でも同じ世界） */
-  start(stageId: StageId, daily = false): GameState {
+  /** 開いていく順番を決める記録（救った世界・遊び終えた世界・観測記録・負けた数） */
+  get journey(): Journey {
+    const p = this.progress;
+    return { cleared: p.cleared, played: p.played, discovered: p.discovered, losses: p.losses };
+  }
+
+  /** すべて開いた状態で遊んでいる（すべてを一度開き、設定で選んだとき） */
+  get everythingOpen(): boolean {
+    return this.settings.allOpen && allOpen(this.data, this.journey);
+  }
+
+  /** 改稿者の試練が開いているか（そのステージの3つの印をそろえた） */
+  trialOpen(stageId: StageId): boolean {
+    const st = this.data.stageById.get(stageId);
+    return !!st?.trial && (this.everythingOpen || (this.progress.best[stageId]?.marks?.length ?? 0) >= 3);
+  }
+
+  /** そのステージが開くまでに足りないもの（開いていれば空） */
+  stageNeeds(stageId: StageId): Need[] {
+    return this.everythingOpen ? [] : stageNeeds(this.data, this.journey, stageId);
+  }
+
+  /**
+   * 世界を始める。daily なら今日の世界（日付から決まる世界番号。同じ日なら誰でも同じ世界）。
+   * seed を渡すと、その世界番号の世界（同じ世界でもう一度・番号で開く）
+   */
+  start(stageId: StageId, daily = false, seed: number | null = null, opts: { numbered?: boolean; trial?: boolean } = {}): GameState {
     // 世界は1つだけ。遊んでいる世界があれば、それを放棄して新しい世界を開く
     if (this.playing) this.progress.abandoned += 1;
     const date = daily ? this.today() : null;
+    // 同じ世界でもう一度：小さな違いが育つのを見られる（開いていく順番の発見）
+    const prev = this.state;
+    const retry = seed !== null && prev !== null && prev.stageId === stageId && prev.seed === seed;
     // 書き換えられる範囲は、いまの筆の位（救った世界の数）とステージで決まる
-    this.state = createGame(this.data, stageId, date ? dailySeed(date) : this.opts.newSeed(), accessFor(this.data, stageId, this.progress.cleared.length));
+    // はじめての本番の世界（序章のほかに、まだどの世界も遊び終えていない）は、そのステージの決まった原因の型から始める
+    const firstWorld = !this.progress.played.some((s) => s !== 'prologue');
+    const first = firstWorld && seed === null && !date ? (this.data.stageById.get(stageId)?.firstCause ?? undefined) : undefined;
+    // 世界の決まりの強さ：わかった決まりは本来の強さ、まだの決まりは弱く動かす（開いていく順番）
+    const intro = this.everythingOpen ? {} : introFor(this.data, this.journey);
+    this.state = createGame(this.data, stageId, seed ?? (date ? dailySeed(date) : this.opts.newSeed()), accessFor(this.data, stageId, this.progress.cleared.length), {
+      ...(first ? { cause: first } : {}),
+      intro,
+      trial: !!opts.trial && !!this.data.stageById.get(stageId)?.trial,
+    });
     this.rankUp = null;
+    this.lastMarks = [];
     this.state.daily = date;
     this.progress.worlds += 1;
     this.fresh = [];
+    if (retry) this.note('h:retry');
+    // 世界番号を入れて開いた（友だちの世界番号で遊ぶ）
+    if (opts.numbered) this.note('h:number');
     this.unlock(this.state);
     void this.save();
     return this.state;
+  }
+
+  /**
+   * 分かれ道からやり直す：終わった世界の棋譜を、分かれ道の年（その年の手は書かない）まで作り直し、そこから遊ぶ。
+   * やり直した世界には、印の「少ない手で」「早く見抜いた」は付かず、いちばん良かった棋譜にも残さない
+   */
+  branchFrom(): GameState | null {
+    const g = this.state;
+    if (!g || g.status === 'playing' || !g.branch) return null;
+    const k = kifuOf(g, this.data);
+    if (!canReplay(k, this.data)) return null;
+    const next = replayKifu(this.data, k, { year: g.branch.year, loops: g.branch.pass });
+    next.branched = true;
+    next.daily = g.daily;
+    this.state = next;
+    this.rankUp = null;
+    this.lastMarks = [];
+    this.progress.worlds += 1;
+    this.fresh = [];
+    this.absorb(next);
+    void this.save();
+    return next;
+  }
+
+  /** 記録の側で初めて起きたこと（初めての負け・3回目の負け・同じ世界でもう一度）を観測記録に残す */
+  private note(id: string): void {
+    if (this.progress.discovered.includes(id)) return;
+    this.progress.discovered.push(id);
+    this.fresh.push(id);
   }
 
   /** WORLD.txt を書き換える（既存の行・書き足した行・新しい行） */
@@ -231,6 +320,20 @@ export class GameRuntime {
   /** 終わった世界を記録に残す */
   private record(g: GameState): void {
     const sum = worldSummary(g, this.data);
+    // 開いていく順番：遊び終えた世界（勝ち負けは問わない）と、負けた数（3回負けるごとに兆しの読み方が開く）
+    if (!this.progress.played.includes(g.stageId)) this.progress.played.push(g.stageId);
+    if (g.status === 'failed') {
+      const losses = (this.progress.losses[g.stageId] ?? 0) + 1;
+      this.progress.losses[g.stageId] = losses;
+      this.note('h:lose');
+      if (losses % this.data.balance.intro.hintEvery === 0 && losses / this.data.balance.intro.hintEvery <= (this.data.stageById.get(g.stageId)?.hints.length ?? 0)) this.note('h:lose3');
+    }
+    // 改稿者の試練：救えば試練の記録だけを残す（ステージの記録・印・棋譜は、ふつうの世界のもの）
+    if (g.trial) {
+      if (g.status === 'cleared' && !this.progress.trials.includes(g.stageId)) this.progress.trials.push(g.stageId);
+      return;
+    }
+    this.keepKifu(g);
     if (this.data.stageById.get(g.stageId)?.endless) {
       // 無限の世界：何年続いたかを新しい順に残し、記録簿（ランキング）には長く続いた順に上位だけを残す
       const at = this.opts.now();
@@ -260,7 +363,28 @@ export class GameRuntime {
     // 少ない書き換えで救えた記録は、別に残す
     const fewest = cleared ? Math.min(prev?.fewest ?? Number.POSITIVE_INFINITY, g.stats.edits) : prev?.fewest;
     if (fewest !== undefined && Number.isFinite(fewest)) next.fewest = fewest;
+    // 3つの印：これまでに付いた印は残す（開いたものは閉じない）
+    const marks = new Set([...(prev?.marks ?? []), ...marksOf(g, this.data)]);
+    if (marks.size > 0) next.marks = MARKS.filter((m) => marks.has(m));
+    this.lastMarks = marksOf(g, this.data);
     this.progress.best[g.stageId] = next;
+  }
+
+  /**
+   * ステージごとに、いちばん良かった棋譜を残す：救った世界の中で手の少ないもの。救っていなければ長く続いたもの。
+   * 分かれ道からやり直した世界は残さない（はじめから通した手ではないので）
+   */
+  private keepKifu(g: GameState): void {
+    if (g.branched) return;
+    const k = kifuOf(g, this.data);
+    const prev = this.progress.kifu[g.stageId];
+    const better =
+      !prev ||
+      prev.rules !== k.rules ||
+      (k.result === 'cleared' && prev.result !== 'cleared') ||
+      (k.result === 'cleared' && prev.result === 'cleared' && k.moves.length < prev.moves.length) ||
+      (k.result !== 'cleared' && prev.result !== 'cleared' && (k.loops > prev.loops || (k.loops === prev.loops && k.year > prev.year)));
+    if (better) this.progress.kifu[g.stageId] = k;
   }
 
   abandon(): void {
@@ -283,6 +407,34 @@ export class GameRuntime {
 
   exportSave(): string {
     return exportText(this.snapshot());
+  }
+
+  /** 書き出した（ファイルに保存・共有・コピー）。最後に書き出した日を残す */
+  markExported(): void {
+    this.progress.exportedAt = this.opts.now();
+    void this.save();
+  }
+
+  /** ホーム画面に追加の案内を出すか（最初のクリアのあとに1度だけ。出したら、もう出さない） */
+  get homePrompt(): boolean {
+    return this.progress.cleared.length > 0 && !this.progress.prompted.home;
+  }
+
+  /** ホーム画面に追加の案内を出した（閉じた） */
+  dismissHome(): void {
+    this.progress.prompted = { ...this.progress.prompted, home: true };
+    void this.save();
+  }
+
+  /** 書き出しのおすすめを出すか（新しい筆の位になったあとに1度だけ） */
+  exportPrompt(rank: number): boolean {
+    return rank > this.progress.prompted.exportRank;
+  }
+
+  /** 書き出しのおすすめを出した */
+  dismissExport(rank: number): void {
+    this.progress.prompted = { ...this.progress.prompted, exportRank: Math.max(this.progress.prompted.exportRank, rank) };
+    void this.save();
   }
 
   async importSave(text: string): Promise<void> {

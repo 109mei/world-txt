@@ -4,9 +4,11 @@
  *   npm run ranks          （全ステージ、種10個ずつ）
  *   npm run ranks -- 30     （種30個ずつ）
  */
-import { accessFor, addLine, advance, createGame, rewriteLaw } from '../src/core';
+import { accessFor } from '../src/core';
 import { gameData } from '../src/data';
 import type { StageId } from '../src/data/schema';
+import { playReader } from './bots';
+import { HARD_BLOCKS, runEdits } from './run';
 import { STRATEGIES } from './strategies';
 
 const seeds = Number(process.argv[2] ?? 10);
@@ -21,17 +23,16 @@ for (const st of [...gameData.stages].sort((a, b) => a.order - b.order)) {
     let wins = 0;
     let block: string | null = null;
     for (let i = 0; i < seeds && !block; i += 1) {
-      const g = createGame(gameData, st.id as StageId, 1000 + i, accessFor(gameData, st.id as StageId, strat.clears ?? clears));
-      let steps = 0;
-      while (g.status === 'playing' && g.year < st.goalYears && steps++ < 600 && !block) {
-        for (const e of strat.edits) {
-          if (e.year !== g.year || (e.pass !== undefined && e.pass !== (g.loop?.count ?? 0))) continue;
-          const res = e.law ? rewriteLaw(g, gameData, e.law, e.text) : addLine(g, gameData, e.text);
-          if (res.block === 'sealed' || res.block === 'margin' || res.block === 'heavy') block = `${res.block}: ${e.law ?? e.text}`;
-        }
-        if (!block) advance(g, gameData, 1);
-      }
-      if (g.status === 'cleared') wins += 1;
+      // 考えた作戦（ある型の手）は、見立てるボットと同じく、使える文字数が足りなければ短く言い換えて場所を空ける。
+      // どちらも、書換の力が足りない年の手は力が戻った年に書く（scripts/run.ts）
+      const clearsNow = strat.clears ?? clears;
+      const r =
+        strat.role === 'plan' && strat.cause
+          ? playReader(gameData, st.id as StageId, 1000 + i, { plan: strat.cause, clears: clearsNow, edits: strat.edits })
+          : runEdits(gameData, st.id as StageId, strat.edits, 1000 + i, { clears: clearsNow });
+      const hard = r.blocks.find((b) => HARD_BLOCKS.has(b.split(':')[0]!));
+      if (hard) block = hard;
+      if (r.g.status === 'cleared') wins += 1;
     }
     const later = strat.clears !== undefined && strat.clears > clears ? `（救った世界 ${strat.clears} から）` : '';
     if (block) rows.push(`   ✕ ${strat.name.padEnd(22)} 筆の位で止まる（${block}）`);

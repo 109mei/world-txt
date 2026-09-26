@@ -7,6 +7,9 @@ type Json = Record<string, any>;
  * 2 → 3：無限の世界の記録（progress.endless）を足す。遊んでいる世界の危機の項目は、読み込むときに core が補う。
  * 3 → 4：実績（progress.achievements）と、放棄した世界の数（progress.abandoned）を足す。
  * 4 → 5：無限の世界の記録簿（progress.ranking）を足す。これまでの記録から、長く続いた順に上位10件を入れる。
+ * 5 → 6：開いていく順番と棋譜のための記録を足す。遊び終えた世界（progress.played）は、記録の残っている世界から補い、
+ *        すでに世界を遊んだことがあれば序章も遊び終えたことにする（序章を遊ばなくても、これまでの世界が開いたままになるように）。
+ *        負けた数・棋譜・改稿者の試練・書き出した日・1度だけの案内・画面の明るさなどは、読み込むときに既定の値で補う。
  */
 export const MIGRATIONS: Record<number, (old: Json) => Json> = {
   0: (d) => {
@@ -44,6 +47,14 @@ export const MIGRATIONS: Record<number, (old: Json) => Json> = {
           .sort((a, b) => b.years - a.years || a.at - b.at)
           .slice(0, 10);
     d.progress = { ...d.progress, ranking };
+    return d;
+  },
+  5: (d) => {
+    const best = d.progress?.best && typeof d.progress.best === 'object' ? Object.keys(d.progress.best) : [];
+    const cleared: unknown[] = Array.isArray(d.progress?.cleared) ? d.progress.cleared : [];
+    const played = new Set<string>([...best, ...cleared.filter((s): s is string => typeof s === 'string')]);
+    if ((typeof d.progress?.worlds === 'number' && d.progress.worlds > 0) || played.size > 0) played.add('prologue');
+    d.progress = { ...d.progress, played: Array.isArray(d.progress?.played) ? d.progress.played : [...played] };
     return d;
   },
 };

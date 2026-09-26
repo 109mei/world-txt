@@ -2,8 +2,9 @@ import type { ReactNode } from 'react';
 import type { SpecimenMode, SpecimenShape } from '../../data/schema';
 import type { SceneView } from '../../store/scene';
 import { SvgIcon } from '../icons';
-import { BAD, DARK, dur, delay, Ghost, GOOD, GROUND, H, HORIZON, INK, m, Motif, PAPER, PLAZA, SHORE, SILVER, SILVER_DIM, SILVER_FAINT, strokeOf, WARN } from './common';
+import { BAD, DARK, dur, delay, Ghost, GOOD, GROUND, H, HORIZON, INK, m, Motif, PAPER, PLAZA, rnd, SHORE, SILVER, SILVER_DIM, SILVER_FAINT, strokeOf, WARN } from './common';
 import { Person } from './People';
+import { skyTone } from './Sky';
 
 /** 遠い山並みと火山 */
 export function Mountains({ v }: { v: SceneView }) {
@@ -12,10 +13,12 @@ export function Mountains({ v }: { v: SceneView }) {
     <g>
       <path
         d={`M-10 ${HORIZON} L18 132 L34 138 L48 112 L62 136 L84 128 L110 140 L140 132 L170 142 L210 134 L250 144 L${SHORE + 6} ${HORIZON} Z`}
-        fill="#0f1015"
+        fill="var(--sc-mount)"
         stroke={SILVER_FAINT}
         strokeWidth={0.7}
       />
+      {/* 空気遠近法：遠い山ほど、ふもとが空の色にかすむ（太陽のない暗い空ではかすまない） */}
+      {skyTone(v) !== 'dark' && <rect x={-10} y={112} width={SHORE + 20} height={HORIZON - 111} fill="url(#sc-haze)" />}
       {m(v, 'ice') > 0.2 && (
         <Motif v={v} id="ice">
           <path d="M40 124 L48 112 L56 124 L52 122 L48 126 L44 122 Z M14 136 L18 132 L23 135 Z" fill={PAPER} opacity={0.4 + 0.5 * m(v, 'ice')} />
@@ -26,7 +29,7 @@ export function Mountains({ v }: { v: SceneView }) {
           <path d="M44 114 L48 112 L52 114" stroke={BAD} strokeWidth={1.4} fill="none" />
           <path d="M48 113 q -3 8 -8 18 M48 113 q 2 9 6 16" stroke={BAD} strokeWidth={0.9} fill="none" opacity={0.8} />
           {[0, 1, 2, 3].map((k) => (
-            <circle key={k} className="sc-plume" cx={48 + k * 4} cy={104 - k * 9} r={5 + k * 3} fill="#6b6a70" opacity={0.5 * erupt} style={{ ...dur(4), ...delay(k * 0.8) }} />
+            <circle key={k} className="sc-plume" cx={48 + k * 4} cy={104 - k * 9} r={5 + k * 3} fill="var(--sc-ash)" opacity={0.5 * erupt} style={{ ...dur(4), ...delay(k * 0.8) }} />
           ))}
         </Motif>
       )}
@@ -74,17 +77,17 @@ export function Hills({ v }: { v: SceneView }) {
   const burning = m(v, 'wildfire');
   const n = Math.round(TREES.length * Math.min(1, v.eco * 1.1 + 0.5 * m(v, 'forest')) * (1 - noForest));
   const windy = m(v, 'wind') > 0.3;
-  const trunkColor = withered > 0.3 ? '#8a7d64' : SILVER;
+  const trunkColor = withered > 0.3 ? 'var(--sc-withered)' : SILVER;
   const mills = Math.max(1, Math.round(1 + 3 * v.renew + 2 * m(v, 'wind')));
   const millStill = m(v, 'still') > 0.5;
   return (
     <g>
-      <path d={`M-10 ${GROUND - 12} C 30 146, 80 150, 130 ${GROUND - 2} L${SHORE - 6} ${GROUND} L${SHORE + 8} ${H} L-10 ${H} Z`} fill="#0c0d11" stroke={SILVER_DIM} strokeWidth={0.8} />
+      <path d={`M-10 ${GROUND - 12} C 30 146, 80 150, 130 ${GROUND - 2} L${SHORE - 6} ${GROUND} L${SHORE + 8} ${H} L-10 ${H} Z`} fill="var(--sc-ground)" stroke={SILVER_DIM} strokeWidth={0.8} />
       <line x1={112} y1={PLAZA + 3} x2={SHORE - 2} y2={PLAZA + 3} stroke={SILVER_FAINT} strokeWidth={0.5} />
       {m(v, 'desert') > 0 && (
         <Motif v={v} id="desert">
           {/* 砂丘が畑を呑んでいく（縁はなだらかに地面へ下りる） */}
-          <g opacity={0.6 + 0.4 * m(v, 'desert')} fill="#1d1a14" stroke={strokeOf(v, 'desert', 'rgba(234,208,143,0.45)')} strokeWidth={0.8}>
+          <g opacity={0.6 + 0.4 * m(v, 'desert')} fill="var(--sc-desert)" stroke={strokeOf(v, 'desert', 'rgb(var(--warn-rgb) / 0.45)')} strokeWidth={0.8}>
             <path d={`M-12 ${H} C 4 ${GROUND - 10}, 40 ${GROUND - 18}, 74 ${H} Z`} />
             <path d={`M36 ${H} C 58 ${GROUND - 2}, 92 ${GROUND - 8}, 128 ${H} Z`} />
             <path d={`M96 ${H} C 110 ${GROUND + 10}, 132 ${GROUND + 8}, 156 ${H} Z`} />
@@ -107,7 +110,7 @@ export function Hills({ v }: { v: SceneView }) {
             y,
             `t${i}`,
             m(v, 'forest') > 0 && i >= Math.round(TREES.length * v.eco) ? strokeOf(v, 'forest') : trunkColor,
-            withered > 0.5 ? '#16140f' : DARK,
+            withered > 0.5 ? 'var(--sc-dry)' : DARK,
             windy,
             m(v, 'tallCrops') > 0.5 ? 1.2 : 1,
           ),
@@ -164,7 +167,7 @@ export function Hills({ v }: { v: SceneView }) {
       {v.renew > 0.35 && (
         <g>
           {[0, 1, 2].map((i) => (
-            <path key={i} d={`M${8 + i * 12} ${GROUND + 6} l8 -4 l2 3 l-8 4 z`} fill="#1a2233" stroke={SILVER_DIM} strokeWidth={0.5} />
+            <path key={i} d={`M${8 + i * 12} ${GROUND + 6} l8 -4 l2 3 l-8 4 z`} fill="var(--sc-panel)" stroke={SILVER_DIM} strokeWidth={0.5} />
           ))}
         </g>
       )}
@@ -188,7 +191,8 @@ function Beasts({ v }: { v: SceneView }) {
     <g>
       {wild > 0 && (
         <Motif v={v} id="animals">
-          {Array.from({ length: Math.min(9, wild) }, (_, i) => deer(12 + i * 12 + (i % 2) * 3, 178 + (i % 3) * 3, `d${i}`, i >= 4 ? strokeOf(v, 'animals') : SILVER))}
+          {/* 野の獣は7頭まで（右どなりは貯水池） */}
+          {Array.from({ length: Math.min(7, wild) }, (_, i) => deer(12 + i * 12 + (i % 2) * 3, 178 + (i % 3) * 3, `d${i}`, i >= 4 ? strokeOf(v, 'animals') : SILVER))}
         </Motif>
       )}
       {/* 獣がいなくなった年は、野の獣が薄れて消えていく */}
@@ -200,7 +204,7 @@ function Beasts({ v }: { v: SceneView }) {
       {cows > 0 && (
         <g>
           {[0, 1].map((i) => (
-            <g key={i} transform={`translate(${74 + i * 16} 183)`}>
+            <g key={i} transform={`translate(${60 + i * 16} 183)`}>
               <rect x={-4} y={-5} width={8} height={4} rx={1} fill={PAPER} stroke={SILVER} strokeWidth={0.5} opacity={0.85} />
               <path d="M-3 -1 L-3 1 M3 -1 L3 1 M4 -5 L6 -6" stroke={SILVER} strokeWidth={0.6} />
             </g>
@@ -209,7 +213,7 @@ function Beasts({ v }: { v: SceneView }) {
       )}
       {m(v, 'noLivestock') > 0 && (
         <Motif v={v} id="noLivestock">
-          <path d="M66 184 L66 176 M100 184 L100 176 M66 178 L100 178" fill="none" stroke={strokeOf(v, 'noLivestock', SILVER_DIM)} strokeWidth={0.6} strokeDasharray="2 2" />
+          <path d="M52 184 L52 176 M86 184 L86 176 M52 178 L86 178" fill="none" stroke={strokeOf(v, 'noLivestock', SILVER_DIM)} strokeWidth={0.6} strokeDasharray="2 2" />
         </Motif>
       )}
       {m(v, 'dinosaurs') > 0 && (
@@ -259,26 +263,48 @@ export function Fields({ v }: { v: SceneView }) {
   const withered = m(v, 'withered');
   const density = Math.max(0.12, Math.min(1, 0.25 + 0.75 * v.food - 0.8 * barren));
   const h = (1.5 + 4 * v.food) * (1 + 0.8 * tall) * (1 - 0.5 * withered);
-  const color = harvest > 0.3 ? strokeOf(v, 'harvest', WARN) : withered > 0.3 ? '#8a7d64' : tall > 0.3 ? strokeOf(v, 'tallCrops') : '#d8dbe2';
+  const color = harvest > 0.3 ? strokeOf(v, 'harvest', WARN) : withered > 0.3 ? 'var(--sc-withered)' : tall > 0.3 ? strokeOf(v, 'tallCrops') : 'rgb(var(--sc-line-rgb))';
   const rows = [188, 195, 202, 209, 216];
   const extra = m(v, 'fieldsEverywhere');
   const gravesN = Math.round(4 * m(v, 'graves') + (v.people < 0.4 ? (0.4 - v.people) * 10 : 0));
   return (
     <g>
       <Motif v={v} id={harvest > 0 ? 'harvest' : tall > 0 ? 'tallCrops' : barren > 0 ? 'barren' : 'withered'}>
-        {rows.map((y, r) => (
-          <g key={y}>
-            <line x1={2} y1={y + 0.5} x2={110} y2={y + 0.5} stroke={SILVER_FAINT} strokeWidth={0.5} />
-            {Array.from({ length: 19 }, (_, k) => {
-              const x = 4 + k * 5.6 + (r % 2) * 2.8;
-              if (k / 19 >= density) return null;
-              const lean = withered > 0.3 ? 1.6 : m(v, 'wind') > 0.3 ? 1.2 : 0;
-              return (
-                <line key={k} className={lean === 0 && tall > 0.3 ? 'sc-bend' : undefined} x1={x} y1={y} x2={x + lean} y2={y - h} stroke={color} strokeWidth={0.8} opacity={0.35 + 0.5 * v.food} />
-              );
-            })}
-          </g>
-        ))}
+        {rows.map((y, r) => {
+          // 遠近法の畝：奥の畝ほど短く、作物も小さく細く薄い（手前ほど広く、大きい）
+          const near = (r + 1) / rows.length;
+          const x0 = 18 - 16 * near;
+          const x1 = 92 + 18 * near;
+          const step = (x1 - x0) / 19;
+          return (
+            <g key={y}>
+              <line x1={x0} y1={y + 0.5} x2={x1} y2={y + 0.5} stroke={SILVER_FAINT} strokeWidth={0.4 + 0.3 * near} />
+              {Array.from({ length: 19 }, (_, k) => {
+                const x = x0 + (k + 0.5) * step + (r % 2) * step * 0.5;
+                if (k / 19 >= density) return null;
+                const lean = withered > 0.3 ? 1.6 : m(v, 'wind') > 0.3 ? 1.2 : 0;
+                const top = y - h * (0.6 + 0.4 * near);
+                // 作物の病気：広がりに合わせて、株の先に病斑（悪いことの色）が出る。どの株かは世界ごとに決まる
+                const sick = v.blight > 0.08 && rnd(v.seed, 3000 + r * 19 + k) < Math.min(0.8, v.blight * 2);
+                return (
+                  <g key={k}>
+                    <line
+                      className={lean === 0 && tall > 0.3 ? 'sc-bend' : undefined}
+                      x1={x}
+                      y1={y}
+                      x2={x + lean}
+                      y2={top}
+                      stroke={color}
+                      strokeWidth={0.5 + 0.4 * near}
+                      opacity={(0.3 + 0.5 * v.food) * (0.7 + 0.3 * near)}
+                    />
+                    {sick && <circle cx={x + lean} cy={top} r={0.5 + 0.35 * near} fill={BAD} opacity={0.85} />}
+                  </g>
+                );
+              })}
+            </g>
+          );
+        })}
       </Motif>
       {extra > 0 && (
         <Motif v={v} id="fieldsEverywhere">
@@ -294,9 +320,11 @@ export function Fields({ v }: { v: SceneView }) {
         <Motif v={v} id="granary">
           {Array.from({ length: 1 + Math.round(2 * m(v, 'granary')) }, (_, i) => (
             <g key={i} transform={`translate(${14 + i * 18} 184)`}>
-              <path d="M-6 0 L-6 -7 L0 -12 L6 -7 L6 0 Z" fill={DARK} stroke={strokeOf(v, 'granary')} strokeWidth={0.8} />
-              <path d="M-2 0 L-2 -4 L2 -4 L2 0" fill="none" stroke={strokeOf(v, 'granary')} strokeWidth={0.6} />
-              <ellipse cx={8} cy={-1.5} rx={2} ry={1.5} fill="#d8c79c" opacity={0.8} />
+              {/* サイロ：円筒に丸屋根と、胴の帯。光の来る左は明るく、右の面は影 */}
+              <path d="M-4 0 L-4 -11 A4 3.2 0 0 1 4 -11 L4 0 Z" fill={DARK} stroke={strokeOf(v, 'granary')} strokeWidth={0.8} />
+              <path d="M1.6 -0.4 L1.6 -12.6 A4 3.2 0 0 1 3.6 -11 L3.6 -0.4 Z" fill="var(--sc-shade)" opacity={0.25} />
+              <path d="M-4 -7.4 Q 0 -6.2 4 -7.4 M-4 -3.8 Q 0 -2.6 4 -3.8" fill="none" stroke={strokeOf(v, 'granary')} strokeWidth={0.4} />
+              <ellipse cx={7.4} cy={-1.5} rx={2} ry={1.5} fill="var(--sc-grain)" opacity={0.8} />
             </g>
           ))}
         </Motif>
@@ -314,15 +342,22 @@ export function Fields({ v }: { v: SceneView }) {
   );
 }
 
-/** 川：水が乏しいとひび割れ、湧き水があれば泉が噴く */
+/** 川：水が減ると水面が下がって乾いた岸が現れ、乏しいとひび割れる。湧き水があれば泉が噴く */
 export function River({ v }: { v: SceneView }) {
   const dry = Math.max(m(v, 'drought'), v.water < 0.3 ? 1 : 0);
   const springs = m(v, 'springs');
+  // 水位：水が6割を切ると水面が下がり、岸の乾いた帯が見えてくる
+  const low = Math.max(0, Math.min(1, (0.6 - v.water) / 0.3));
+  const drop = 5 * low;
+  const bank = `M112 ${H - 6} C 170 ${H - 12}, 220 ${H - 2}, ${SHORE + 4} ${H - 10}`;
+  const surface = `M112 ${H - 6 + drop} C 170 ${H - 12 + drop}, 220 ${H - 2 + drop}, ${SHORE + 4} ${H - 10 + drop}`;
   return (
     <g>
       {dry < 0.6 ? (
         <g>
-          <path d={`M112 ${H - 6} C 170 ${H - 12}, 220 ${H - 2}, ${SHORE + 4} ${H - 10} L${SHORE + 10} ${H} L112 ${H} Z`} fill="url(#sc-water)" opacity={(0.4 + 0.6 * v.water) * (1 - dry)} />
+          {low > 0.05 && <path d={`${bank} L${SHORE + 10} ${H} L112 ${H} Z`} fill="var(--sc-dry)" stroke={SILVER_FAINT} strokeWidth={0.5} opacity={0.9 * low} />}
+          <path d={`${surface} L${SHORE + 10} ${H} L112 ${H} Z`} fill="url(#sc-water)" opacity={(0.4 + 0.6 * v.water) * (1 - dry)} />
+          <path d={surface} fill="none" stroke={PAPER} strokeWidth={0.4} opacity={0.35 * (1 - dry)} />
           {[140, 190, 240].map((x, k) => (
             <line key={x} className="sc-flow" x1={x} y1={H - 4} x2={x + 12} y2={H - 4} stroke={PAPER} strokeWidth={0.7} opacity={0.4 * v.water} style={{ ...dur(4), ...delay(k) }} />
           ))}
@@ -332,7 +367,7 @@ export function River({ v }: { v: SceneView }) {
           <path
             d={`M120 ${H - 4} l10 -5 l-4 4 l12 1 M170 ${H - 6} l-6 4 l10 1 M214 ${H - 3} l8 -4 l-6 -1 M250 ${H - 5} l10 3`}
             fill="none"
-            stroke={strokeOf(v, 'drought', 'rgba(216,219,226,0.45)')}
+            stroke={strokeOf(v, 'drought', 'rgb(var(--sc-line-rgb) / 0.45)')}
             strokeWidth={0.8}
           />
           <path d={`M4 ${H - 2} l9 -4 l-3 4 M40 ${H - 3} l6 -3 M70 ${H - 2} l-5 -3 l8 0`} fill="none" stroke={strokeOf(v, 'drought', SILVER_DIM)} strokeWidth={0.6} />
@@ -358,6 +393,67 @@ export function River({ v }: { v: SceneView }) {
   );
 }
 
+/**
+ * 貯水池（町のはずれ）：水位は水の状態から。水が減ると水面が縮み、乾いた岸と水位の跡が見える。干ばつでは干上がる。
+ * 水をためる仕組み（ため池・ダム）を書くと、堤ができて池が広がり、水位が上がる
+ */
+export function Reservoir({ v }: { v: SceneView }) {
+  const built = m(v, 'reservoir');
+  const dry = Math.max(m(v, 'drought'), v.water < 0.3 ? 1 : 0) * (1 - built);
+  const low = Math.max(0, Math.min(1, (0.75 - v.water) / 0.5 - 0.6 * built));
+  const cx = 98;
+  const cy = 180;
+  const rx = 11 + 3 * built;
+  const ry = 3.2 + 0.6 * built;
+  const k = dry >= 0.6 ? 0 : 1 - 0.6 * low;
+  const pond = (
+    <g>
+      {/* 池の底と、水の引いた岸 */}
+      <ellipse cx={cx} cy={cy} rx={rx + 1.2} ry={ry + 0.8} fill="var(--sc-dry)" stroke={built > 0 ? strokeOf(v, 'reservoir', SILVER_DIM) : SILVER_DIM} strokeWidth={0.6} />
+      {/* 満ちていたころの水位の跡 */}
+      {low > 0.15 && k > 0 && <ellipse cx={cx} cy={cy + 0.3} rx={rx * (1 - 0.3 * low)} ry={ry * (1 - 0.3 * low)} fill="none" stroke={SILVER_FAINT} strokeWidth={0.4} strokeDasharray="1.2 1" />}
+      {k > 0 && <ellipse cx={cx} cy={cy + 0.6 * (1 - k)} rx={rx * k} ry={ry * k} fill="var(--sc-water)" opacity={0.35 + 0.4 * v.water} />}
+      {k > 0 && <path d={`M${cx - rx * k * 0.6} ${cy - 0.6} q ${rx * k * 0.3} -0.8 ${rx * k * 0.6} 0`} fill="none" stroke={PAPER} strokeWidth={0.35} opacity={0.4} />}
+      {/* 干上がった池の底のひび */}
+      {k === 0 && <path d={`M${cx - 7} ${cy} l3 -1 l-1 2 l4 0 M${cx + 1} ${cy - 1} l3 1.4 M${cx + 5} ${cy + 1} l2 -1.2`} fill="none" stroke={SILVER_DIM} strokeWidth={0.5} />}
+      {/* 堤（書き足した、水をためる仕組み） */}
+      {built > 0 && <path d={`M${cx + rx + 0.6} ${cy - ry - 0.6} L${cx + rx + 1.8} ${cy + ry + 0.6}`} stroke={strokeOf(v, 'reservoir')} strokeWidth={1.6} strokeLinecap="round" />}
+    </g>
+  );
+  return built > 0 ? (
+    <Motif v={v} id="reservoir">
+      {pond}
+    </Motif>
+  ) : (
+    pond
+  );
+}
+
+/**
+ * 消した行の空き地：空白の行があると、畑のはずれに杭と縄で囲った空き地ができる（縁は書いたインク）。
+ * 世界が行を埋める年が近づくほど、草が伸びる
+ */
+export function VoidLots({ v }: { v: SceneView }) {
+  if (v.voids.length === 0) return null;
+  const p = Math.max(...v.voids);
+  const weeds = 2 + Math.round(5 * p);
+  return (
+    <g transform="translate(80 198)">
+      <path d="M0 0 L17 0 L19.5 7 L-2.5 7 Z" fill="var(--sc-ground)" stroke={INK} strokeWidth={0.6} strokeDasharray="1.6 1.2" />
+      {[-2.5, 19.5].map((x) => (
+        <line key={x} x1={x} y1={7} x2={x} y2={3} stroke={SILVER_DIM} strokeWidth={0.6} />
+      ))}
+      {Array.from({ length: weeds }, (_, i) => {
+        const x = 1 + i * (16 / Math.max(1, weeds - 1));
+        const h = 1.2 + 3 * p * (0.6 + 0.4 * ((i * 7) % 3) / 2);
+        return <path key={i} d={`M${x} 6 q ${0.4 + (i % 2) * 0.4} ${-h * 0.6} ${i % 2 ? 1 : -0.6} ${-h}`} fill="none" stroke={SILVER_DIM} strokeWidth={0.5} />;
+      })}
+      {/* 空白の行が2つ以上なら、奥にもう1つ区画を張る */}
+      {v.voids.length > 1 && <path d="M3 -5 L15 -5 L16.5 -1 L1.5 -1 Z" fill="var(--sc-ground)" stroke={INK} strokeWidth={0.5} strokeDasharray="1.4 1.1" opacity={0.8} />}
+    </g>
+  );
+}
+
 /** 絵にしにくい決まりを刻んだ石碑（手前の左に並ぶ） */
 export function Steles({ v }: { v: SceneView }) {
   if (v.steles.length === 0) return null;
@@ -366,7 +462,7 @@ export function Steles({ v }: { v: SceneView }) {
       {v.steles.slice(0, 7).map((s, i) => (
         <g key={s.key} className={s.fresh ? 'sc-fresh sc-in-rise' : undefined} data-stele={s.key}>
           <g transform={`translate(${8 + i * 15} ${H - 1})`}>
-            <path d="M-6 0 L-6 -14 Q 0 -19 6 -14 L6 0 Z" fill="#14151a" stroke={INK} strokeWidth={0.8} />
+            <path d="M-6 0 L-6 -14 Q 0 -19 6 -14 L6 0 Z" fill="var(--sc-fill)" stroke={INK} strokeWidth={0.8} />
             <g transform="translate(-4.5 -13)" style={{ color: 'var(--ink)' }}>
               <SvgIcon name={s.icon} size={9} />
             </g>

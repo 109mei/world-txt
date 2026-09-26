@@ -1,8 +1,12 @@
+import { Pencil } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { costAfter, noiseOf, originalText, textCost, weightOf } from '../../core';
+import { costAfter, delayOf, noiseOf, originalText, planWrite, textCost, weightOf, wordMarks } from '../../core';
 import { gameData } from '../../data';
+import { READ_MODES } from '../../data/schema';
 import { closeSheet, getRuntime, NOISE_EFFECT, noiseText, useGame, writeWorld } from '../../store/game';
+import { modesOpen } from '../../store/journey';
 import type { EditTarget } from '../../store/runtime';
+import { useCoachNote } from '../Coach';
 import { Icon } from '../icons';
 import { Sheet } from '../parts';
 import { seWrite } from '../se';
@@ -13,12 +17,40 @@ const HELPERS = ['少し', 'とても', 'だけ', 'なしで', 'ただし、'];
 /** 入力の補助に並べる、その行の言葉の数 */
 const KEY_WORDS = 4;
 
+/** 出典を短く（名前と年。全文とURLはノートの「出典」で） */
+function SourceNote({ id }: { id: string }) {
+  const s = gameData.sources[id];
+  if (!s) return null;
+  return (
+    <span className="source-note" data-testid="source-note">
+      {s.check === '要確認' ? '（出典は確認中）' : `（${s.name}${s.year ? `、${s.year}年` : ''}）`}
+    </span>
+  );
+}
+
+/** 書こうとしている読み取りが効き始めるまでの年数（書き足す仕組み・行の概念ごと。いちばん遅いもの） */
+function planDelay(discoveries: readonly string[]): number {
+  let most = 0;
+  for (const d of discoveries) {
+    if (d.startsWith('p:')) most = Math.max(most, delayOf(gameData, null, d.slice(2)));
+    const r = /^r:(\w+)\./u.exec(d);
+    if (r) most = Math.max(most, delayOf(gameData, gameData.lawById.get(r[1]!)?.concept ?? null, null));
+  }
+  return most;
+}
+
 /**
  * WORLD.txt の1行を、そのまま書き換える。選択肢も予測も出さない。
  * 結果は、時間を進めて世界を見るまでわからない。
  */
 export function EditSheet({ target }: { target: EditTarget }) {
   const view = useGame((s) => s.view);
+  const progress = useGame((s) => s.progress);
+  const allOpen = useGame((s) => s.settings.allOpen);
+  // 読まれ方の札は、「書き方と人の心」の段が開いてから（制度・条件つきと読まれた文の札は、開く前でも見せる）
+  const modes = modesOpen(gameData, progress, allOpen);
+  // 序章の手引き：書く画面は手引きの札を覆うので、いまの手順をここにも添える
+  const coach = useCoachNote(target);
   const line = target.kind === 'new' ? null : view?.laws.find((l) => l.id === target.id);
   const law = target.kind === 'law' ? gameData.lawById.get(target.id) : null;
   const original = law ? originalText(law) : '';
@@ -63,18 +95,23 @@ export function EditSheet({ target }: { target: EditTarget }) {
   const chars = textCost(text);
   const concept = Math.max(0, weight - chars);
   // 書き足した文章が既存の行の書き換えとして読まれるときも、命令と同じ計算で世界容量を見積もる
-  const after = costAfter(g, gameData, target, text);
-  const over = after > g.sim.capacityMax && after > view.capacity.used;
+  // 書いたあとの使える文字数（序章では、見えている行の分だけで見せる）
+  const after = costAfter(g, gameData, target, text) - view.capacity.hidden;
+  const over = after + view.capacity.hidden > g.sim.capacityMax && after > view.capacity.used;
   const changed = withoutPeriod(text) !== withoutPeriod(current);
   const noEdits = view.edits.left <= 0;
   const ended = view.status !== 'playing';
   const negated = negate(text);
   const words = keyWords(original, line?.text ?? '').slice(0, KEY_WORDS);
+  // 世界の読み：言葉が通じるかだけを見せる（書き換えの結果は見せない）。意味の伝わらない文は、世界に届かない
+  const marks = wordMarks(text);
+  const plan = changed && text.trim() !== '' ? planWrite(g, gameData, target, text) : null;
+  const noise = plan && !plan.block && !plan.result.understood ? (plan.result.noise ?? noiseOf(text)) : null;
 
   const title =
     target.kind === 'new' ? (
       <>
-        <Icon name="edit" size={16} /> 新しい定義を書く
+        <Icon name="edit" size={16} /> 行を書き足す
       </>
     ) : (
       <>
@@ -83,15 +120,24 @@ export function EditSheet({ target }: { target: EditTarget }) {
       </>
     );
 
+  // 手引きで押してほしいボタン（消す手引きでは、まず文章を空にする）
+  const coachBtn = coach ? (coach.move === 'delete' && text !== '' ? 'clear' : 'write') : null;
+
   return (
     <Sheet title={title} onClose={closeSheet} testId="edit-sheet">
+      {coach && (
+        <p className="coach-note" data-testid="coach-note">
+          <Icon name="edit" size={14} /> 手引き：{coach.text}
+        </p>
+      )}
       {line && (
         <div className="now-text">
           <div className="mini-label">いまの文章</div>
           <p className={line.state === 'deleted' ? 'law-big deleted' : 'law-big'}>{line.state === 'deleted' ? `（削除）${line.text}` : line.text}</p>
           {!line.understood ? (
             <p className="reading noise" data-testid="reading">
-              <b>意味なし</b>　{noiseText(noiseOf(line.text))}。{NOISE_EFFECT}{target.kind === 'law' ? '（この行の意味は、書き換える前のまま）' : ''}
+              <b>意味なし</b>　{noiseText(noiseOf(line.text))}。{NOISE_EFFECT}
+              {target.kind === 'law' ? '（この行の意味は書き換える前のまま）' : ''}
             </p>
           ) : (
             line.reading && (
@@ -110,7 +156,7 @@ export function EditSheet({ target }: { target: EditTarget }) {
         value={text}
         rows={3}
         maxLength={80}
-        placeholder={target.kind === 'new' ? '例：人間は空を飛べる' : '文章を消すと、その法則は世界から消える'}
+        placeholder={target.kind === 'new' ? '例：人間は空を飛べる' : '文章を消すとその法則は世界から消える'}
         onChange={(e) => setText(e.target.value)}
         data-testid="editor"
         spellCheck={false}
@@ -141,31 +187,70 @@ export function EditSheet({ target }: { target: EditTarget }) {
           </button>
         ))}
       </div>
+      <div className="world-reading" data-testid="world-reading">
+        <div className="mini-label">世界の読み</div>
+        <p className="marks" aria-label="知っている言葉は実線、知らない言葉は点線">
+          {marks.length === 0 ? (
+            <span className="dim small">世界が知っている言葉には実線、知らない言葉には点線が付く</span>
+          ) : (
+            marks.map((m, i) => (
+              <span key={i} className={m.known === null ? undefined : m.known ? 'mark-known' : 'mark-unknown'} data-known={m.known === null ? undefined : String(m.known)}>
+                {m.text}
+              </span>
+            ))
+          )}
+        </p>
+        {noise && (
+          <p className="noise-note" data-testid="noise-note">
+            <b>世界に届かない言葉</b>　<span className="dim small">{noiseText(noise)}</span>
+          </p>
+        )}
+        {/* 効き始めまでの遅れ（建てる・育てる仕組みや、大地と気候の行は、何年かたってから効く） */}
+        {plan && !plan.block && plan.result.understood && planDelay(plan.discoveries) > 0 && (
+          <p className="onset-note" data-testid="onset-plan">
+            効き始めまで約{planDelay(plan.discoveries)}年かかる
+          </p>
+        )}
+        {/* 読まれ方：人の振る舞いを書いた文は、書き方で性質・制度・条件つきに読み分ける（どう読まれたかだけ。結果は見せない） */}
+        {plan && !plan.block && plan.result.understood && plan.result.mode && (modes || plan.result.mode !== 'nature') && (
+          <div className="read-mode" data-testid="read-mode" data-mode={plan.result.mode}>
+            <span className="mini-label">読まれ方</span>
+            <span className="mode-chips">
+              {READ_MODES.map((m) => (
+                <span key={m} className={m === plan.result.mode ? 'mode-chip mode-on' : 'mode-chip'}>
+                  {gameData.indicators.modes[m].name}
+                </span>
+              ))}
+            </span>
+            <span className="dim small">{gameData.indicators.modes[plan.result.mode].note}</span>
+          </div>
+        )}
+      </div>
       <div className="weight-row" data-testid="weight">
         <span>
           <Icon name="capacity" size={13} /> <b>{chars}</b>字{concept > 0 && <span className="dim small">（＋新しい概念 {concept}字）</span>}
         </span>
         <span className={over ? 'tone-bad' : 'dim'}>
-          世界容量 {view.capacity.used} → <b>{after}</b> / {view.capacity.max}字
+          使える文字数 {view.capacity.used} → <b>{after}</b> / {view.capacity.max}字
         </span>
       </div>
-      {over && <p className="block">世界容量が {Math.ceil(after - view.capacity.max)}字 足りない。先にどこかを消すか、短く書き換える。</p>}
+      {over && <p className="block">使える文字数が {Math.ceil(after - view.capacity.max)}字 足りない。先にどこかを消すか短く書き換える。</p>}
 
       <div className="edit-actions">
         <button
-          className="btn btn-primary wide"
-          disabled={!changed || over || noEdits || ended}
+          className={coachBtn === 'write' ? 'btn btn-primary wide coach-target' : 'btn btn-primary wide'}
+          disabled={!changed || over || noEdits || ended || noise !== null}
           onClick={() => {
             if (writeWorld(target, text)) seWrite();
           }}
           data-testid="write"
         >
-          ✎ {text.trim() === '' && target.kind !== 'new' ? 'この行を世界から消す' : '世界を書き換える'}
+          <Pencil size={15} strokeWidth={1.5} aria-hidden="true" /> {text.trim() === '' && target.kind !== 'new' ? 'この行を世界から消す' : '世界を書き換える'}
           <span className="dim small">（残り {view.edits.left}）</span>
         </button>
         {target.kind !== 'new' && (
           <div className="row2">
-            <button className="btn" onClick={() => setText('')} disabled={text === ''} data-testid="clear">
+            <button className={coachBtn === 'clear' ? 'btn coach-target' : 'btn'} onClick={() => setText('')} disabled={text === ''} data-testid="clear">
               文章を消す
             </button>
             {law ? (
@@ -179,41 +264,24 @@ export function EditSheet({ target }: { target: EditTarget }) {
             )}
           </div>
         )}
-        {ended ? (
-          <p className="block">この世界はもう終わっている。</p>
-        ) : (
-          noEdits && <p className="block">書き換えの力が残っていない。時間を進めると戻る。</p>
-        )}
+        {ended ? <p className="block">この世界はもう終わっている</p> : noEdits && <p className="block">書き換えの残りがない。時間を進めると戻る。</p>}
       </div>
 
       {law?.fact && (
         <p className="fact">
           <span className="fact-label">現実では</span>
           {law.fact}
+          <SourceNote id={`laws/${law.id}/fact`} />
         </p>
       )}
       <details className="hint">
         <summary>世界が読み取る言葉</summary>
-        <p>
-          否定（〜ない）・量（少し／倍／大量）・頻度（数日に一度／週に一度）・例外（ただし〜は除く）・条件（〜のときだけ）・
-          「〜なしで」「〜だけ」「〜に強い」。英語でも書ける。
-        </p>
-        <p>
-          ひとつの文に、いくつもの新しい概念を書ける（例：「人間は空を飛び、光合成できる。」）。
-          技術や科学の言葉（人工知能・半導体・反物質など）も読み取る。
-        </p>
-        <p>
-          意味が伝わらない文章（知らない言葉・問いかけ・記号だけ）は意味のない文になり、世界は何も変わらない。使うのは文字数と書換の力だけ。
-        </p>
-        <p>
-          長い文章ほど世界容量（文字数）を使う。同じものについて短く言い換えれば（例：「人は毎日食べる。」）、意味を変えずに字数を減らせる。
-        </p>
-        <p>入力欄の下の言葉を押すと、カーソルの位置に差し込む。「〜ない」は文の終わりを打ち消しの形にする。</p>
-        {target.kind === 'new' ? (
-          <p>すでにある行と同じものについて書いた文は、その行の書き換えとして読まれる。</p>
-        ) : (
-          <p>別のものについての文に書き換えると、元の定義は消え、新しい定義がその行に宿る。</p>
-        )}
+        <p>否定（〜ない）・量（少し／倍／大量）・頻度（数日に一度／週に一度）・例外（ただし〜は除く）・条件（〜のときだけ）・ 「〜なしで」「〜だけ」「〜に強い」。英語でも書ける。</p>
+        <p>ひとつの文にいくつもの新しい概念を書ける（例：「人間は空を飛び、光合成できる。」）。 技術や科学の言葉（人工知能・半導体・反物質など）も読み取る。</p>
+        <p>意味が伝わらない文章（知らない言葉・問いかけ・記号だけ）は世界に届かない。書き込めず、書き換えの残りも文字数も減らない。 「世界の読み」の点線の言葉は世界がまだ知らない言葉。</p>
+        <p>長い文章ほど使える文字数を使う。同じものについて短く言い換えれば（例：「人は毎日食べる。」）、意味を変えずに字数を減らせる。</p>
+        <p>入力欄の下の言葉を押すとカーソルの位置に差し込む。「〜ない」は文の終わりを打ち消しの形にする。</p>
+        {target.kind === 'new' ? <p>すでにある行と同じものについて書いた文はその行の書き換えとして読まれる。</p> : <p>別のものについての文に書き換えると元の意味は消え、新しい意味がその行に宿る。</p>}
       </details>
     </Sheet>
   );

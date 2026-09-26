@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>メニュー（セーブと設定）・明るい画面</title>
+
+</head>
+<body>
+<div>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&amp;family=Shippori+Mincho:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#f6f4ef;font-family:'Shippori Mincho',serif;color:#1c1d21}
+a{color:#1c1d21;text-decoration:none}a:hover{color:#000000}
+/* 設定の画面なので動かさない */
+.tg{width:40px;height:24px;box-sizing:border-box;border-radius:12px;border:1px solid #5c616a;position:relative;display:inline-block;flex-shrink:0}
+.tg::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:8px;background:#5c616a}
+input:checked + .tg{border-color:#30333a;background:#d6d2c9}
+input:checked + .tg::after{left:19px;background:#1c1d21}
+input:focus-visible + .tg{outline:2px solid #1b5aa6;outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #f6f4ef; display: flex; flex-direction: column; overflow: hidden; font-family: 'Shippori Mincho', serif; color: #1c1d21;">
+
+<header style="height: 56px; flex-shrink: 0; box-sizing: border-box; padding: 0 4px 0 16px; display: flex; align-items: center; justify-content: space-between; background: #eeebe4; border-bottom: 1px solid rgba(40,42,48,0.14);">
+<span style="font-size: 18px; letter-spacing: 0.2em;">メニュー</span>
+<a href="MainLight.html" aria-label="閉じる" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #30333a;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></a>
+</header>
+
+<div style="flex-shrink: 0; margin: 12px 16px 0; box-sizing: border-box; padding: 10px 12px; background: #fbf4e2; border: 1px solid rgba(131,95,12,0.5); border-radius: 6px; display: flex; flex-direction: column; gap: 6px;">
+<div style="display: flex; align-items: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#835f0c" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2"></rect><path d="M11 17.5h2"></path></svg><span style="font-size: 14px; color: #835f0c; font-weight: 600;">ホーム画面に追加すると記録が消えにくい</span></div>
+<div style="font-size: 12px; line-height: 1.6; color: #30333a;">iPhone の Safari は、7日間開かなかったサイトの記録を消すことがある。ホーム画面から開けば、そのぶんの日数は数えられない。</div>
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px;"><button style="height: 40px; background: transparent; border: 1px solid rgba(131,95,12,0.6); border-radius: 6px; color: #835f0c; font-family: inherit; font-size: 13px;">追加のしかた</button><button style="height: 40px; background: transparent; border: 1px solid rgba(40,42,48,0.32); border-radius: 6px; color: #30333a; font-family: inherit; font-size: 13px;">閉じる</button></div>
+</div>
+
+<div style="flex-shrink: 0; padding: 12px 16px 4px; font-size: 11px; letter-spacing: 0.3em; color: #50555e;">記録（セーブ）</div>
+<div style="flex-shrink: 0; margin: 0 16px; display: flex; flex-direction: column;">
+<div style="min-height: 44px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(40,42,48,0.10);"><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 1px;"><span style="font-size: 14px;">自動で保存している</span></span><span style="font-size: 12px; color: #1d6b46;">最後の保存　たった今</span></div>
+<div style="min-height: 44px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(40,42,48,0.10);"><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 1px;"><span style="font-size: 14px;">最後に書き出した日</span><span style="font-size: 11px; color: #5c616a;">別の端末へ移すときや、消えたときのために</span></span><span style="font-size: 12px; color: #835f0c; white-space: nowrap;"><span style="font-family: 'Cormorant Garamond', serif; font-size: 17px; font-weight: 600;">12</span>日前</span></div>
+</div>
+<div style="flex-shrink: 0; margin: 8px 16px 0; display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px;">
+<button style="height: 44px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px; background: #ffffff; border: 1px solid #30333a; border-radius: 6px; color: #1c1d21; font-family: inherit; font-size: 13px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5"></path><path d="M5 19h14"></path></svg>ファイルに保存</button>
+<button style="height: 44px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px; background: transparent; border: 1px solid rgba(40,42,48,0.32); border-radius: 6px; color: #1c1d21; font-family: inherit; font-size: 13px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="12" r="2.2"></circle><circle cx="17" cy="6" r="2.2"></circle><circle cx="17" cy="18" r="2.2"></circle><path d="M8 11l7-4M8 13l7 4"></path></svg>共有</button>
+<button style="height: 44px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px; background: transparent; border: 1px solid rgba(40,42,48,0.32); border-radius: 6px; color: #1c1d21; font-family: inherit; font-size: 13px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="11" height="12" rx="1.5"></rect><path d="M5 16V5.5A1.5 1.5 0 0 1 6.5 4H15"></path></svg>コピー</button>
+</div>
+<div style="flex-shrink: 0; margin: 8px 16px 0;"><button style="height: 44px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px; background: transparent; border: 1px solid rgba(40,42,48,0.32); border-radius: 6px; color: #1c1d21; font-family: inherit; font-size: 13px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20V9M7 14l5-5 5 5"></path><path d="M5 5h14"></path></svg>書き出したものを読み込む</button></div>
+
+<div style="flex-shrink: 0; padding: 12px 16px 4px; font-size: 11px; letter-spacing: 0.3em; color: #50555e;">画面</div>
+<div style="flex-shrink: 0; margin: 0 16px; display: flex; flex-direction: column;">
+<div style="min-height: 44px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(40,42,48,0.10);"><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 1px;"><span style="font-size: 14px;">画面の明るさ</span><span style="font-size: 11px; color: #5c616a;">最初は端末の設定に合わせる</span></span><div role="radiogroup" aria-label="画面の明るさ" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid rgba(40,42,48,0.32); border-radius: 6px; overflow: hidden; width: 186px; flex-shrink: 0;"><label style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; background: #d6d2c9; color: #1c1d21;"><input type="radio" name="theme" checked style="position: absolute; opacity: 0; width: 1px; height: 1px;">自動</label><label style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; color: #50555e; border-left: 1px solid rgba(40,42,48,0.2);"><input type="radio" name="theme" style="position: absolute; opacity: 0; width: 1px; height: 1px;">明るい</label><label style="height: 36px; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; color: #50555e; border-left: 1px solid rgba(40,42,48,0.2);"><input type="radio" name="theme" style="position: absolute; opacity: 0; width: 1px; height: 1px;">暗い</label></div></div>
+<div style="min-height: 44px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(40,42,48,0.10);"><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 1px;"><span style="font-size: 14px;">動きを減らす</span><span style="font-size: 11px; color: #5c616a;">端末の「視差効果を減らす」にも合わせる</span></span><label for="motion" style="display: flex; align-items: center; gap: 8px; height: 44px; cursor: pointer;"><input type="checkbox" id="motion" style="position: absolute; opacity: 0; width: 1px; height: 1px;"><span class="tg" aria-hidden="true"></span><span class="sr">動きを減らす</span></label></div>
+</div>
+
+<div style="flex-shrink: 0; padding: 12px 16px 4px; font-size: 11px; letter-spacing: 0.3em; color: #50555e;">音</div>
+<div style="flex-shrink: 0; margin: 0 16px; display: flex; flex-direction: column;">
+<div style="min-height: 44px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(40,42,48,0.10);"><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 1px;"><span style="font-size: 14px;">音楽</span></span><label for="bgm" style="display: flex; align-items: center; gap: 8px; height: 44px; cursor: pointer;"><input type="checkbox" id="bgm" checked style="position: absolute; opacity: 0; width: 1px; height: 1px;"><span class="tg" aria-hidden="true"></span><span class="sr">音楽</span></label></div>
+<div style="min-height: 44px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(40,42,48,0.10);"><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 1px;"><span style="font-size: 14px;">効果音</span></span><label for="se" style="display: flex; align-items: center; gap: 8px; height: 44px; cursor: pointer;"><input type="checkbox" id="se" checked style="position: absolute; opacity: 0; width: 1px; height: 1px;"><span class="tg" aria-hidden="true"></span><span class="sr">効果音</span></label></div>
+<div style="min-height: 44px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(40,42,48,0.10);"><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 1px;"><span style="font-size: 14px;">音量</span></span><input type="range" min="0" max="100" value="60" aria-label="音量" style="width: 150px; accent-color: #30333a;"></div>
+</div>
+
+<div style="flex-grow: 1;"></div>
+<div style="flex-shrink: 0; padding: 8px 16px 14px; border-top: 1px solid rgba(40,42,48,0.10); background: #eeebe4; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+<a href="RecordsLight.html" style="height: 44px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(40,42,48,0.32); border-radius: 6px; font-size: 13px; color: #30333a;">記録と実績</a>
+<a href="MainLight.html" style="height: 44px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(40,42,48,0.32); border-radius: 6px; font-size: 13px; color: #30333a;">遊び方をもう一度見る</a>
+</div>
+</div>
+</div>
+
+</body>
+</html>

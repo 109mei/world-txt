@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>ノート（因果の地図）</title>
+
+</head>
+<body>
+<div>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&amp;family=Shippori+Mincho:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#050506;font-family:'Shippori Mincho',serif;color:#eceae4}
+a{color:#eceae4;text-decoration:none}a:hover{color:#ffffff}
+/* 考える画面なので動かさない。まだ見ぬつながりは、止まった点線で示す */
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #050506; display: flex; flex-direction: column; overflow: hidden; font-family: 'Shippori Mincho', serif; color: #eceae4;">
+
+<header style="height: 64px; flex-shrink: 0; box-sizing: border-box; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; background: #0b0c0e; border-bottom: 1px solid rgba(214,220,232,0.14);">
+<span style="font-size: 18px; letter-spacing: 0.2em;">ノート</span>
+<span style="font-size: 12px; color: #a2a5ac;">見つけたつながり <span style="font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; color: #eceae4;">7</span></span>
+</header>
+
+<div role="tablist" aria-label="ノートの中身" style="flex-shrink: 0; height: 48px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 1px solid rgba(214,220,232,0.14);">
+<button role="tab" aria-selected="true" style="background: transparent; border: none; border-bottom: 2px solid #d8dbe2; color: #eceae4; font-family: inherit; font-size: 14px;">因果の地図</button>
+<button role="tab" aria-selected="false" style="background: transparent; border: none; color: #a2a5ac; font-family: inherit; font-size: 14px;">世界の辞書</button>
+<button role="tab" aria-selected="false" style="background: transparent; border: none; color: #a2a5ac; font-family: inherit; font-size: 14px;">仮説</button>
+<a href="Records.html" role="tab" aria-selected="false" style="display: flex; align-items: center; justify-content: center; background: transparent; border: none; border-bottom: 2px solid transparent; color: #a2a5ac; font-family: inherit; font-size: 14px;">記録</a>
+</div>
+
+<div style="flex-shrink: 0; position: relative; width: 390px; height: 352px; background: #07080a;">
+<svg width="390" height="352" viewBox="0 0 390 352" style="position: absolute; left: 0; top: 0;" aria-hidden="true">
+<g fill="none" stroke-width="1.3">
+<path d="M88 50V104" stroke="#a6cdff"></path>
+<path d="M290 50V104" stroke="#a6cdff"></path>
+<path d="M258 126H140" stroke="#d8dbe2"></path>
+<path d="M80 146V188" stroke="#d8dbe2"></path>
+<path d="M120 222C150 236 170 246 186 256" stroke="#f2a393"></path>
+<path d="M240 284C250 294 258 302 262 312" stroke="#f2a393"></path>
+<path stroke-dasharray="4 4" d="M300 146V196" stroke="#c8b2ff"></path>
+<path stroke-dasharray="4 4" d="M70 222V300" stroke="#c8b2ff"></path>
+</g>
+</svg>
+<div style="position: absolute; left: 14px; top: 16px; width: 150px; box-sizing: border-box; padding: 6px 8px; border: 1px solid rgba(166,205,255,0.6); background: #0a0f16; border-radius: 6px; font-size: 12px; color: #a6cdff; text-align: center;">二日に一度食べる</div>
+<div style="position: absolute; left: 216px; top: 16px; width: 150px; box-sizing: border-box; padding: 6px 8px; border: 1px solid rgba(166,205,255,0.6); background: #0a0f16; border-radius: 6px; font-size: 12px; color: #a6cdff; text-align: center;">少しの水で育つ</div>
+<div style="position: absolute; left: 40px; top: 108px; width: 96px; box-sizing: border-box; padding: 6px 8px; border: 1px solid rgba(214,220,232,0.5); background: #121316; border-radius: 16px; font-size: 13px; text-align: center;">食料</div>
+<div style="position: absolute; left: 258px; top: 108px; width: 84px; box-sizing: border-box; padding: 6px 8px; border: 1px solid rgba(214,220,232,0.5); background: #121316; border-radius: 16px; font-size: 13px; text-align: center;">水</div>
+<div style="position: absolute; left: 14px; top: 190px; width: 148px; box-sizing: border-box; padding: 6px 8px; border: 1px solid rgba(242,163,147,0.55); background: #160f0d; border-radius: 6px; font-size: 12px; text-align: center;">農と食の仕事が減る</div>
+<div style="position: absolute; left: 150px; top: 254px; width: 128px; box-sizing: border-box; padding: 6px 8px; border: 1px solid rgba(242,163,147,0.55); background: #160f0d; border-radius: 6px; font-size: 12px; text-align: center;">研究が止まる</div>
+<div style="position: absolute; left: 196px; top: 312px; width: 170px; box-sizing: border-box; padding: 6px 8px; border: 1px solid rgba(242,163,147,0.55); background: #160f0d; border-radius: 6px; font-size: 12px; text-align: center;">作物の病に弱くなる</div>
+<div style="position: absolute; left: 272px; top: 196px; width: 60px; box-sizing: border-box; padding: 6px 8px; border: 1px dashed rgba(200,178,255,0.7); border-radius: 6px; font-size: 13px; color: #c8b2ff; text-align: center;">？</div>
+<div style="position: absolute; left: 40px; top: 300px; width: 60px; box-sizing: border-box; padding: 6px 8px; border: 1px dashed rgba(200,178,255,0.7); border-radius: 6px; font-size: 13px; color: #c8b2ff; text-align: center;">？</div>
+</div>
+<div style="flex-shrink: 0; padding: 6px 16px 0; display: flex; gap: 10px; font-size: 10px; color: #a2a5ac;">
+<span style="display: flex; align-items: center; gap: 4px;"><svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true"><rect x="0.5" y="0.5" width="15" height="9" rx="2" fill="#0a0f16" stroke="#a6cdff"></rect></svg>書いた一文</span><span style="display: flex; align-items: center; gap: 4px;"><svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true"><rect x="0.5" y="0.5" width="15" height="9" rx="4.5" fill="#121316" stroke="#d8dbe2"></rect></svg>項目</span><span style="display: flex; align-items: center; gap: 4px;"><svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true"><rect x="0.5" y="0.5" width="15" height="9" rx="2" fill="#160f0d" stroke="#f2a393"></rect></svg>出来事</span><span style="display: flex; align-items: center; gap: 4px;"><svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true"><path d="M0 5H16" stroke="#c8b2ff" stroke-width="1.2" stroke-dasharray="3 2"></path></svg>まだ見ぬつながり</span>
+</div>
+
+<div style="flex-grow: 1; overflow: hidden; padding: 12px 16px 0; display: flex; flex-direction: column; gap: 10px;">
+<div style="box-sizing: border-box; padding: 10px 12px; background: #111214; border: 1px solid rgba(234,208,143,0.4); border-radius: 6px; display: flex; flex-direction: column; gap: 6px;">
+<span style="font-size: 11px; letter-spacing: 0.3em; color: #ead08f;">仮説</span>
+<span style="font-size: 14px; line-height: 1.6;">この世界の土は「水が足りない型」</span>
+<div style="display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #d8dbe2;">
+<span style="display: flex; align-items: center; gap: 8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d8dbe2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="見た"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>雨の少ない年が続いている</span>
+<span style="display: flex; align-items: center; gap: 8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d8dbe2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="見た"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>給水制限が始まった</span>
+<span style="display: flex; align-items: center; gap: 8px; color: #8b8f97;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b8f97" stroke-width="1.6" stroke-dasharray="3 3" role="img" aria-label="まだ見ていない"><circle cx="12" cy="12" r="7"></circle></svg>川が細っている（まだ見ていない）</span>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between;">
+<span style="font-size: 11px; color: #a2a5ac;">3つそろうと、見立てが確定する</span>
+<button style="height: 36px; padding: 0 12px; background: transparent; border: 1px solid rgba(234,208,143,0.6); border-radius: 6px; color: #ead08f; font-family: inherit; font-size: 12px;">書き留める</button>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px;">
+<span style="font-size: 11px; letter-spacing: 0.3em; color: #a2a5ac;">世界の辞書から</span>
+<div style="display: flex; flex-wrap: wrap; gap: 6px;">
+<span style="padding: 3px 8px; border-bottom: 2px solid #d8dbe2; font-size: 12px;">数日に一度</span>
+<span style="padding: 3px 8px; border-bottom: 2px solid #d8dbe2; font-size: 12px;">蔵</span>
+<span style="padding: 3px 8px; border-bottom: 2px solid #d8dbe2; font-size: 12px;">分かち合う</span>
+<span style="padding: 3px 8px; border-bottom: 2px solid #d8dbe2; font-size: 12px;">ただし</span>
+<span style="padding: 3px 8px; border-bottom: 2px dotted #c8b2ff; font-size: 12px; color: #c8b2ff;">獲る</span>
+<span style="padding: 3px 8px; border-bottom: 2px dotted #c8b2ff; font-size: 12px; color: #c8b2ff;">収穫量</span>
+</div>
+</div>
+</div>
+
+<nav aria-label="画面の切り替え" style="height: 56px; flex-shrink: 0; margin-top: 8px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid rgba(214,220,232,0.14); background: #08090b;">
+<a href="Main.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 12px; letter-spacing: 0.15em; color: #a2a5ac; border-top: 2px solid transparent;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3c3.2 3.2 3.2 14.8 0 18M12 3c-3.2 3.2-3.2 14.8 0 18"></path></svg><span>世界</span></a>
+<a href="Text.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 12px; letter-spacing: 0.15em; color: #a2a5ac; border-top: 2px solid transparent;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"></path><path d="M15 3v4h4"></path><path d="M9 11h7M9 14h7M9 17h5"></path></svg><span>法則</span></a>
+<a href="Notebook.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 12px; letter-spacing: 0.15em; color: #eceae4; border-top: 2px solid #d8dbe2;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="1.5"></rect><path d="M9 3v18"></path><path d="M12 8h4M12 11h4"></path></svg><span>ノート</span></a>
+</nav>
+</div>
+</div>
+
+</body>
+</html>

@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { validateCondition } from '../core/conditions';
-import { originalText } from '../core/interpret';
+import { hashText } from '../core/hash';
+import { canonical, evenParticles, originalText } from '../core/interpret';
 import { setLexicon } from '../core/interpret';
-import type { GameData } from '../core/types';
+import type { GameData, NamedMeaning } from '../core/types';
 import anomaliesRaw from './anomalies.json';
 import balanceRaw from './balance.json';
 import combosRaw from './combos.json';
@@ -20,6 +21,8 @@ import sceneRaw from './scene.json';
 import stagesRaw from './stages.json';
 import tagsRaw from './tags.json';
 import twistsRaw from './twists.json';
+import sourcesRaw from './sources.json';
+import unlocksRaw from './unlocks.json';
 import {
   AccessSchema,
   AnomalySchema,
@@ -35,6 +38,8 @@ import {
   LexiconSchema,
   PhraseSchema,
   SceneDataSchema,
+  SourcesSchema,
+  UnlocksSchema,
   StageSchema,
   TagSchema,
   TwistSchema,
@@ -62,6 +67,8 @@ export interface RawData {
   achievements: unknown;
   scene: unknown;
   access: unknown;
+  sources: unknown;
+  unlocks: unknown;
 }
 
 export const RAW_DATA: RawData = {
@@ -82,6 +89,8 @@ export const RAW_DATA: RawData = {
   achievements: achievementsRaw,
   scene: sceneRaw,
   access: accessRaw,
+  sources: sourcesRaw,
+  unlocks: unlocksRaw,
 };
 
 export class DataError extends Error {}
@@ -118,6 +127,10 @@ export function buildGameData(raw: RawData): GameData {
       .sort((a, b) => b.e.priority - a.e.priority || a.i - b.i)
       .map((x) => x.e),
     achievements: z.array(AchievementSchema).parse(raw.achievements),
+    sources: SourcesSchema.parse(raw.sources ?? {}),
+    unlocks: UnlocksSchema.parse(raw.unlocks),
+    // 規則の版：データの中身が1字でも変われば変わる（棋譜は、同じ版の規則でだけ再生する）
+    rulesVersion: Math.floor(hashText(JSON.stringify(raw)) * 2 ** 32).toString(36),
     scene: SceneDataSchema.parse(raw.scene),
     access: AccessSchema.parse(raw.access),
     lawById: new Map(),
@@ -129,6 +142,7 @@ export function buildGameData(raw: RawData): GameData {
     stageById: new Map(),
     crisisById: new Map(),
     endingById: new Map(),
+    nameIndex: new Map(),
   };
   uniqueIds('概念', data.concepts);
   uniqueIds('法則', data.laws);
@@ -159,7 +173,10 @@ export function buildGameData(raw: RawData): GameData {
     if (!init) throw new DataError(`法則 ${law.id} の最初の形がない: ${law.initial}`);
     if (init.kind !== 'original' || !init.text) throw new DataError(`法則 ${law.id} の最初の形は、文章のある original`);
     if (!law.options.some((o) => o.kind === 'delete')) throw new DataError(`法則 ${law.id} に削除したときの意味がない`);
+    const fill = map.get(law.voidFill);
+    if (!fill || fill.kind === 'delete') throw new DataError(`法則 ${law.id} の空白を埋める読み取りがない（または消したときの意味になっている）: ${law.voidFill}`);
   }
+  for (const law of data.laws) for (const d of law.supports) if (!data.lawById.has(d) || d === law.id) throw new DataError(`法則 ${law.id} が支える行が知らない行: ${d}`);
 
   // 読み取りの語彙：規則に出てくる言葉と、lexicon.json の言葉を世界が知っている言葉にする
   const lex = data.lexicon;
@@ -185,6 +202,21 @@ export function buildGameData(raw: RawData): GameData {
     vocab.filter((w) => !w.startsWith('@')),
     nouns,
   );
+  // 読み取りの規則の言葉は、読む文と同じように助詞のゆれをそろえておく（「病気がない」と「病気はない」を同じに探す）
+  const even = (ws: string[] | undefined) => ws?.map((w) => (w.startsWith('@') ? w : evenParticles(w)));
+  const evenRule = (r: MatchRule): MatchRule => ({
+    ...r,
+    any: even(r.any),
+    all: even(r.all),
+    none: even(r.none),
+    except: even(r.except),
+    without: even(r.without),
+    only: even(r.only),
+    rest: even(r.rest),
+    subject: even(r.subject),
+  });
+  for (const law of data.laws) for (const o of law.options) if (o.match) o.match = o.match.map(evenRule);
+  for (const p of data.phrases) p.match = p.match.map(evenRule);
 
   const problems: string[] = [];
   const checkGroups = (where: string, rules: readonly MatchRule[]) => {
@@ -240,7 +272,7 @@ export function buildGameData(raw: RawData): GameData {
   for (const a of data.achievements) {
     check(`実績 ${a.id}`, a.world);
     for (const c of a.progress)
-      if (!/^(cleared|worlds|discovered|endlessBest|endings|achievements|abandoned)\s*(<=|>=|==|<|>)\s*\d+$/.test(c)) problems.push(`実績 ${a.id}: 進み具合の条件が読めない ${c}`);
+      if (!/^(cleared|worlds|discovered|endlessBest|endings|achievements|abandoned|modes|rules|marks3|numbered|trials)\s*(<=|>=|==|<|>)\s*\d+$/.test(c)) problems.push(`実績 ${a.id}: 進み具合の条件が読めない ${c}`);
   }
   for (const law of data.laws)
     for (const w of law.exists) if (!law.subject.includes(w) && !law.topic.includes(w) && !originalText(law).startsWith(w)) problems.push(`法則 ${law.id}: exists の ${w} が主語にも話題にもない`);
@@ -290,7 +322,39 @@ export function buildGameData(raw: RawData): GameData {
     if (!open) problems.push(`筆の位: ステージ ${s.id} で開いている行がない`);
     for (const c of open ?? []) if (!data.conceptById.has(c)) problems.push(`筆の位: ステージ ${s.id} の知らない概念 ${c}`);
   }
+  // 名前の索引：画面に出る名前をそのまま書けば、その意味に読む（P3）。同じ名前が別の意味を指すのは、内容の誤り
+  const nameKey = (name: string) => canonical(name.replace(/（[^）]*）$/u, ''));
+  // 同じ意味の法則の読み取り（covers）をもつ言い回しと、その読み取りが同じ名前なら、法則の読み取りとして読む
+  const sameMeaning = (a: NamedMeaning, b: NamedMeaning) =>
+    a.kind === 'phrase' && b.kind === 'law' && (data.phraseById.get(a.id)?.covers ?? []).some((c) => new RegExp(`^law:${b.law}=(?:[\w|]*\|)?${b.option}(?:\|[\w|]*)?$`, 'u').test(c));
+  const named = (key: string, m: NamedMeaning, where: string) => {
+    if (!key) return;
+    const prev = data.nameIndex.get(key);
+    if (prev && JSON.stringify(prev) !== JSON.stringify(m) && !sameMeaning(prev, m)) problems.push(`名前が重なっている: 「${key}」（${where}）`);
+    else data.nameIndex.set(key, m);
+  };
+  // 同じ意味の法則の読み取りがある言い回し（covers）の名前は、その行の書き換えとして読む（索引に入れない）
+  for (const p of data.phrases) if (!p.generic && !p.name.includes('{X') && p.covers.length === 0) named(nameKey(p.name), { kind: 'phrase', id: p.id }, `言い回し ${p.id}`);
+  for (const law of data.laws) for (const o of law.options) if (o.kind !== 'original') named(nameKey(o.label), { kind: 'law', law: law.id, option: o.id }, `法則 ${law.id}=${o.id}`);
   if (problems.length > 0) throw new DataError(problems.join('\n'));
+  // 開いていく順番：学問の仕組みは、どれもちょうど1つの段で紹介する。発見が指す決まりはあるもの
+  const ruleIds = new Set(data.unlocks.rules.map((r) => r.id));
+  const introduced = data.unlocks.steps.flatMap((s) => s.rules);
+  for (const id of introduced) if (!ruleIds.has(id)) throw new DataError(`開いていく順番の段に、知らない決まり: ${id}`);
+  for (const id of ruleIds) if (introduced.filter((x) => x === id).length !== 1) throw new DataError(`決まり ${id} は、ちょうど1つの段で紹介する`);
+  for (const d of data.unlocks.discoveries) if (d.rule && !ruleIds.has(d.rule)) throw new DataError(`発見が知らない決まりを指している: ${d.rule}`);
+  for (const s of data.unlocks.steps) if (s.stage && !data.stageById.has(s.stage)) throw new DataError(`開いていく順番の段に、知らないステージ: ${s.stage}`);
+  // 4つの柱：14の項目は、どれかちょうど1つの柱に入る
+  const inPillars = data.indicators.pillars.flatMap((p) => p.items);
+  for (const id of Object.keys(data.indicators.items)) if (inPillars.filter((x) => x === id).length !== 1) throw new DataError(`項目 ${id} は、ちょうど1つの柱に入れる`);
+  // 改稿者の試練：重なる型はそのステージの型、書き換えの少ない版には決まりがある
+  for (const st of data.stages) {
+    const t = st.trial;
+    if (!t) continue;
+    if (t.kind === 'double' && (!t.cause || !st.causes.some((c) => c.id === t.cause))) throw new DataError(`改稿者の試練 ${st.id}：重なる型がステージの型にない（${t.cause}）`);
+    if (t.kind === 'few' && !t.edits) throw new DataError(`改稿者の試練 ${st.id}：書き換えの少ない版に、書き換えの決まりがない`);
+    if (t.kind === 'late' && t.late < 1) throw new DataError(`改稿者の試練 ${st.id}：兆しの遅れが0年`);
+  }
   return data;
 }
 

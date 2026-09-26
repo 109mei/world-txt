@@ -1,15 +1,122 @@
 [
   {
+    "id": "prologue",
+    "order": 0,
+    "title": "序章　ひと区画の庭",
+    "icon": "plant",
+    "mission": "3年のあいだに書き換える・書き足す・消すを1つずつ試す",
+    "goalYears": 3,
+    "briefing": [
+      "世界は文章でできている",
+      "この序章は手引き。書き換える・書き足す・消すを1年に1つずつ試す",
+      "何をどこで押すかは、画面の上の手引きが順に示す",
+      "書いたことは時間を進めて初めて世界に表れる。この庭は何もしなくても滅びない"
+    ],
+    "focus": [
+      "food",
+      "water",
+      "eco",
+      "humanity"
+    ],
+    "start": {
+      "pop": 80,
+      "agri": 0.98,
+      "industry": 1,
+      "energyCap": 1.04,
+      "renewShare": 0.25,
+      "oilReserve": 60,
+      "infra": 0.88,
+      "science": 1,
+      "eco": 50,
+      "co2": 425,
+      "temp": 1.3,
+      "pathogen": 2.5,
+      "immunity": 0.39,
+      "strainR": 1,
+      "strainV": 0.06,
+      "stability": 65,
+      "happiness": 50,
+      "tension": 30,
+      "unemployment": 0.07
+    },
+    "mods": {},
+    "capacity": 700,
+    "capacityDecay": 0,
+    "edits": {
+      "start": 1,
+      "every": 1,
+      "max": 1
+    },
+    "fail": {
+      "pop": 1,
+      "civ": 1
+    },
+    "unlock": 0,
+    "causes": [],
+    "lines": [
+      "plant_grow",
+      "water_rain",
+      "food_rot",
+      "human_food",
+      "animal_pollen"
+    ],
+    "tutorial": [
+      {
+        "title": "書き換える",
+        "lead": "行の文章を書き換えると、次の年に世界がそのとおりに変わる",
+        "move": "rewrite",
+        "law": "animal_pollen",
+        "example": "虫や鳥がたくさんの花粉を運ぶ。",
+        "steps": [
+          { "text": "下の「法則」を開く", "done": "tab:laws", "target": "tab-laws" },
+          { "text": "「虫や鳥が花粉を運ぶ。」の行を押す", "done": "edit:animal_pollen", "target": "law-animal_pollen" },
+          { "text": "「虫や鳥がたくさんの花粉を運ぶ。」と書き換えて「世界を書き換える」を押す", "done": "move", "target": "write" },
+          { "text": "「1年進める」を押して世界がどう変わるかを見る", "done": "year", "target": "advance" }
+        ],
+        "after": "書き換えた一文が次の年に世界の姿になった。情景と「世界が書き換わった」の知らせで確かめる"
+      },
+      {
+        "title": "書き足す",
+        "lead": "新しい一文を書き足すと、世界になかった決まりが加わる",
+        "move": "add",
+        "example": "人々は食べ物を分け合う。",
+        "steps": [
+          { "text": "「法則」のいちばん下の「行を書き足す」を押す", "done": "edit:new", "target": "add-line" },
+          { "text": "「人々は食べ物を分け合う。」と書いて「世界を書き換える」を押す", "done": "move", "target": "write" },
+          { "text": "「1年進める」を押す", "done": "year", "target": "advance" }
+        ],
+        "after": "書き足した一文が世界に新しい決まりを加えた。建てる・育てるものは効き始めるまで何年かかかる"
+      },
+      {
+        "title": "消す",
+        "lead": "行を消すと、その決まりが世界からなくなる",
+        "move": "delete",
+        "law": "food_rot",
+        "steps": [
+          { "text": "「法則」の「食べ物は時間がたつと腐る。」の行を押す", "done": "edit:food_rot", "target": "law-food_rot" },
+          { "text": "「文章を消す」で空にして「この行を世界から消す」を押す", "done": "move", "target": "write" },
+          { "text": "「1年進める」を押す。3年目を越えると序章は終わる", "done": "year", "target": "advance" }
+        ],
+        "after": "消した行の決まりが世界からなくなった。空いた行は何年かたつと世界が元の文で埋める"
+      }
+    ],
+    "hints": [
+      "書いたことは1年進めて初めて世界に表れる。情景と「世界が書き換わった」の知らせを見よう。"
+    ],
+    "marks": false,
+    "par": 3
+  },
+  {
     "id": "food",
     "order": 1,
     "title": "食料危機",
     "icon": "food",
-    "mission": "30年間、人類文明を維持せよ。",
+    "mission": "30年間、人類文明を維持せよ",
     "goalYears": 30,
     "briefing": [
-      "人口は増え続け、農地は限界に近い。",
-      "雨は年々少なくなり、水が足りない。",
-      "飢えは社会の不安を呼び、やがて争いを呼ぶ。"
+      "人口は増え続け、農地は限界に近い",
+      "雨は年々少なくなり、水が足りない",
+      "飢えは社会の不安を呼び、やがて争いを呼ぶ"
     ],
     "focus": [
       "food",
@@ -43,15 +150,58 @@
       "agriMax": 0.75,
       "tension": 6
     },
-    "capacity": 636,
+    "capacity": 666,
     "edits": {
-      "start": 3,
-      "every": 5,
-      "max": 5
+      "start": 2,
+      "every": 7,
+      "max": 4
     },
     "fail": {
       "pop": 68,
       "civ": 25
+    },
+    "causes": [
+      {
+        "id": "water",
+        "name": "水が足りない",
+        "mods": {
+          "waterSupply": 0.86,
+          "cropDisease": 0.85,
+          "distribution": 1.02
+        },
+        "par": 6
+      },
+      {
+        "id": "reach",
+        "name": "届かない",
+        "mods": {
+          "distribution": 0.95,
+          "waterSupply": 1.02,
+          "cropDisease": 0.85
+        },
+        "par": 6
+      },
+      {
+        "id": "blight",
+        "name": "病害",
+        "mods": {
+          "cropDisease": 1.6,
+          "waterSupply": 1.02,
+          "distribution": 1.02
+        },
+        "par": 6
+      }
+    ],
+    "firstCause": "water",
+    "capacityDecay": 1.8,
+    "hints": [
+      "はじめの2年のニュースに原因の型の兆しが2つ出る。川の水位・給水制限なら水、港に積まれた穀物・値段の差なら届かない、葉の斑点なら病害。",
+      "型に合った仕組み（ため池・道と港・畑を守る）を書き足さないと、数年後に大崩れが来る"
+    ],
+    "trial": {
+      "kind": "double",
+      "name": "原因の型が2つ重なる",
+      "cause": "blight"
     }
   },
   {
@@ -59,12 +209,12 @@
     "order": 2,
     "title": "感染症",
     "icon": "pathogen",
-    "mission": "40年間、文明の崩壊を防げ。",
+    "mission": "40年間、文明の崩壊を防げ",
     "goalYears": 40,
     "briefing": [
       "世界は安定している。いまのところは。",
-      "各地で、原因不明の肺炎が報告され始めた。",
-      "病は人を奪い、社会を止め、文明を弱らせる。"
+      "各地で原因不明の肺炎が報告され始めた",
+      "病は人を奪い、社会を止め、文明を弱らせる"
     ],
     "focus": [
       "health",
@@ -94,18 +244,62 @@
       "unemployment": 0.06
     },
     "mods": {
-      "agriMax": 0.8,
-      "waterSupply": 0.8
+      "agriMax": 0.9,
+      "waterSupply": 0.92
     },
-    "capacity": 576,
+    "capacity": 628,
     "edits": {
-      "start": 3,
-      "every": 5,
-      "max": 5
+      "start": 2,
+      "every": 7,
+      "max": 4
     },
     "fail": {
       "pop": 66,
       "civ": 25
+    },
+    "causes": [
+      {
+        "id": "air",
+        "name": "空気で広がる",
+        "mods": {
+          "transmission": 1.03,
+          "outbreak": 0.7,
+          "mutation": 0.8
+        },
+        "par": 7
+      },
+      {
+        "id": "animal",
+        "name": "動物から来る",
+        "mods": {
+          "outbreak": 1.1,
+          "transmission": 0.97,
+          "mutation": 0.85
+        },
+        "par": 7
+      },
+      {
+        "id": "mutating",
+        "name": "変わり続ける",
+        "mods": {
+          "mutation": 1.15,
+          "immunityDecay": 1.05,
+          "transmission": 0.97,
+          "outbreak": 0.8
+        },
+        "par": 7
+      }
+    ],
+    "firstCause": "air",
+    "capacityDecay": 0.6,
+    "hints": [
+      "閉めきった部屋での感染なら空気、森や市場の動物からなら動物、治ったはずの人がまたかかるなら変わり続ける病原体",
+      "手洗い・野生動物の売り買いをやめる・すぐに作れるワクチン。型に合った仕組みがないと医療が崩れる。"
+    ],
+    "trial": {
+      "kind": "late",
+      "name": "兆しが1年遅れて出る",
+      "late": 1
     }
   },
   {
@@ -113,12 +307,12 @@
     "order": 3,
     "title": "気候危機",
     "icon": "climate",
-    "mission": "50年間、人類文明を維持せよ。",
+    "mission": "50年間、人類文明を維持せよ",
     "goalYears": 50,
     "briefing": [
-      "二酸化炭素は増え続け、地球は熱を帯びている。",
-      "熱波・干ばつ・山火事が、年ごとに激しくなる。",
-      "しかも世界容量は、少しずつ縮み始めている。"
+      "二酸化炭素は増え続け、地球は熱を帯びている",
+      "熱波・干ばつ・山火事が年ごとに激しくなる",
+      "しかも使える文字数は少しずつ減り始めている"
     ],
     "focus": [
       "climate",
@@ -148,20 +342,67 @@
       "unemployment": 0.06
     },
     "mods": {
-      "emissions": 1.3,
+      "emissions": 1.45,
       "renewGrowth": 0.5,
       "misfortune": 1.5
     },
-    "capacity": 612,
-    "capacityDecay": 1.8,
+    "capacity": 642,
+    "capacityDecay": 1.0,
     "edits": {
-      "start": 3,
-      "every": 5,
-      "max": 5
+      "start": 2,
+      "every": 7,
+      "max": 4
     },
     "fail": {
       "pop": 55,
       "civ": 25
+    },
+    "causes": [
+      {
+        "id": "burn",
+        "name": "燃やしすぎ",
+        "mods": {
+          "emissions": 1.08,
+          "plantSink": 1.05
+        },
+        "par": 9
+      },
+      {
+        "id": "sinks",
+        "name": "吸う力が落ちた",
+        "mods": {
+          "plantSink": 0.7,
+          "oceanSink": 0.8,
+          "emissions": 0.97
+        },
+        "par": 8
+      },
+      {
+        "id": "tipping",
+        "name": "転換点が近い",
+        "mods": {
+          "tempHold": 1.04,
+          "emissions": 0.97
+        },
+        "start": {
+          "temp": 0.15
+        },
+        "par": 9
+      }
+    ],
+    "firstCause": "burn",
+    "hints": [
+      "燃料の消費が増えているなら燃やしすぎ、海や森が吸わなくなっているなら吸う力、凍土や氷河の変化なら転換点",
+      "冷やすだけの書き換えは燃やす理由を消さない。型に合った仕組みで燃やす理由と吸う力を変えよう。"
+    ],
+    "trial": {
+      "kind": "few",
+      "name": "書き換えが少ない",
+      "edits": {
+        "start": 2,
+        "every": 10,
+        "max": 2
+      }
     }
   },
   {
@@ -169,12 +410,12 @@
     "order": 4,
     "title": "世界大戦",
     "icon": "war",
-    "mission": "40年間、戦火から文明を守れ。",
+    "mission": "40年間、戦火から文明を守れ",
     "goalYears": 40,
     "briefing": [
-      "国々は二つの陣営に分かれ、にらみ合っている。",
-      "軍備は膨らみ続け、小さな火種がいつ大戦に変わってもおかしくない。",
-      "戦争は人を奪い、街を焼き、ときに空まで暗くする。"
+      "国々は二つの陣営に分かれ、にらみ合っている",
+      "軍備は膨らみ続け、小さな火種がいつ大戦に変わってもおかしくない",
+      "戦争は人を奪い、街を焼き、ときに空まで暗くする"
     ],
     "focus": [
       "peace",
@@ -206,31 +447,70 @@
     "mods": {
       "war": 1.7,
       "warHarm": 1.5,
-      "tension": 40
+      "tension": 44
     },
-    "capacity": 612,
+    "capacity": 642,
     "edits": {
-      "start": 3,
-      "every": 5,
-      "max": 5
+      "start": 2,
+      "every": 7,
+      "max": 4
     },
     "fail": {
       "pop": 68,
       "civ": 25
     },
-    "unlock": 1
+    "unlock": 1,
+    "causes": [
+      {
+        "id": "scarcity",
+        "name": "奪い合い",
+        "mods": {
+          "distribution": 0.95,
+          "tension": -3
+        },
+        "par": 7
+      },
+      {
+        "id": "borders",
+        "name": "国境",
+        "mods": {
+          "tension": 4,
+          "distribution": 1.03
+        },
+        "par": 7
+      },
+      {
+        "id": "fear",
+        "name": "恐れの連鎖",
+        "mods": {
+          "war": 1.2,
+          "tension": -1
+        },
+        "par": 7
+      }
+    ],
+    "capacityDecay": 1.2,
+    "hints": [
+      "穀物の値上がりと暴動なら奪い合い、国境の兵なら国境、軍拡と誤った警報なら恐れの連鎖",
+      "配給・会議の約束・核をなくす約束。型に合った仕組みがないと小さな衝突が戦争になる。"
+    ],
+    "trial": {
+      "kind": "double",
+      "name": "原因の型が2つ重なる",
+      "cause": "fear"
+    }
   },
   {
     "id": "energy",
     "order": 5,
     "title": "資源枯渇",
     "icon": "oil",
-    "mission": "40年間、エネルギーの尽きゆく文明を支えよ。",
+    "mission": "40年間、エネルギーの尽きゆく文明を支えよ",
     "goalYears": 40,
     "briefing": [
-      "石油は、あと十数年分しか残っていない。",
-      "代わりの電気は、まだ世界の一部しか支えられない。",
-      "エネルギーが尽きれば、工場も、肥料も、物流も止まる。"
+      "石油はあと十数年分しか残っていない",
+      "代わりの電気はまだ世界の一部しか支えられない",
+      "エネルギーが尽きれば、工場も、肥料も、物流も止まる"
     ],
     "focus": [
       "energy",
@@ -244,7 +524,7 @@
       "industry": 1,
       "energyCap": 1.04,
       "renewShare": 0.2,
-      "oilReserve": 8,
+      "oilReserve": 12,
       "infra": 0.88,
       "science": 1,
       "eco": 52,
@@ -260,33 +540,76 @@
       "unemployment": 0.06
     },
     "mods": {
-      "renewGrowth": 0.55,
-      "fossilDepletion": 1.25,
-      "tension": 16
+      "renewGrowth": 1.3,
+      "fossilDepletion": 1.15,
+      "tension": 8
     },
-    "capacity": 590,
+    "capacity": 640,
     "edits": {
-      "start": 3,
-      "every": 5,
-      "max": 5
+      "start": 2,
+      "every": 7,
+      "max": 4
     },
     "fail": {
       "pop": 66,
       "civ": 25
     },
-    "unlock": 1
+    "unlock": 1,
+    "causes": [
+      {
+        "id": "depletion",
+        "name": "尽きる",
+        "mods": {
+          "fossilDepletion": 1.1,
+          "energyDemand": 0.96
+        },
+        "start": {
+          "oilReserve": -1
+        },
+        "par": 7
+      },
+      {
+        "id": "delivery",
+        "name": "届かない",
+        "mods": {
+          "distribution": 0.94,
+          "energySupply": 0.95,
+          "fossilDepletion": 0.95
+        },
+        "par": 7
+      },
+      {
+        "id": "overuse",
+        "name": "使いすぎ",
+        "mods": {
+          "energyDemand": 1.1,
+          "fossilDepletion": 0.95
+        },
+        "par": 6
+      }
+    ],
+    "capacityDecay": 0.9,
+    "hints": [
+      "新しい油田が見つからないなら尽きる、停電と港の足止めなら届かない、使用量の記録更新なら使いすぎ",
+      "石油の限りを消すと産油国が傾く。限りは残したまま太陽光・電池・節約で置き換えよう。"
+    ],
+    "trial": {
+      "kind": "late",
+      "name": "兆しが1年遅れて出る",
+      "late": 1
+    }
   },
   {
     "id": "tiny",
     "order": 6,
     "title": "極小世界",
     "icon": "capacity",
-    "mission": "縮みゆく世界で、50年間文明を維持せよ。",
+    "mission": "縮みゆく世界で50年間文明を維持せよ",
     "goalYears": 50,
     "briefing": [
-      "世界は、すべてを覚えていられなくなった。",
-      "WORLD.txt ははじめから世界容量をはみ出していて、世界容量はこれからも縮み続ける。",
-      "短く言い換えれば、意味を変えずに軽くできる。消せばもっと軽くなるが、世界は揺らぐ。"
+      "世界はすべてを覚えていられなくなった",
+      "WORLD.txt ははじめから使える文字数をはみ出していて、使える文字数はこれからも減り続ける",
+      "短く言い換えれば意味を変えずに軽くできる。消せばもっと軽くなるが、世界は揺らぐ。"
     ],
     "focus": [
       "humanity",
@@ -319,19 +642,53 @@
       "waterSupply": 0.88,
       "tension": 4
     },
-    "capacity": 516,
-    "capacityDecay": 2.3,
+    "capacity": 575,
+    "capacityDecay": 0.6,
     "edits": {
-      "start": 4,
-      "every": 3,
-      "max": 6
+      "start": 3,
+      "every": 4,
+      "max": 5
     },
     "fail": {
       "pop": 60,
       "civ": 25
     },
     "unlock": 3,
-    "overflow": true
+    "overflow": true,
+    "causes": [
+      {
+        "id": "water",
+        "name": "水",
+        "mods": {
+          "waterSupply": 0.93
+        },
+        "par": 14
+      },
+      {
+        "id": "tension",
+        "name": "緊張",
+        "mods": {
+          "tension": 6
+        },
+        "par": 14
+      },
+      {
+        "id": "letters",
+        "name": "使える文字数",
+        "mods": {},
+        "capacityDecay": 0.5,
+        "par": 14
+      }
+    ],
+    "hints": [
+      "はじめから使える文字数があふれている。長い行を、意味を変えずに短く言い換えよう（1行に1度まで）。",
+      "川が細るなら水、隣人との争いなら緊張、文字が速く消えるなら使える文字数。型に合った仕組みを書き足す場所を空けよう。"
+    ],
+    "trial": {
+      "kind": "late",
+      "name": "兆しが1年遅れて出る",
+      "late": 1
+    }
   },
   {
     "id": "loop",
@@ -341,10 +698,10 @@
     "mission": "10年ごとに巻き戻る世界。破局の原因を突き止め、11年目へ抜け出して、30年を生き延びよ。",
     "goalYears": 30,
     "briefing": [
-      "この世界は、10年目の終わりに0年目へ巻き戻る。その10年のあいだに大戦が起きていれば、あるいは文明が保たれていなければ。",
-      "巻き戻るのは世界の様子だけ。あなたが書いた文章は残り、同じ書き方なら、同じ出来事が同じようにくり返す。",
-      "10年のあいだに何が起きるのかを見届け、その原因を書き換えで断て。",
-      "巻き戻るたびに世界の頁は擦り切れ、世界容量が減っていく。書換の力は、巻き戻るたびに1つだけ戻る。"
+      "その10年のうちに大戦が起きるか文明が保たれないと、この世界は10年目の終わりに0年目へ巻き戻る",
+      "巻き戻るのは世界の様子だけ。あなたが書いた文章は残り、同じ書き方なら同じ出来事が同じようにくり返す。",
+      "10年のあいだに何が起きるのかを見届け、その原因を書き換えで断て",
+      "巻き戻るたびに世界のページは擦り切れ、使える文字数が減っていく。書き換えの残りは巻き戻るたびに1回だけ戻る。"
     ],
     "focus": [
       "health",
@@ -378,12 +735,12 @@
       "agriMax": 0.9,
       "tension": 15
     },
-    "capacity": 612,
+    "capacity": 642,
     "capacityDecay": 0,
     "edits": {
-      "start": 3,
-      "every": 5,
-      "max": 5
+      "start": 2,
+      "every": 7,
+      "max": 4
     },
     "fail": {
       "pop": 60,
@@ -401,21 +758,35 @@
       "news": "10年目の終わり。時が巻き戻り、世界は{n}年前の同じ朝に戻った（{count}回目）",
       "fallNews": "文明が崩れたその年、時が巻き戻り、世界は{n}年前の同じ朝に戻った（{count}回目）",
       "breakNews": "10年目を越えた。くり返しがほどけ、世界は11年目へ進んでいく",
-      "rule": "10年目の終わりに、その10年のうちに大戦が起きていれば、あるいは文明が保たれていなければ、世界は0年目へ戻る。"
-    }
+      "rule": "その10年のうちに大戦が起きるか文明が保たれないと、10年目の終わりに世界は0年目へ戻る"
+    },
+    "hints": [
+      "1周目は何が連鎖して世界が壊れるのかを見届けよう。2周目に根を断つ。",
+      "抜け出したあとの20年も、乏しい食料をめぐる争いが続く。分け合う仕組みを書き足しておこう。"
+    ],
+    "trial": {
+      "kind": "few",
+      "name": "書き換えが少ない",
+      "edits": {
+        "start": 2,
+        "every": 10,
+        "max": 2
+      }
+    },
+    "par": 7
   },
   {
     "id": "endless",
     "order": 8,
     "title": "無限の世界",
     "icon": "infinity",
-    "mission": "文明が滅ぶまで、何年続くか。",
+    "mission": "文明が滅ぶまで何年続くか",
     "goalYears": 9999,
     "endless": true,
     "briefing": [
-      "危機は、忘れたころにやってくる。",
-      "隕石、疫病、戦争、飢え。どれも、この世界ではまだ起きていないだけだ。",
-      "知らせが届いてから襲われるまでに、世界の定義を書き換えよ。"
+      "危機は忘れたころにやってくる",
+      "隕石、疫病、戦争、飢え。どれもこの世界ではまだ起きていないだけだ。",
+      "知らせが届いてから襲われるまでに世界の法則を書き換えよ"
     ],
     "focus": [
       "humanity",
@@ -448,17 +819,21 @@
       "waterSupply": 0.85,
       "agriMax": 0.9
     },
-    "capacity": 624,
+    "capacity": 654,
     "capacityDecay": 0.3,
     "edits": {
-      "start": 3,
-      "every": 5,
-      "max": 5
+      "start": 2,
+      "every": 7,
+      "max": 4
     },
     "fail": {
       "pop": 50,
       "civ": 25
     },
-    "unlock": 1
+    "unlock": 1,
+    "hints": [
+      "危機の知らせが来たらその危機に効く行を先に書き換えよう"
+    ],
+    "marks": false
   }
 ]

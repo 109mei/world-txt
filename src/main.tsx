@@ -7,6 +7,7 @@ import { GameRuntime } from './store/runtime';
 import { App } from './ui/App';
 import { onVisibility } from './ui/audio';
 import { syncSe } from './ui/se';
+import { WORLD_NUMBERS } from './store/runtime';
 import { guardLongPress } from './ui/touch';
 import './ui/styles.css';
 
@@ -15,11 +16,12 @@ const seedParam = params.get('seed');
 // テスト用の窓口（?debug=1）は、開発中とテスト用のビルド（--mode e2e）だけ。公開用のビルドには入れない
 const debug = (import.meta.env.DEV || import.meta.env.MODE === 'e2e') && params.get('debug') === '1';
 
+/** 新しい世界の世界番号（1〜9999。番号を送り合えば、同じ世界を遊べる） */
 function randomSeed(): number {
-  return crypto.getRandomValues(new Uint32Array(1))[0]! >>> 0;
+  return ((crypto.getRandomValues(new Uint32Array(1))[0]! >>> 0) % WORLD_NUMBERS) + 1;
 }
 
-/** ?seed=数字 で乱数の種を固定する（テスト・再現用） */
+/** ?seed=数字 で世界番号を固定する（テスト・再現用） */
 const fixedSeed = seedParam !== null && Number.isFinite(Number(seedParam)) ? Math.floor(Number(seedParam)) : null;
 
 function saveStore(): SaveStore {
@@ -87,10 +89,17 @@ async function start(): Promise<void> {
       __wtxt: {
         state: () => JSON.parse(JSON.stringify(getRuntime().state)),
         start: (stage: StageId, daily = false) => startStage(stage, daily),
-        // 鍵のかかった世界を開く（世界を1つ救ったことにする）
+        // 鍵のかかった世界を開く（序章と食料危機を遊び終え、世界を1つ救ったことにする）
         unlock: () => {
           const rt = getRuntime();
           if (!rt.progress.cleared.includes('food')) rt.progress.cleared.push('food');
+          for (const s of ['prologue', 'food'] as StageId[]) if (!rt.progress.played.includes(s)) rt.progress.played.push(s);
+          refreshView();
+        },
+        // その世界を遊び終えたことにする（開いていく順番を試すため）
+        played: (...ids: StageId[]) => {
+          const rt = getRuntime();
+          for (const s of ids) if (!rt.progress.played.includes(s)) rt.progress.played.push(s);
           refreshView();
         },
         advance: (years: number) => advanceYears(years, true),
@@ -110,7 +119,9 @@ async function start(): Promise<void> {
         // 救った世界の数を決める（筆の位を試すため。はじめの n ステージを救ったことにする）
         clears: (n: number) => {
           const order: StageId[] = ['food', 'plague', 'climate', 'war', 'energy', 'loop', 'tiny'];
-          getRuntime().progress.cleared = order.slice(0, n);
+          const rt = getRuntime();
+          rt.progress.cleared = order.slice(0, n);
+          rt.progress.played = [...new Set<StageId>([...rt.progress.played, 'prologue', ...rt.progress.cleared])];
           refreshView();
         },
         ui: () => {

@@ -885,7 +885,7 @@
   ],
   "hides": {
     "noSea": ["freshSea", "saltSea", "seaBubbles", "seaCity", "divers", "seaFields", "moreLand"],
-    "noPeople": ["flyers", "crowd", "queue", "soldiers", "divers", "couples", "apart", "handshake", "fight", "daring", "sleepers", "lying", "babies", "young", "elders", "canes", "clones", "cyborgs", "beasts", "naked", "cannibal", "halo", "joy", "blank", "signs", "masks", "fading", "genius", "forget", "thoughts", "speech", "bandage", "grazers", "green", "giant", "tiny", "heavy", "slide", "invisible", "blink", "linked", "marketBusy", "talk"],
+    "noPeople": ["flyers", "crowd", "queue", "soldiers", "divers", "couples", "apart", "handshake", "fight", "daring", "sleepers", "lying", "babies", "young", "elders", "canes", "clones", "cyborgs", "beasts", "naked", "cannibal", "halo", "joy", "blank", "signs", "masks", "fading", "genius", "forget", "thoughts", "speech", "bandage", "grazers", "green", "giant", "tiny", "heavy", "slide", "invisible", "blink", "linked", "marketBusy", "talk", "noChildren"],
     "noSun": ["sunNear", "sunFar", "sunBright", "sunDim", "sunFlicker", "twoSuns", "rainbow", "eternalDay"],
     "sunHole": ["sunNear", "sunFar", "sunBright", "sunDim", "sunFlicker", "twoSuns", "rainbow", "eternalDay"],
     "eternalNight": ["sunNear", "sunFar", "sunBright", "sunDim", "sunFlicker", "twoSuns", "rainbow", "eternalDay"],
@@ -893,5 +893,16 @@
     "noForest": ["wildfire", "glowPlants"],
     "eternalDay": ["starsDim", "starsMore"]
   },
-  "hideAt": 0.5
+  "hideAt": 0.5,
+  "labels": [
+    {"id": "fields", "name": "畑", "item": "food", "x": 22, "y": 186, "icons": ["food", "agriculture", "plant", "animal"], "alert": {"sim": "blight", "above": 0.25, "word": "病気"}},
+    {"id": "water", "name": "貯水池", "item": "water", "x": 88, "y": 176, "icons": ["water", "flood", "cold"]},
+    {"id": "forest", "name": "森", "item": "eco", "x": 20, "y": 132, "icons": ["eco", "environment", "earth", "climate", "temperature", "co2", "sun"]},
+    {"id": "town", "name": "町", "item": "society", "x": 176, "y": 108, "icons": ["war", "weapon", "nation", "society", "peace", "crime", "happiness", "mind"]},
+    {"id": "hospital", "name": "病院", "item": "health", "x": 204, "y": 150, "icons": ["pathogen", "medicine", "health", "immunity", "humanity"]},
+    {"id": "factory", "name": "工場", "item": "industry", "x": 244, "y": 132, "icons": ["industry", "energy", "oil", "electricity", "fire", "atom", "science"]},
+    {"id": "harbor", "name": "港", "item": "logistics", "x": 318, "y": 168, "icons": ["logistics", "money", "sea"]},
+    {"id": "queue", "name": "給水の列", "x": 280, "y": 189, "icons": [], "when": {"item": "water", "below": 45}},
+    {"id": "void", "name": "消した行", "x": 84, "y": 197, "icons": [], "when": "voids"}
+  ]
 }

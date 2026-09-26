@@ -15,6 +15,8 @@ import type { GameData, GameState } from './types';
  *   "ending:gravity_void"             世界の結末（終わった世界）
  *   "daily"                           今日の世界で遊んでいる
  *   "law:death=not_human || phrase:immortal"   どちらかが成り立つ（同じ意味を、法則の行でも言い回しでも書けるとき）
+ *   "cause:water|reach" / "!cause:blight"      この世界の原因の型
+ *   "found:h:hoard" / "!found:m:rule"          この世界で初めて起きたこと（観測記録の id）
  */
 
 type Op = '<' | '<=' | '>' | '>=' | '==' | '!=';
@@ -31,6 +33,8 @@ export type Cond =
   | { t: 'sincePhrase'; id: string; op: Op; value: number }
   | { t: 'ending'; id: string; neg: boolean }
   | { t: 'daily'; neg: boolean }
+  | { t: 'cause'; ids: string[]; neg: boolean }
+  | { t: 'found'; id: string; neg: boolean }
   | { t: 'or'; parts: string[] };
 
 /** 条件に使える量 */
@@ -80,6 +84,8 @@ export const VARS = [
   'lines',
   'maxPhrases',
   'noiseLines',
+  // 世界に届かなかった文を書こうとした回数
+  'noiseTried',
   'stacked',
   'anomalies',
   'combos',
@@ -89,6 +95,9 @@ export const VARS = [
   'mind',
   'prices',
   'loops',
+  // 原因に効く手を打った年（まだなら -1）・消した手の数（実績の条件）
+  'countered',
+  'deletes',
 ] as const;
 export type VarName = (typeof VARS)[number];
 const VAR_SET = new Set<string>(VARS);
@@ -134,6 +143,12 @@ export function parseCondition(src: string): Cond {
     cond = { t: 'ending', id: text.slice(neg ? 8 : 7), neg };
   } else if (text === 'daily' || text === '!daily') {
     cond = { t: 'daily', neg: text.startsWith('!') };
+  } else if (text.startsWith('cause:') || text.startsWith('!cause:')) {
+    const neg = text.startsWith('!');
+    cond = { t: 'cause', ids: text.slice(neg ? 7 : 6).split('|'), neg };
+  } else if (text.startsWith('found:') || text.startsWith('!found:')) {
+    const neg = text.startsWith('!');
+    cond = { t: 'found', id: text.slice(neg ? 7 : 6), neg };
   } else if (text.startsWith('stage:')) {
     cond = { t: 'stage', ids: text.slice(6).split('|') };
   } else if (text.startsWith('twist:') || text.startsWith('since:')) {
@@ -218,6 +233,8 @@ export function varValue(g: GameState, name: VarName): number {
       for (const x of g.extras) if (!g.carried[x.id] || (g.carried[x.id]!.phrases.length === 0 && !g.carried[x.id]!.law)) n += 1;
       return n;
     }
+    case 'noiseTried':
+      return g.stats.noise ?? 0;
     case 'stacked':
       return Object.values(g.carried).filter((c) => c.law).length;
     case 'anomalies':
@@ -226,6 +243,10 @@ export function varValue(g: GameState, name: VarName): number {
       return g.combos.length;
     case 'loops':
       return g.loop?.count ?? 0;
+    case 'countered':
+      return g.countered ?? -1;
+    case 'deletes':
+      return g.moves.filter((m) => m.kind === 'delete').length;
     case 'minScore': {
       const v = Object.values(g.scores);
       return v.length > 0 ? Math.min(...v) : 0;
@@ -286,6 +307,15 @@ export function checkCondition(g: GameState, src: string, laws: Record<string, s
     }
     case 'daily':
       return c.neg ? g.daily === null : g.daily !== null;
+    case 'cause': {
+      // 改稿者の試練では、重なる2つ目の型も、この世界の型
+      const hit = (g.cause !== null && c.ids.includes(g.cause)) || (!!g.trial?.cause2 && c.ids.includes(g.trial.cause2));
+      return c.neg ? !hit : hit;
+    }
+    case 'found': {
+      const hit = g.found.includes(c.id);
+      return c.neg ? !hit : hit;
+    }
   }
 }
 
@@ -335,6 +365,9 @@ export function validateCondition(data: GameData, src: string): string | null {
       return null;
     case 'ending':
       return data.endingById.has(c.id) || GENERIC_ENDINGS.includes(c.id) ? null : `知らない結末: ${c.id}（${src}）`;
+    case 'cause':
+      for (const id of c.ids) if (!data.stages.some((s) => s.causes.some((x) => x.id === id))) return `知らない原因の型: ${id}（${src}）`;
+      return null;
     default:
       return null;
   }

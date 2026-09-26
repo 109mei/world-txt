@@ -197,11 +197,15 @@
     "energy": 60,
     "instability": 0.5,
     "climate": 6,
-    "rate": 0.25
+    "rate": 0.25,
+    "prices": 30
   },
   "war": {
-    "threshold": 72,
-    "scale": 60,
+    "mu": 97,
+    "sigma": 9,
+    "amp": 26,
+    "channelShift": 5,
+    "signMargin": 6,
     "intensity": 0.8,
     "exhaust": 4,
     "endBelow": 55,
@@ -684,6 +688,46 @@
     "fast": 8,
     "slow": 2
   },
+  "world": {
+    "scale": {
+      "oilReserve": 0.06,
+      "agri": 0.02,
+      "industry": 0.02,
+      "science": 0.02
+    },
+    "shift": {
+      "eco": 2,
+      "stability": 2,
+      "happiness": 2,
+      "tension": 3,
+      "co2": 4
+    }
+  },
+  "signs": {
+    "eventAt": 0.6,
+    "twistAt": 0.12,
+    "max": 3
+  },
+  "voids": {
+    "years": 5,
+    "scar": 0.5,
+    "supportIncoherence": 4
+  },
+  "strength": {
+    "strong": 1.3,
+    "plain": 1,
+    "mild": 0.6,
+    "backlash": 1.5
+  },
+  "overwrite": {
+    "incoherence": 3
+  },
+  "adapt": {
+    "after": 8,
+    "span": 10,
+    "floor": 0.7,
+    "noticeAt": 0.9
+  },
   "news": {
     "perYear": 4,
     "historyMax": 400
@@ -698,5 +742,145 @@
     "mind": 0.45,
     "coherence": 0.3,
     "temp": 0.12
+  },
+  "modes": {
+    "conditionalScale": 0.6,
+    "needBelow": {
+      "supply": 1,
+      "stability": 50
+    },
+    "ruleTwists": [
+      {
+        "id": "black_market",
+        "rate": 0.05,
+        "delay": 2
+      },
+      {
+        "id": "rule_fatigue",
+        "rate": 0.04,
+        "delay": 3
+      }
+    ]
+  },
+  "people": {
+    "start": {
+      "trust": 55,
+      "anxiety": 30
+    },
+    "living": {
+      "food": 0.45,
+      "water": 0.25,
+      "energy": 0.2,
+      "unemp": 1.5,
+      "min": 0.3,
+      "max": 1.4
+    },
+    "ref": {
+      "rate": 0.2,
+      "happy": 40,
+      "stability": 25,
+      "loss": 1.6
+    },
+    "peak": {
+      "decay": 0.03,
+      "tension": 35
+    },
+    "trust": {
+      "up": 1.5,
+      "upStability": 50,
+      "down": {
+        "shortage": 40,
+        "blackMarket": 10,
+        "coherence": 1.5,
+        "war": 8
+      },
+      "ruleMin": 0.5,
+      "ruleRef": 55
+    },
+    "anxiety": {
+      "base": 25,
+      "shortage": 90,
+      "prices": 3,
+      "stock": 20,
+      "trust": 20,
+      "rate": 0.35,
+      "hoardAt": 62,
+      "hoardTrust": 40,
+      "hoardHit": 0.08
+    },
+    "caution": {
+      "gain": 0.9,
+      "relax": 0.3,
+      "effect": 0.45
+    },
+    "overshoot": {
+      "eco": 28,
+      "water": 0.85,
+      "amp": 0.04,
+      "max": 10,
+      "signAt": 3
+    },
+    "slowing": {
+      "line": 25,
+      "civSpan": 20,
+      "floor": 0.45,
+      "signAt": 0.7
+    },
+    "scarcity": {
+      "science": 0.5
+    },
+    "demography": {
+      "science": 0.25,
+      "medicine": 0.1
+    },
+    "spread": {
+      "seed": 0.12,
+      "rate": 0.8,
+      "tipping": 0.25,
+      "boost": 1.6,
+      "trustStop": 25,
+      "trustFull": 55,
+      "crowdOut": 0.3,
+      "crowdCap": 0.6,
+      "freeRideFrom": 0.6,
+      "freeRide": 0.03
+    }
+  },
+  "delays": {
+    "concepts": {
+      "agriculture": 1,
+      "plant": 1,
+      "co2": 2,
+      "sea": 2,
+      "environment": 2,
+      "education": 2,
+      "science": 1,
+      "energy": 1,
+      "oil": 1,
+      "atom": 1
+    },
+    "phrases": {
+      "reservoir": 1,
+      "desalination": 2,
+      "granary": 1,
+      "logistics": 2,
+      "crop_guard": 1,
+      "afforest": 3,
+      "renewables": 2,
+      "grid_storage": 1,
+      "nuclear_power": 3,
+      "new_fuel": 2,
+      "biofuel": 1,
+      "electrify": 2,
+      "carbon_capture": 2,
+      "vaccination": 1,
+      "schooling": 3,
+      "fishing": 1
+    }
+  },
+  "intro": {
+    "before": 0.3,
+    "ramp": 0.2,
+    "hintEvery": 3
   }
 }

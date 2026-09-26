@@ -5,12 +5,16 @@ import { BAD, DARK, dur, delay, Ghost, GOOD, GROUND, INK, m, Motif, PAPER, PLAZA
 
 type Arms = 'down' | 'up' | 'forward' | 'raise' | 'wide';
 
-/** 人の形（足もとが原点、高さ約11）。姿と持ち物で描き分ける */
+/**
+ * 人の形（足もとが原点、高さ約11。頭は全身の約4分の1）。姿と持ち物で描き分ける：
+ * 立つ（arms down）・歩く（stride）・バケツを持つ・鍬をふるう（arms raise と持ち物）
+ */
 export function Person({
   color = SILVER,
   arms = 'down',
   coat = true,
   bent = false,
+  stride = false,
   head,
   children,
 }: {
@@ -18,6 +22,8 @@ export function Person({
   arms?: Arms;
   coat?: boolean;
   bent?: boolean;
+  /** 歩く姿（足を前後に開く） */
+  stride?: boolean;
   head?: ReactNode;
   children?: ReactNode;
 }) {
@@ -29,11 +35,12 @@ export function Person({
     raise: 'M0 -7 L2 -10.4 M0 -7 L-1.8 -4',
     wide: 'M0 -7 L-3 -6 M0 -7 L3 -6',
   };
+  const legs = stride ? 'M0 -3.4 L-2.1 0 M0 -3.4 L1.9 -0.2' : 'M0 -3.4 L-1.4 0 M0 -3.4 L1.4 0';
   return (
     <g>
-      <circle cx={hx} cy={-9.6} r={1.7} fill={DARK} stroke={color} strokeWidth={0.7} />
-      <path d={`M${hx * 0.6} -7.9 L0 -3.2 L-1.5 0 M0 -3.2 L1.5 0 ${armPath[arms]}`} fill="none" stroke={color} strokeWidth={0.8} strokeLinecap="round" />
-      {coat && <path d="M-2 -3.3 L0 -7.6 L2 -3.3 Z" fill={DARK} stroke={color} strokeWidth={0.6} />}
+      <circle cx={hx} cy={-9.9} r={1.4} fill={DARK} stroke={color} strokeWidth={0.7} />
+      <path d={`M${hx * 0.6} -8.5 L0 -3.4 ${legs} ${armPath[arms]}`} fill="none" stroke={color} strokeWidth={0.8} strokeLinecap="round" />
+      {coat && <path d="M-1.9 -3.5 L0 -8 L1.9 -3.5 Z" fill={DARK} stroke={color} strokeWidth={0.6} />}
       {head}
       {children}
     </g>
@@ -227,18 +234,52 @@ function Figure({ v, look, i, tint = SILVER }: { v: SceneView; look: SceneMotif 
         </g>
       );
     default:
-      return <Person color={naked ? nakedColor : color} coat={coat} arms={look === 'signs' ? 'raise' : 'down'} head={headMark(look, color)} />;
+      // 広場を歩く人：一人おきに、足を開いた歩く姿にする
+      return <Person color={naked ? nakedColor : color} coat={coat} arms={look === 'signs' ? 'raise' : 'down'} stride={i % 2 === 0} head={headMark(look, color)} />;
   }
 }
 
 /** 人々：広場を歩く人、子ども、寄り添う二人、列、群衆、兵士、横たわる人、屋根の上の人、ロボット */
+/** 鍬をふるう人（畑で働く人。作物が育っている畑にだけ） */
+export function Farmer({ v }: { v: SceneView }) {
+  if (m(v, 'noPeople') > 0.5 || v.food < 0.15 || m(v, 'barren') > 0.5) return null;
+  return (
+    <g transform="translate(58 204)" aria-hidden="true">
+      <Person arms="raise">
+        <path d="M2 -10.4 L6 -13 M5 -14.4 L7.4 -11.8" fill="none" stroke={SILVER} strokeWidth={0.7} strokeLinecap="round" />
+      </Person>
+    </g>
+  );
+}
+
+/** 給水の列：水が足りないと、水を待つ人がバケツを持って並ぶ（水の状態から描く） */
+export function WaterQueue({ v }: { v: SceneView }) {
+  if (m(v, 'noPeople') > 0.5 || v.water >= 0.45) return null;
+  const n = Math.round(3 + 5 * Math.min(1, (0.45 - v.water) / 0.35));
+  return (
+    <g aria-hidden="true">
+      {/* 給水の塔 */}
+      <path d={`M${SHORE - 2} 212 L${SHORE - 2} 196 L${SHORE + 8} 196 L${SHORE + 8} 212 M${SHORE - 4} 196 L${SHORE + 10} 196 L${SHORE + 10} 190 L${SHORE - 4} 190 Z`} fill={DARK} stroke={SILVER} strokeWidth={0.7} />
+      {Array.from({ length: n }, (_, i) => (
+        <g key={i} transform={`translate(${SHORE - 10 - i * 7} 212)`}>
+          <Person arms="down">
+            <path d="M1.4 -4.2 L3.4 -4.2 L3 -1.8 L1.8 -1.8 Z" fill="none" stroke={WARN} strokeWidth={0.6} />
+          </Person>
+        </g>
+      ))}
+    </g>
+  );
+}
+
 export function People({ v }: { v: SceneView }) {
   const none = m(v, 'noPeople');
   const count = Math.round((4 + 10 * Math.min(1.3, v.pop) * (0.4 + 0.6 * v.people)) * (1 - none));
   const size = m(v, 'giant') > 0.3 ? 2.1 : m(v, 'tiny') > 0.3 ? 0.55 : 1;
   const heavy = m(v, 'heavy') > 0.3;
   const spread = m(v, 'apart') > 0.3 ? 1.35 : 1;
-  const walkers = Math.min(16, m(v, 'giant') > 0.3 ? Math.ceil(count / 3) : m(v, 'tiny') > 0.3 ? count + 5 : count);
+  // 書き換えから来た姿は、人が少ない世界でも一人ずつは描く（巨人の世界のように人数が減っても、書いた姿が埋もれない）
+  const inkedLooks = none > 0.9 ? 0 : LOOKS.filter((id) => m(v, id) > 0 && (v.inked.includes(id) || v.fresh.includes(id))).length;
+  const walkers = Math.min(16, Math.max(inkedLooks, m(v, 'giant') > 0.3 ? Math.ceil(count / 3) : m(v, 'tiny') > 0.3 ? count + 5 : count));
   const kids = none > 0.5 ? 0 : Math.round((2 + 6 * m(v, 'babies')) * (1 - m(v, 'noChildren')) * (m(v, 'young') > 0.3 ? 2 : 1));
   const sizeId: SceneMotif | null = m(v, 'giant') > 0.3 ? 'giant' : m(v, 'tiny') > 0.3 ? 'tiny' : m(v, 'heavy') > 0.3 ? 'heavy' : m(v, 'slide') > 0.3 ? 'slide' : null;
   const walkCls = m(v, 'slide') > 0.3 ? 'sc-slide' : m(v, 'clones') > 0.5 ? '' : 'sc-walk';

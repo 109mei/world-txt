@@ -60,11 +60,11 @@ export function Overlay({ v }: { v: SceneView }) {
         <Motif v={v} id="void">
           <defs>
             <radialGradient id="sc-void" cx="0.5" cy="0.55" r="0.75">
-              <stop offset="0.25" stopColor="#000000" stopOpacity="0" />
-              <stop offset="1" stopColor="#000000" stopOpacity="1" />
+              <stop offset="0.25" stopColor="var(--sc-shade)" stopOpacity="0" />
+              <stop offset="1" stopColor="var(--sc-shade)" stopOpacity="1" />
             </radialGradient>
           </defs>
-          <rect width={W} height={H} fill="#000000" opacity={0.3 * voidK} />
+          <rect width={W} height={H} fill="var(--sc-shade)" opacity={0.3 * voidK} />
           <rect width={W} height={H} fill="url(#sc-void)" opacity={0.5 + 0.5 * voidK} />
           {/* 世界のかけらが、ほどけて宙へ散っていく */}
           {Array.from({ length: 16 }, (_, i) => (
@@ -89,12 +89,12 @@ export function Overlay({ v }: { v: SceneView }) {
       )}
       {m(v, 'frozen') > 0.3 && (
         <Motif v={v} id="frozen">
-          <rect width={W} height={H} fill="#9fb3c8" opacity={0.08 + 0.08 * m(v, 'frozen')} />
+          <rect width={W} height={H} fill="var(--sc-frost)" opacity={0.08 + 0.08 * m(v, 'frozen')} />
         </Motif>
       )}
       {m(v, 'reverse') > 0.3 && (
         <Motif v={v} id="reverse">
-          <rect width={W} height={H} fill="#b89f73" opacity={0.08 + 0.06 * m(v, 'reverse')} />
+          <rect width={W} height={H} fill="var(--sc-sepia)" opacity={0.08 + 0.06 * m(v, 'reverse')} />
         </Motif>
       )}
       {m(v, 'loop') > 0.3 && (
@@ -107,12 +107,12 @@ export function Overlay({ v }: { v: SceneView }) {
           </g>
         </Motif>
       )}
-      {gloom > 0.05 && <rect width={W} height={H} fill="#000000" opacity={Math.min(0.35, gloom)} />}
+      {gloom > 0.05 && <rect width={W} height={H} fill="var(--sc-shade)" opacity={Math.min(0.35, gloom)} />}
       {/* 写本の挿し絵のふち */}
       <rect width={W} height={H} fill="url(#sc-vignette)" pointerEvents="none" />
-      {v.ended === 'failed' && <rect width={W} height={H} fill="#000000" opacity={0.42} />}
+      {v.ended === 'failed' && <rect width={W} height={H} fill="var(--sc-shade)" opacity={0.42} />}
       {v.ended === 'failed' && <line x1={0} y1={HORIZON + 30} x2={W} y2={HORIZON + 30} stroke={BAD} strokeWidth={0.4} opacity={0.4} />}
-      {v.ended === 'cleared' && <ellipse cx={W / 2} cy={GROUND} rx={190} ry={34} fill="#ffffff" opacity={0.08} />}
+      {v.ended === 'cleared' && <ellipse cx={W / 2} cy={GROUND} rx={190} ry={34} fill="var(--sc-paper)" opacity={0.08} />}
     </g>
   );
 }

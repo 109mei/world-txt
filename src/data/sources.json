@@ -1,0 +1,1571 @@
+{
+  "crises/blight/why": {
+    "name": "アイルランド国立博物館「An Gorta Mór」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.museum.ie/en-IE/Museums/Decorative-Arts-History/Exhibitions/An-Gorta-Mor",
+    "asOf": 1851
+  },
+  "crises/cold_age/why": {
+    "name": "米国気象学会（AMS）用語集「Little Ice Age」；Zhang ほか（2011, PNAS）",
+    "check": "確認済み",
+    "year": 2011,
+    "url": "https://glossary.ametsoc.org/wiki/Little_ice_age",
+    "asOf": 1850
+  },
+  "crises/depression/why": {
+    "name": "FDR大統領図書館・博物館「Great Depression Facts」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.fdrlibrary.org/great-depression-facts",
+    "asOf": 1933
+  },
+  "crises/megadrought/why": {
+    "name": "Cullen ほか「Climate change and the collapse of the Akkadian empire」Geology 28(4)",
+    "check": "確認済み",
+    "year": 2000,
+    "url": "https://ui.adsabs.harvard.edu/abs/2000Geo....28..379C/abstract"
+  },
+  "crises/megaquake/why": {
+    "name": "NOAA JetStream「2004 Indian Ocean Tsunami」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.noaa.gov/jetstream/2004tsu_max",
+    "asOf": 2004
+  },
+  "crises/meteor/why": {
+    "name": "ロンドン自然史博物館（NHM）「How an asteroid ended the age of the dinosaurs」；Barnosky ほか（2011, Nature）",
+    "check": "確認済み",
+    "year": 2011,
+    "url": "https://www.nhm.ac.uk/discover/how-an-asteroid-caused-extinction-of-dinosaurs.html"
+  },
+  "crises/pandemic/why": {
+    "name": "CDC「1918 Pandemic (H1N1 virus)」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://archive.cdc.gov/www_cdc_gov/flu/pandemic-resources/1918-pandemic-h1n1.html",
+    "asOf": 1919
+  },
+  "crises/solar_storm/why": {
+    "name": "NOAA NESDIS「What Was the Carrington Event?」「When Solar Storms Attack」",
+    "check": "確認済み",
+    "year": 2015,
+    "url": "https://www.nesdis.noaa.gov/about/k-12-education/space-weather/what-was-the-carrington-event",
+    "asOf": 1859
+  },
+  "crises/supervolcano/why": {
+    "name": "NOAA NESDIS「This Day In History: Mount Tambora Explosively Erupts in 1815」",
+    "check": "確認済み",
+    "year": 2020,
+    "url": "https://www.nesdis.noaa.gov/news/day-history-mount-tambora-explosively-erupts-1815",
+    "asOf": 1816
+  },
+  "endings/closed_eternity/why": {
+    "name": "国連 World Population Prospects 2024（Our World in Data 経由のデータ）",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://population.un.org/wpp/",
+    "asOf": 2023
+  },
+  "endings/conquered/why": {
+    "name": "Murphy ほか「Violence and weapon-related trauma at Puruchuco-Huaquerones, Peru」American Journal of Physical Anthropology",
+    "check": "確認済み",
+    "year": 2010,
+    "url": "https://doi.org/10.1002/ajpa.21291",
+    "asOf": 1530
+  },
+  "endings/famine_world/why": {
+    "name": "WHO ファクトシート「Healthy diet」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.who.int/news-room/fact-sheets/detail/healthy-diet",
+    "asOf": 2026
+  },
+  "endings/far_future/why": {
+    "name": "「Metaphors and the Invention of Writing」Topics in Cognitive Science；Barnosky ほか（2011, Nature）",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://doi.org/10.1111/tops.12768"
+  },
+  "endings/frozen/why": {
+    "name": "Clark ほか「The Last Glacial Maximum」Science；アリゾナ大学（Tierney ほか 2020, Nature の紹介記事）",
+    "check": "確認済み",
+    "year": 2009,
+    "url": "https://doi.org/10.1126/science.1172873"
+  },
+  "endings/machine_victory/why": {
+    "name": "Center for AI Safety「Statement on AI Risk」",
+    "check": "確認済み",
+    "year": 2023,
+    "url": "https://aistatement.com/",
+    "asOf": 2023
+  },
+  "endings/meteor_end/why": {
+    "name": "ロンドン自然史博物館（NHM）「How an asteroid ended the age of the dinosaurs」；Barnosky ほか（2011, Nature）",
+    "check": "確認済み",
+    "year": 2011,
+    "url": "https://www.nhm.ac.uk/discover/how-an-asteroid-caused-extinction-of-dinosaurs.html"
+  },
+  "endings/mind_collapse/why": {
+    "name": "WHO ファクトシート「Depressive disorder (depression)」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.who.int/news-room/fact-sheets/detail/depression",
+    "asOf": 2023
+  },
+  "endings/paper_money/why": {
+    "name": "リッチモンド連邦準備銀行 Economic Quarterly 88(1)（Hetzel「German Monetary History in the First Half of the Twentieth Century」）",
+    "check": "確認済み",
+    "year": 2002,
+    "url": "https://www.richmondfed.org/-/media/richmondfedorg/publications/research/economic_quarterly/2002/winter/pdf/hetzel.pdf",
+    "asOf": 1923
+  },
+  "endings/plague_world/why": {
+    "name": "Dean ほか（2018, PNAS）；Izdebski ほか（2022, Nature Ecology & Evolution）",
+    "check": "確認済み",
+    "year": 2018,
+    "url": "https://doi.org/10.1073/pnas.1715640115",
+    "asOf": 1353
+  },
+  "endings/stopped_spin/why": {
+    "name": "NASA「Earth Fact Sheet」",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html",
+    "asOf": 2024
+  },
+  "endings/undying/why": {
+    "name": "国連 World Population Prospects 2024（Our World in Data 経由のデータ）",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://population.un.org/wpp/",
+    "asOf": 2023
+  },
+  "endings/undying_far/why": {
+    "name": "国立国語研究所「ことば研究館」（福沢将樹「古典文法では過去や完了の助動詞がたくさんあるのに…」）",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://kotoba.ninjal.ac.jp/qa/yokuaru/qa-68/"
+  },
+  "endings/utopia/why": {
+    "name": "Our World in Data「Child mortality rate」（Gapminder＋国連IGME 2025）",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://ourworldindata.org/grapher/child-mortality",
+    "asOf": 1900
+  },
+  "endings/withered_eternity/why": {
+    "name": "総務省統計局「統計トピックスNo.149 統計からみた我が国の高齢者」；厚生労働省「第9期介護保険事業計画に基づく介護職員の必要数について」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.stat.go.jp/data/topics/topi1490.html",
+    "asOf": 2026
+  },
+  "events/acid_rain_note/why": {
+    "name": "Grennfelt et al.「Acid rain and air pollution: 50 years of progress in environmental science and policy」Ambio（査読）／米EPA「Th",
+    "check": "確認済み",
+    "year": 2020,
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7028813/",
+    "asOf": 1970
+  },
+  "events/air_pollution_note/why": {
+    "name": "WHO「Air pollution」（Health topics）",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.who.int/health-topics/air-pollution"
+  },
+  "events/antimatter_power_note/why": {
+    "name": "CERN「Making antimatter」／米国立公文書館（広島の原爆の威力）",
+    "check": "確認済み",
+    "year": 2020,
+    "url": "https://angelsanddemons.web.cern.ch/archived/antimatter/making-antimatter.html",
+    "asOf": 1945
+  },
+  "events/basic_income_note/why": {
+    "name": "フィンランド社会保健省（実験の最終結果）",
+    "check": "確認済み",
+    "year": 2020,
+    "url": "https://stm.fi/en/-/perustulokokeilun-tulokset-tyollisyysvaikutukset-vahaisia-toimeentulo-ja-psyykkinen-terveys-koettiin-paremmaksi",
+    "asOf": 2018
+  },
+  "events/bees_gone_note/why": {
+    "name": "IPBES 送粉者評価（Klein ら, Proc. R. Soc. B 2007 も）",
+    "check": "確認済み",
+    "year": 2016,
+    "url": "https://www.ipbes.net/article/press-release-pollinators-vital-our-food-supply-under-threat",
+    "asOf": 2016
+  },
+  "events/birth_decline_note/why": {
+    "name": "厚生労働省「令和5年人口動態統計（確定数）」／国立社会保障・人口問題研究所",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://www.mhlw.go.jp/toukei/saikin/hw/jinkou/kakutei23/dl/02_kek.pdf",
+    "asOf": 2023
+  },
+  "events/birth_recover_note/why": {
+    "name": "厚生労働省「令和5年人口動態統計（確定数）」／国立社会保障・人口問題研究所",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://www.mhlw.go.jp/toukei/saikin/hw/jinkou/kakutei23/dl/02_kek.pdf",
+    "asOf": 2023
+  },
+  "events/black_hole_far_note/why": {
+    "name": "NASA（Hubble）",
+    "check": "確認済み",
+    "year": 2022,
+    "url": "https://science.nasa.gov/missions/hubble/hubble-determines-mass-of-isolated-black-hole-roaming-our-milky-way-galaxy/",
+    "asOf": 2022
+  },
+  "events/black_hole_void_note/why": {
+    "name": "NOIRLab／ハーバード・スミソニアン天体物理学センター（El-Badry ら）",
+    "check": "確認済み",
+    "year": 2022,
+    "url": "https://noirlab.edu/public/news/noirlab2227/",
+    "asOf": 2022
+  },
+  "events/brain_vat_note/why": {
+    "name": "Putnam『Reason, Truth and History』第1章（Cambridge UP）",
+    "check": "確認済み",
+    "year": 1981,
+    "url": "https://www.cambridge.org/core/books/abs/reason-truth-and-history/brains-in-a-vat/4301D7FCC5869697D0110E89CAA1A47B",
+    "asOf": 1981
+  },
+  "events/c_dieback/why": {
+    "name": "Gatti et al.「Amazonia as a carbon source linked to deforestation and climate change」Nature（査読）",
+    "check": "確認済み",
+    "year": 2021,
+    "url": "https://www.nature.com/articles/s41586-021-03629-6",
+    "asOf": 2018
+  },
+  "events/c_lockin/why": {
+    "name": "Cui et al.「Quantifying operational lifetimes for coal power plants under the Paris goals」Nature Communications（査読）／IEA「T",
+    "check": "確認済み",
+    "year": 2019,
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6800419/"
+  },
+  "events/c_methane/why": {
+    "name": "NOAA「Arctic Report Card 2019: Permafrost and the Global Carbon Cycle」",
+    "check": "確認済み",
+    "year": 2019,
+    "url": "https://arctic.noaa.gov/report-card/report-card-2019/permafrost-and-the-global-carbon-cycle/",
+    "asOf": 2019
+  },
+  "events/chain_food_jobs/why": {
+    "name": "世界銀行（ILOモデル推計）「農業の就業者の割合」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://data.worldbank.org/indicator/SL.AGR.EMPL.ZS",
+    "asOf": 2025
+  },
+  "events/chain_greenhouse_cold/why": {
+    "name": "NASA「Global Warming」",
+    "check": "確認済み",
+    "year": 2010,
+    "url": "https://science.nasa.gov/earth/climate-change/global-warming/"
+  },
+  "events/desertification_note/why": {
+    "name": "UNCCD「The Global Threat of Drying Lands」／国連「UN Decade for Deserts」",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://www.unccd.int/sites/default/files/2024-12/aridity_report.pdf",
+    "asOf": 2020
+  },
+  "events/dinosaurs_note/why": {
+    "name": "Hutchinson ら, PLoS ONE（ロンドン自然史博物館も参照）",
+    "check": "確認済み",
+    "year": 2011,
+    "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0026037",
+    "asOf": 2011
+  },
+  "events/e_grid_down/why": {
+    "name": "米加電力系統停止合同調査部会「Final Report on the August 14, 2003 Blackout」",
+    "check": "確認済み",
+    "year": 2004,
+    "url": "https://www.energy.gov/oe/articles/blackout-2003-final-report-august-14-2003-blackout-united-states-and-canada-causes-and",
+    "asOf": 2003
+  },
+  "events/earth_closer_note/why": {
+    "name": "NASA JPL「Basics of Space Flight」",
+    "check": "確認済み",
+    "url": "https://science.nasa.gov/learn/basics-of-space-flight/chapter6-1/"
+  },
+  "events/earth_drift_note/why": {
+    "name": "NASA JPL「Basics of Space Flight」",
+    "check": "確認済み",
+    "url": "https://science.nasa.gov/learn/basics-of-space-flight/chapter6-1/"
+  },
+  "events/eruptions_note/why": {
+    "name": "Schurer ら, Environmental Research Letters",
+    "check": "確認済み",
+    "year": 2019,
+    "url": "https://iopscience.iop.org/article/10.1088/1748-9326/ab3a10",
+    "asOf": 1816
+  },
+  "events/export_ban/why": {
+    "name": "Nature Food の論文（貿易政策の発表と国際価格の変動）／世界銀行 2022年4月26日の発表",
+    "check": "確認済み",
+    "year": 2023,
+    "url": "https://doi.org/10.1038/s43016-023-00729-6",
+    "asOf": 2008
+  },
+  "events/f_market_break/why": {
+    "name": "FAO（Sharma 2011）／IFPRI Food Security Portal（Mamun & Laborde）",
+    "check": "確認済み",
+    "year": 2011,
+    "url": "https://www.fao.org/fileadmin/templates/est/PUBLICATIONS/Comm_Working_Papers/EST-WP32.pdf",
+    "asOf": 2011
+  },
+  "events/f_monoculture/why": {
+    "name": "UCバークレー古生物学博物館「Understanding Evolution: Monoculture and the Irish potato famine」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://evolution.berkeley.edu/the-relevance-of-evolution/agriculture/monoculture-and-the-irish-potato-famine-cases-of-missing-genetic-variation/",
+    "asOf": 1840
+  },
+  "events/f_reach_1/why": {
+    "name": "FAO（Sharma）「Food Export Restrictions: Review of the 2007-2010 Experience」",
+    "check": "確認済み",
+    "year": 2011,
+    "url": "https://www.fao.org/fileadmin/templates/est/PUBLICATIONS/Comm_Working_Papers/EST-WP32.pdf",
+    "asOf": 2011
+  },
+  "events/f_water_1/why": {
+    "name": "国連ニュース（FAO「AQUASTAT 2025」の紹介）",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://news.un.org/en/story/2025/12/1166582",
+    "asOf": 2025
+  },
+  "events/five_minutes_note/why": {
+    "name": "Russell『The Analysis of Mind』第9講",
+    "check": "確認済み",
+    "year": 1921,
+    "url": "https://www.gutenberg.org/files/2529/2529-h/2529-h.htm",
+    "asOf": 1921
+  },
+  "events/food_govt/why": {
+    "name": "Koren & Winecoff（Food Security）",
+    "check": "確認済み",
+    "year": 2022,
+    "url": "https://doi.org/10.1007/s12571-022-01300-0",
+    "asOf": 2011
+  },
+  "events/green_revolution/why": {
+    "name": "Pingali（PNAS）",
+    "check": "確認済み",
+    "year": 2012,
+    "url": "https://doi.org/10.1073/pnas.0912953109",
+    "asOf": 2000
+  },
+  "events/ice_age_note/why": {
+    "name": "Tierney ら, Nature",
+    "check": "確認済み",
+    "year": 2020,
+    "url": "https://www.nature.com/articles/s41586-020-2617-x"
+  },
+  "events/internet_gone_note/why": {
+    "name": "ITU（Facts and Figures 2023）",
+    "check": "確認済み",
+    "year": 2023,
+    "url": "https://www.itu.int/en/mediacentre/Pages/PR-2023-11-27-facts-and-figures-measuring-digital-development.aspx",
+    "asOf": 2023
+  },
+  "events/iron_gone_note/why": {
+    "name": "USGS（Iron and Steel Statistics and Information）",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.usgs.gov/centers/national-minerals-information-center/iron-and-steel-statistics-and-information"
+  },
+  "events/light_fast_note/why": {
+    "name": "NIST（光速の値）／NASA（地球の直径）",
+    "check": "確認済み",
+    "url": "https://physics.nist.gov/cgi-bin/cuu/Value?c"
+  },
+  "events/light_slow_note/why": {
+    "name": "Royal Museums Greenwich",
+    "check": "確認済み",
+    "url": "https://www.rmg.co.uk/stories/topics/how-far-away-moon"
+  },
+  "events/livestock_gone_note/why": {
+    "name": "Poore & Nemecek, Science",
+    "check": "確認済み",
+    "year": 2018,
+    "url": "https://doi.org/10.1126/science.aaq0216",
+    "asOf": 2018
+  },
+  "events/lockdown/why": {
+    "name": "WTO 2021年3月31日の発表（PR876）／国連世界観光機関（UNWTO）2020年4月28日の発表",
+    "check": "確認済み",
+    "year": 2021,
+    "url": "https://www.wto.org/english/news_e/pres21_e/pr876_e.htm",
+    "asOf": 2020
+  },
+  "events/loop_harvest/why": {
+    "name": "FAO ニュースリリース",
+    "check": "確認済み",
+    "year": 2014,
+    "url": "https://www.fao.org/newsroom/detail/Ebola-leaves-hundreds-of-thousands-facing-hunger-in-three-worst-hit-countries/en",
+    "asOf": 2014
+  },
+  "events/loop_plague/why": {
+    "name": "Legendre ら, PNAS（CNRS の発表で確認）",
+    "check": "確認済み",
+    "year": 2014,
+    "url": "https://www.pnas.org/doi/10.1073/pnas.1320670111",
+    "asOf": 2014
+  },
+  "events/loop_thaw/why": {
+    "name": "Liskova ら, Frontiers in Veterinary Science（Stella ら, Scientific Reports 2020 も）",
+    "check": "確認済み",
+    "year": 2021,
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8264129/",
+    "asOf": 2016
+  },
+  "events/loop_war/why": {
+    "name": "Sternberg, Applied Geography（Koren & Winecoff, Food Security 2022 も）",
+    "check": "確認済み",
+    "year": 2012,
+    "url": "https://www.sciencedirect.com/science/article/abs/pii/S0143622812000161",
+    "asOf": 2011
+  },
+  "events/meteor_strike/why": {
+    "name": "Chiarenza ほか（PNAS）／Senel ほか（Nature Geoscience）",
+    "check": "確認済み",
+    "year": 2020,
+    "url": "https://doi.org/10.1073/pnas.2006087117"
+  },
+  "events/new_pathogen/why": {
+    "name": "米国疾病予防管理センター（CDC）「About Zoonotic Diseases」",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://www.cdc.gov/one-health/about/about-zoonotic-diseases.html"
+  },
+  "events/no_antibiotics_note/why": {
+    "name": "Antimicrobial Resistance Collaborators（Murray ら）, The Lancet",
+    "check": "確認済み",
+    "year": 2022,
+    "url": "https://doi.org/10.1016/S0140-6736(21)02724-0",
+    "asOf": 2019
+  },
+  "events/no_army_note/why": {
+    "name": "コスタリカ共和国憲法（1949年）第12条",
+    "check": "確認済み",
+    "year": 1949,
+    "url": "https://pdba.georgetown.edu/Constitutions/Costa/costarica49.html",
+    "asOf": 1949
+  },
+  "events/no_bathing_note/why": {
+    "name": "Cochrane（Ejemot-Nwadiaro ら）／CDC",
+    "check": "確認済み",
+    "year": 2021,
+    "url": "https://www.cochrane.org/evidence/CD004265_does-encouraging-people-wash-their-hands-stop-them-having-diarrhoea",
+    "asOf": 2021
+  },
+  "events/no_children_note/why": {
+    "name": "厚生労働省「令和5年人口動態統計（確定数）」",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://www.mhlw.go.jp/toukei/saikin/hw/jinkou/kakutei23/dl/02_kek.pdf",
+    "asOf": 2023
+  },
+  "events/no_computers_note/why": {
+    "name": "SIA（WSTS のデータ）",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://www.semiconductors.org/global-semiconductor-sales-decrease-8-2-in-2023-market-rebounds-late-in-year/",
+    "asOf": 2023
+  },
+  "events/no_farmers_note/why": {
+    "name": "世界銀行 WDI（ILO の推計）",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://data.worldbank.org/indicator/SL.AGR.EMPL.ZS",
+    "asOf": 2025
+  },
+  "events/no_forest_note/why": {
+    "name": "FAO 世界森林資源評価（FRA 2025）",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://www.fao.org/newsroom/detail/global-deforestation-slows--but-forests-remain-under-pressure--fao-report-shows/en",
+    "asOf": 2025
+  },
+  "events/no_government_note/why": {
+    "name": "International IDEA（Wahiu & Abebe）",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://www.idea.int/publications/catalogue/html/substate-governance-constitution-building-centre-view-somalia",
+    "asOf": 2012
+  },
+  "events/no_hearing_note/why": {
+    "name": "WHO ファクトシート「Deafness and hearing loss」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.who.int/news-room/fact-sheets/detail/deafness-and-hearing-loss"
+  },
+  "events/no_jobs_note/why": {
+    "name": "米議会調査局（CRS）R40655",
+    "check": "確認済み",
+    "year": 2009,
+    "url": "https://www.congress.gov/crs-product/R40655",
+    "asOf": 1933
+  },
+  "events/no_marriage_note/why": {
+    "name": "厚生労働省「令和3年度 出生に関する統計の概況」",
+    "check": "確認済み",
+    "year": 2021,
+    "url": "https://www.mhlw.go.jp/toukei/saikin/hw/jinkou/tokusyu/syussyo07/dl/gaikyou.pdf",
+    "asOf": 2019
+  },
+  "events/no_nuclear_power_note/why": {
+    "name": "IEA「The Path to a New Era for Nuclear Energy」",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://www.iea.org/reports/the-path-to-a-new-era-for-nuclear-energy/executive-summary",
+    "asOf": 2025
+  },
+  "events/no_police_note/why": {
+    "name": "The Canadian Encyclopedia（Historica Canada）",
+    "check": "確認済み",
+    "year": 2022,
+    "url": "https://www.thecanadianencyclopedia.ca/en/article/murray-hill-riot",
+    "asOf": 1969
+  },
+  "events/no_sight_note/why": {
+    "name": "WHO ファクトシート「Blindness and vision impairment」／GBD 2019 Blindness and Vision Impairment Collaborators, Lancet Glob Health",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.thelancet.com/journals/langlo/article/PIIS2214-109X(20)30425-3/fulltext",
+    "asOf": 2020
+  },
+  "events/no_teachers_note/why": {
+    "name": "UNESCO",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.unesco.org/en/articles/more-children-out-school-7th-year-row-273-million",
+    "asOf": 2024
+  },
+  "events/no_vaccine_note/why": {
+    "name": "WHO「Vaccines and immunization」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.who.int/health-topics/vaccines-and-immunization"
+  },
+  "events/organ_regen_note/why": {
+    "name": "日本政府（JapanGov）",
+    "check": "確認済み",
+    "year": 2017,
+    "url": "https://www.japan.go.jp/tomodachi/2017/summer2017/ips_cells.html",
+    "asOf": 2014
+  },
+  "events/p_animal_1/why": {
+    "name": "米CDC「About Zoonotic Diseases」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.cdc.gov/one-health/about/about-zoonotic-diseases.html"
+  },
+  "events/p_shutdown/why": {
+    "name": "ILO「ILO Monitor: COVID-19 and the world of work. 7th edition」の報道発表",
+    "check": "確認済み",
+    "year": 2021,
+    "url": "https://www.ilo.org/resource/news/ilo-uncertain-and-uneven-recovery-expected-following-unprecedented-labour",
+    "asOf": 2019
+  },
+  "events/parallel_note/why": {
+    "name": "Everett, Reviews of Modern Physics 29, 454",
+    "check": "確認済み",
+    "year": 1957,
+    "url": "https://ui.adsabs.harvard.edu/abs/1957RvMP...29..454E",
+    "asOf": 1957
+  },
+  "events/plastic_gone_note/why": {
+    "name": "UN News（国連）／UNEP",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://news.un.org/en/story/2025/06/1164046",
+    "asOf": 2025
+  },
+  "events/precog_disaster/why": {
+    "name": "WMO／バングラデシュ政府ほか「Cyclone Sidr 被害・ニーズ評価」（Haque ら, WHO 紀要 2012 も）",
+    "check": "確認済み",
+    "year": 2020,
+    "url": "https://wmo.int/media/news/worlds-deadliest-tropical-cyclone-was-50-years-ago",
+    "asOf": 1970
+  },
+  "events/quakes_more_note/why": {
+    "name": "総務省消防庁「東北地方太平洋沖地震（東日本大震災）の被害状況（第164報）」",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://www.fdma.go.jp/disaster/higashinihon/items/164.pdf",
+    "asOf": 2024
+  },
+  "events/rewilding/why": {
+    "name": "世界銀行 世界開発指標（FAOのデータ）「農地の割合（陸地面積に対する%）」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://data.worldbank.org/indicator/AG.LND.AGRI.ZS",
+    "asOf": 2023
+  },
+  "events/s2_outbreak/why": {
+    "name": "米国疾病予防管理センター（CDC）「1918 Pandemic (H1N1 virus)」／国連「The World at Six Billion」",
+    "check": "確認済み",
+    "year": 1999,
+    "url": "https://archive.cdc.gov/www_cdc_gov/flu/pandemic-resources/1918-pandemic-h1n1.html",
+    "asOf": 1919
+  },
+  "events/s3_permafrost/why": {
+    "name": "IPCC第6次評価報告書 第1作業部会（政策決定者向け要約・第5章）",
+    "check": "確認済み",
+    "year": 2021,
+    "url": "https://www.ipcc.ch/report/ar6/wg1/chapter/summary-for-policymakers/"
+  },
+  "events/s4_arms_spending/why": {
+    "name": "SIPRI 2026年4月の発表／SIPRI 2025年4月の発表",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.sipri.org/media/press-release/2026/global-military-spending-rise-continues-european-and-asian-expenditures-surge",
+    "asOf": 2025
+  },
+  "events/s5_coal/why": {
+    "name": "米国エネルギー情報局（EIA）「Carbon Dioxide Emissions Coefficients」",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://www.eia.gov/environment/emissions/co2_vol_mass.php"
+  },
+  "events/s5_price_shock/why": {
+    "name": "米国務省 歴史室「Oil Embargo, 1973–1974」／IMF「Finance & Development」（What Is a Recession?）",
+    "check": "確認済み",
+    "year": 2009,
+    "url": "https://history.state.gov/milestones/1969-1976/oil-embargo",
+    "asOf": 1975
+  },
+  "events/sea_level/why": {
+    "name": "国連経済社会局「持続可能な開発の指標」の説明書（海岸近くに住む人口の割合）",
+    "check": "確認済み",
+    "year": 2007,
+    "url": "https://www.un.org/esa/sustdev/natlinfo/indicators/methodology_sheets/oceans_seas_coasts/pop_coastal_areas.pdf",
+    "asOf": 2000
+  },
+  "events/sea_rise_note/why": {
+    "name": "IPCC AR6 第1作業部会 SPM（A.1.7）",
+    "check": "確認済み",
+    "year": 2021,
+    "url": "https://www.ipcc.ch/report/ar6/wg1/downloads/report/IPCC_AR6_WGI_SPM.pdf",
+    "asOf": 2018
+  },
+  "events/self_driving_note/why": {
+    "name": "WHO ファクトシート「Road traffic injuries」（Global status report on road safety 2023）",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.who.int/news-room/fact-sheets/detail/road-traffic-injuries",
+    "asOf": 2023
+  },
+  "events/simulation_note/why": {
+    "name": "Bostrom, Philosophical Quarterly 53(211)",
+    "check": "確認済み",
+    "year": 2003,
+    "url": "https://ora.ox.ac.uk/objects/uuid:44c386c4-5d9e-4ecf-a47c-9631a2a59747",
+    "asOf": 2003
+  },
+  "events/solar_flare/why": {
+    "name": "Muller（Origins of Life and Evolution of Biospheres）／Moriña ほか（Scientific Reports）",
+    "check": "確認済み",
+    "year": 2014,
+    "url": "https://doi.org/10.1007/s11084-014-9368-3",
+    "asOf": 1859
+  },
+  "events/superintelligence_note/why": {
+    "name": "NobelPrize.org",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://www.nobelprize.org/prizes/chemistry/2024/press-release/",
+    "asOf": 2024
+  },
+  "events/time_speed_note/why": {
+    "name": "Ashby, Living Reviews in Relativity",
+    "check": "確認済み",
+    "year": 2003,
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5253894/"
+  },
+  "events/vaccine/why": {
+    "name": "WHO 2020年12月31日の発表",
+    "check": "確認済み",
+    "year": 2020,
+    "url": "https://www.who.int/news/item/31-12-2020-who-issues-its-first-emergency-use-validation-for-a-covid-19-vaccine-and-emphasizes-need-for-equitable-global-access",
+    "asOf": 2020
+  },
+  "events/volcano/why": {
+    "name": "Scientific Reports の論文（タンボラ噴火と島々）／Nature Communications の論文（タンボラ噴火後の樹木）",
+    "check": "確認済み",
+    "year": 2023,
+    "url": "https://doi.org/10.1038/s41598-023-30729-2",
+    "asOf": 1816
+  },
+  "events/w_border_war/why": {
+    "name": "英国立公文書館のブログ「100 years ago today: Austria declares war on Serbia」／米国立第一次世界大戦博物館",
+    "check": "確認済み",
+    "year": 2014,
+    "url": "https://blog.nationalarchives.gov.uk/100-years-ago-today-austria-declares-war-serbia/",
+    "asOf": 1914
+  },
+  "events/w_fear_2/why": {
+    "name": "APS News（米国物理学会）の1983年の核の誤警報の記事",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.aps.org/apsnews/2026/09/1983-averting-potential-nuclear-war",
+    "asOf": 1983
+  },
+  "events/w_first_strike/why": {
+    "name": "National Security Archive（ジョージ・ワシントン大学）「False Warnings of Soviet Missile Attacks during 1979-80」／APS News",
+    "check": "確認済み",
+    "year": 2020,
+    "url": "https://nsarchive.gwu.edu/briefing-book/nuclear-vault/2020-03-16/false-warnings-soviet-missile-attacks-during-1979-80-led-alert-actions-us-strategic-forces",
+    "asOf": 1983
+  },
+  "events/w_scarcity_1/why": {
+    "name": "Lagi, Bertrand, Bar-Yam（NECSI、arXiv）／Bellemare「Rising Food Prices, Food Price Volatility, and Social Unrest」American Jou",
+    "check": "確認済み",
+    "year": 2011,
+    "url": "https://arxiv.org/abs/1108.2455",
+    "asOf": 2011
+  },
+  "events/warming_fast_note/why": {
+    "name": "IPCC AR6 統合報告書 SPM（A.1）",
+    "check": "確認済み",
+    "year": 2023,
+    "url": "https://www.ipcc.ch/report/ar6/syr/downloads/report/IPCC_AR6_SYR_SPM.pdf",
+    "asOf": 2020
+  },
+  "events/world_government_note/why": {
+    "name": "国連（About Us／平和維持活動のページ）",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.un.org/en/about-us"
+  },
+  "indicators/people.hoard/why": {
+    "name": "nippon.com「〈1973年の今日〉11月1日：石油ショックでトイレットペーパーパニック」",
+    "check": "確認済み",
+    "year": 2023,
+    "url": "https://www.nippon.com/ja/japan-topics/today11010/",
+    "asOf": 1973
+  },
+  "indicators/people.overshoot/why": {
+    "name": "Klein「The Introduction, Increase, and Crash of Reindeer on St. Matthew Island」Journal of Wildlife Management 32(2)",
+    "check": "確認済み",
+    "year": 1968,
+    "url": "https://doi.org/10.2307/3798981",
+    "asOf": 1963
+  },
+  "laws/animal_exist/fact": {
+    "name": "Poore & Nemecek（Science）／Klein ほか（Proceedings of the Royal Society B）",
+    "check": "確認済み",
+    "year": 2018,
+    "url": "https://doi.org/10.1126/science.aaq0216"
+  },
+  "laws/animal_pollen/fact": {
+    "name": "IPBES「花粉媒介者・受粉・食料生産」評価報告書",
+    "check": "確認済み",
+    "year": 2016,
+    "url": "https://www.ipbes.net/article/press-release-pollinators-vital-our-food-supply-under-threat"
+  },
+  "laws/art/fact": {
+    "name": "Pike ほか（Science）／Oktaviana ほか（Nature）",
+    "check": "確認済み",
+    "year": 2012,
+    "url": "https://doi.org/10.1126/science.1219957"
+  },
+  "laws/automation/fact": {
+    "name": "Frey & Osborne「The Future of Employment」（オックスフォード大 Oxford Martin School）",
+    "check": "確認済み",
+    "year": 2013,
+    "url": "https://www.oxfordmartin.ox.ac.uk/publications/the-future-of-employment",
+    "asOf": 2010
+  },
+  "laws/cloud/fact": {
+    "name": "NASA Earth Observatory「Clouds and Radiation」",
+    "check": "確認済み",
+    "year": 1999,
+    "url": "https://science.nasa.gov/earth/earth-observatory/clouds-and-radiation/"
+  },
+  "laws/co2_heat/fact": {
+    "name": "NASA「Global Warming」／NASA「What Is the Greenhouse Effect?」",
+    "check": "確認済み",
+    "year": 2010,
+    "url": "https://science.nasa.gov/earth/climate-change/global-warming/"
+  },
+  "laws/crime/fact": {
+    "name": "米州開発銀行（IDB）『The Costs of Crime and Violence』",
+    "check": "確認済み",
+    "year": 2017,
+    "url": "https://publications.iadb.org/en/costs-crime-and-violence-new-evidence-and-insights-latin-america-and-caribbean",
+    "asOf": 2014
+  },
+  "laws/death/fact": {
+    "name": "OpenStax『Biology 2e』45.4 Population Dynamics and Regulation",
+    "check": "確認済み",
+    "year": 2018,
+    "url": "https://openstax.org/books/biology-2e/pages/45-4-population-dynamics-and-regulation"
+  },
+  "laws/density/fact": {
+    "name": "World Bank「Urban Development」",
+    "check": "確認済み",
+    "url": "https://www.worldbank.org/ext/en/topic/urban-development",
+    "asOf": 2025
+  },
+  "laws/density/voidWhy": {
+    "name": "国連経済社会局「World Urbanization Prospects 2018」",
+    "check": "確認済み",
+    "year": 2018,
+    "url": "https://www.un.org/development/desa/en/news/population/2018-revision-of-world-urbanization-prospects.html",
+    "asOf": 2018
+  },
+  "laws/eco_recover/fact": {
+    "name": "Poorter ほか「Multidimensional tropical forest recovery」Science",
+    "check": "確認済み",
+    "year": 2021,
+    "url": "https://research.wur.nl/en/publications/multidimensional-tropical-forest-recovery/"
+  },
+  "laws/electric/fact": {
+    "name": "世界銀行 世界開発指標「送配電の損失（出力に対する%）」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://data.worldbank.org/indicator/EG.ELC.LOSS.ZS",
+    "asOf": 2024
+  },
+  "laws/energy_conserve/fact": {
+    "name": "『ファインマン物理学講義』第1巻 第4章（Caltech公開版）",
+    "check": "確認済み",
+    "year": 1963,
+    "url": "https://www.feynmanlectures.caltech.edu/I_04.html"
+  },
+  "laws/family/fact": {
+    "name": "ILO「Care work and care jobs for the future of decent work」",
+    "check": "確認済み",
+    "year": 2018,
+    "url": "https://www.ilo.org/global/about-the-ilo/newsroom/news/WCMS_633115/lang--en/index.htm"
+  },
+  "laws/farm_land/fact": {
+    "name": "FAO「森林資源評価2020 リモートセンシング調査」",
+    "check": "確認済み",
+    "year": 2021,
+    "url": "https://www.fao.org/forest-resources-assessment/remote-sensing/remote-sensing-survey/en",
+    "asOf": 2018
+  },
+  "laws/fire_burn/fact": {
+    "name": "WHO ファクトシート「Household air pollution」／Balch ほか（PNAS）",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://www.who.int/news-room/fact-sheets/detail/household-air-pollution-and-health",
+    "asOf": 2025
+  },
+  "laws/fission/fact": {
+    "name": "IEA「Global Energy Review 2025」／SIPRI年鑑2026",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://www.iea.org/reports/global-energy-review-2025/electricity",
+    "asOf": 2024
+  },
+  "laws/food_rot/fact": {
+    "name": "国連「食品ロスと廃棄に関する啓発の国際デー」（FAOとUNEPの推計）",
+    "check": "確認済み",
+    "url": "https://www.un.org/en/observances/end-food-waste-day"
+  },
+  "laws/happiness_seek/fact": {
+    "name": "Easterlin「Explaining happiness」PNAS",
+    "check": "確認済み",
+    "year": 2003,
+    "url": "https://europepmc.org/article/MED/12958207"
+  },
+  "laws/heat_escape/fact": {
+    "name": "NASA Earth Observatory「Climate and Earth's Energy Budget」",
+    "check": "確認済み",
+    "year": 2009,
+    "url": "https://science.nasa.gov/earth/earth-observatory/climate-and-earths-energy-budget/"
+  },
+  "laws/human_aging/fact": {
+    "name": "国連「World Population Prospects 2024」",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://population.un.org/wpp/",
+    "asOf": 2023
+  },
+  "laws/human_birth/fact": {
+    "name": "UNFPA 世界人口白書2022（報道発表）",
+    "check": "確認済み",
+    "year": 2022,
+    "url": "https://www.unfpa.org/press/nearly-half-all-pregnancies-are-unintended%E2%80%94-global-crisis-says-new-unfpa-report",
+    "asOf": 2019
+  },
+  "laws/human_food/fact": {
+    "name": "英国NHS「Understanding calories」／世界銀行（ILOモデル推計）「農業の就業者の割合」",
+    "check": "確認済み",
+    "year": 2023,
+    "url": "https://www.nhs.uk/live-well/healthy-weight/managing-your-weight/understanding-calories/",
+    "asOf": 2025
+  },
+  "laws/human_oxygen/fact": {
+    "name": "NASA「Life Support Baseline Values and Assumptions Document」改訂2版／NOAA 世界の年平均CO2濃度",
+    "check": "確認済み",
+    "year": 2022,
+    "url": "https://ntrs.nasa.gov/api/citations/20210024855/downloads/BVAD_2.15.22-final.pdf",
+    "asOf": 2025
+  },
+  "laws/human_sleep/fact": {
+    "name": "米国立神経疾患・脳卒中研究所（NINDS）「Brain Basics: Understanding Sleep」",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://www.ninds.nih.gov/health-information/public-education/brain-basics/brain-basics-understanding-sleep"
+  },
+  "laws/human_water/fact": {
+    "name": "FAO AQUASTAT「Water use」",
+    "check": "確認済み",
+    "url": "https://www.fao.org/aquastat/en/overview/methodology/water-use/"
+  },
+  "laws/immune_memory/fact": {
+    "name": "CDC『Pink Book』第13章 麻しん",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://www.cdc.gov/pinkbook/hcp/table-of-contents/chapter-13-measles.html"
+  },
+  "laws/learning/fact": {
+    "name": "（参考）Koster ほか（Science Advances）",
+    "check": "要確認",
+    "year": 2020,
+    "url": "https://doi.org/10.1126/sciadv.aax9070"
+  },
+  "laws/life_heat/fact": {
+    "name": "Schlenker & Roberts（PNAS）／Hatfield & Prueger（Weather and Climate Extremes）",
+    "check": "確認済み",
+    "year": 2009,
+    "url": "https://doi.org/10.1073/pnas.0906865106"
+  },
+  "laws/medicine/fact": {
+    "name": "GBD 2021 Antimicrobial Resistance Collaborators（Lancet）",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://doi.org/10.1016/S0140-6736(24)01867-1",
+    "asOf": 2021
+  },
+  "laws/money/fact": {
+    "name": "IMF『Finance & Development』「Back to Basics: What Is Money?」",
+    "check": "確認済み",
+    "year": 2012,
+    "url": "https://www.imf.org/external/pubs/ft/fandd/2012/09/basics.htm"
+  },
+  "laws/nation/fact": {
+    "name": "国連経済社会局「International Migrant Stock 2024: Key facts and figures」／国連「Member States」",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://www.un.org/development/desa/pd/sites/www.un.org.development.desa.pd/files/undesa_pd_2025_intlmigstock_2024_key_facts_and_figures_advance-unedited.pdf",
+    "asOf": 2024
+  },
+  "laws/ocean_co2/fact": {
+    "name": "Global Carbon Budget 2025（Earth System Science Data）／IPCC第6次評価報告書 第1作業部会 第5章",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://essd.copernicus.org/articles/18/3211/2026/",
+    "asOf": 2024
+  },
+  "laws/oil_co2/fact": {
+    "name": "IPCC 2006年温室効果ガス目録ガイドライン 第2巻（エネルギー）",
+    "check": "確認済み",
+    "year": 2006,
+    "url": "https://www.ipcc-nggip.iges.or.jp/public/2006gl/pdf/2_Volume2/V2_1_Ch1_Introduction.pdf"
+  },
+  "laws/oil_finite/fact": {
+    "name": "資源エネルギー庁「エネルギー動向（2025年版）」（エネルギー白書2024も同じ数字）",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://www.enecho.meti.go.jp/about/energytrends/202506/html/s-2-2.html",
+    "asOf": 2020
+  },
+  "laws/oil_heat/fact": {
+    "name": "IEA「World Energy Outlook 2024」",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://www.iea.org/reports/world-energy-outlook-2024/pathways-for-the-energy-mix",
+    "asOf": 2023
+  },
+  "laws/pathogen_air/fact": {
+    "name": "WHO ほか4機関の発表（空気を介してうつる病原体の新しい用語）",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://www.who.int/news/item/18-04-2024-leading-health-agencies-outline-updated-terminology-for-pathogens-that-transmit-through-the-air"
+  },
+  "laws/pathogen_harm/fact": {
+    "name": "Walther & Ewald「Pathogen survival in the external environment and the evolution of virulence」Biol. Rev.",
+    "check": "確認済み",
+    "year": 2004,
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7161823/"
+  },
+  "laws/pathogen_infect/fact": {
+    "name": "WHO ファクトシート「The top 10 causes of death」",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://www.who.int/news-room/fact-sheets/detail/the-top-10-causes-of-death",
+    "asOf": 2021
+  },
+  "laws/pathogen_mutate/fact": {
+    "name": "Alizon ほか「Virulence evolution and the trade-off hypothesis」J. Evol. Biol.",
+    "check": "確認済み",
+    "year": 2009,
+    "url": "https://academic.oup.com/jeb/article/22/2/245/7324136"
+  },
+  "laws/plant_co2/fact": {
+    "name": "Global Carbon Budget 2025（Earth System Science Data）／IPCC第6次評価報告書 第1作業部会 第5章",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://essd.copernicus.org/articles/18/3211/2026/",
+    "asOf": 2024
+  },
+  "laws/plant_grow/fact": {
+    "name": "FAO AQUASTAT／van der Ent ほか（Water Resources Research）／Wei ほか（Geophysical Research Letters）",
+    "check": "確認済み",
+    "year": 2010,
+    "url": "https://doi.org/10.1029/2010WR009127"
+  },
+  "laws/play/fact": {
+    "name": "国連「子どもの権利条約」（UNICEFが載せている条文）",
+    "check": "確認済み",
+    "year": 1989,
+    "url": "https://www.unicef.org/child-rights-convention/convention-text"
+  },
+  "laws/religion/fact": {
+    "name": "ピュー・リサーチ・センター「The Global Religious Landscape」",
+    "check": "確認済み",
+    "year": 2012,
+    "url": "https://www.pewresearch.org/religion/2012/12/18/global-religious-landscape-exec/",
+    "asOf": 2010
+  },
+  "laws/science_repro/fact": {
+    "name": "全米科学・工学・医学アカデミー『Reproducibility and Replicability in Science』",
+    "check": "確認済み",
+    "year": 2019,
+    "url": "https://www.nationalacademies.org/publications/25303"
+  },
+  "laws/sea_salt/fact": {
+    "name": "米国地質調査所（USGS）「Why is the ocean salty?」／NOAA海洋局「The Global Conveyor Belt」",
+    "check": "確認済み",
+    "url": "https://www.usgs.gov/faqs/why-ocean-salty"
+  },
+  "laws/seasons/fact": {
+    "name": "NASA「Earth: Facts」／米国立気象局（NWS）用語集「Monsoon」",
+    "check": "確認済み",
+    "url": "https://science.nasa.gov/earth/facts/"
+  },
+  "laws/sun_shine/fact": {
+    "name": "Li & Tung（Nature Communications）／Modak ほか（Environmental Research Letters）",
+    "check": "確認済み",
+    "year": 2023,
+    "url": "https://doi.org/10.1038/s41467-023-43583-7"
+  },
+  "laws/war/fact": {
+    "name": "ストックホルム国際平和研究所（SIPRI）2026年4月の発表",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.sipri.org/media/press-release/2026/global-military-spending-rise-continues-european-and-asian-expenditures-surge",
+    "asOf": 2025
+  },
+  "laws/water_rain/fact": {
+    "name": "国土交通省 報道発表（社会資本整備審議会答申「気候変動を踏まえた水災害対策のあり方」）",
+    "check": "確認済み",
+    "year": 2020,
+    "url": "https://www.mlit.go.jp/report/press/mizukokudo03_hh_001030.html"
+  },
+  "laws/weapons/fact": {
+    "name": "米国ホロコースト記念博物館「World War II: In Depth」／米国立第二次世界大戦博物館「Worldwide Deaths in World War II」",
+    "check": "確認済み",
+    "url": "https://www.nationalww2museum.org/students-teachers/student-resources/research-starters/research-starters-worldwide-deaths-world-war"
+  },
+  "laws/weapons/voidWhy": {
+    "name": "ヒューマン・ライツ・ウォッチ「Leave None to Tell the Story」／国連「ルワンダのツチに対するジェノサイド」アウトリーチ計画",
+    "check": "確認済み",
+    "year": 1999,
+    "url": "https://www.hrw.org/report/1999/03/01/leave-none-tell-story/genocide-rwanda",
+    "asOf": 1994
+  },
+  "laws/wind/fact": {
+    "name": "IEA「Global Energy Review 2025」／米国農務省 海外農業局「Grain: World Markets and Trade」／査読論文（Insects）",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://www.iea.org/reports/global-energy-review-2025/electricity",
+    "asOf": 2024
+  },
+  "laws/zoonosis/fact": {
+    "name": "米国疾病予防管理センター（CDC）「About Zoonotic Diseases」",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://www.cdc.gov/one-health/about/about-zoonotic-diseases.html"
+  },
+  "phrases/biofuel/adapt": {
+    "name": "ジェヴォンズ『The Coal Question』（OLL版は1866年の第2版）；「Systems thinking and efficiency under emissions constraints」Patterns",
+    "check": "確認済み",
+    "year": 1866,
+    "url": "https://oll.libertyfund.org/titles/jevons-the-coal-question",
+    "asOf": 1865
+  },
+  "phrases/desalination/adapt": {
+    "name": "ジェヴォンズ『The Coal Question』（OLL版は1866年の第2版）；「Systems thinking and efficiency under emissions constraints」Patterns",
+    "check": "確認済み",
+    "year": 1866,
+    "url": "https://oll.libertyfund.org/titles/jevons-the-coal-question",
+    "asOf": 1865
+  },
+  "phrases/distancing/adapt": {
+    "name": "WHO欧州地域事務局「Pandemic fatigue – reinvigorating the public to prevent COVID-19」",
+    "check": "確認済み",
+    "year": 2020,
+    "url": "https://iris.who.int/handle/10665/335820",
+    "asOf": 2020
+  },
+  "phrases/electrify/adapt": {
+    "name": "ジェヴォンズ『The Coal Question』（OLL版は1866年の第2版）；「Systems thinking and efficiency under emissions constraints」Patterns",
+    "check": "確認済み",
+    "year": 1866,
+    "url": "https://oll.libertyfund.org/titles/jevons-the-coal-question",
+    "asOf": 1865
+  },
+  "phrases/fusion/adapt": {
+    "name": "ジェヴォンズ『The Coal Question』（OLL版は1866年の第2版）；「Systems thinking and efficiency under emissions constraints」Patterns",
+    "check": "確認済み",
+    "year": 1866,
+    "url": "https://oll.libertyfund.org/titles/jevons-the-coal-question",
+    "asOf": 1865
+  },
+  "phrases/grid_storage/adapt": {
+    "name": "ジェヴォンズ『The Coal Question』（OLL版は1866年の第2版）；「Systems thinking and efficiency under emissions constraints」Patterns",
+    "check": "確認済み",
+    "year": 1866,
+    "url": "https://oll.libertyfund.org/titles/jevons-the-coal-question",
+    "asOf": 1865
+  },
+  "phrases/new_fuel/adapt": {
+    "name": "ジェヴォンズ『The Coal Question』（OLL版は1866年の第2版）；「Systems thinking and efficiency under emissions constraints」Patterns",
+    "check": "確認済み",
+    "year": 1866,
+    "url": "https://oll.libertyfund.org/titles/jevons-the-coal-question",
+    "asOf": 1865
+  },
+  "phrases/no_waste/adapt": {
+    "name": "ジェヴォンズ『The Coal Question』（OLL版は1866年の第2版）；「Systems thinking and efficiency under emissions constraints」Patterns",
+    "check": "確認済み",
+    "year": 1866,
+    "url": "https://oll.libertyfund.org/titles/jevons-the-coal-question",
+    "asOf": 1865
+  },
+  "phrases/nuclear_power/adapt": {
+    "name": "ジェヴォンズ『The Coal Question』（OLL版は1866年の第2版）；「Systems thinking and efficiency under emissions constraints」Patterns",
+    "check": "確認済み",
+    "year": 1866,
+    "url": "https://oll.libertyfund.org/titles/jevons-the-coal-question",
+    "asOf": 1865
+  },
+  "phrases/renewables/adapt": {
+    "name": "ジェヴォンズ『The Coal Question』（OLL版は1866年の第2版）；「Systems thinking and efficiency under emissions constraints」Patterns",
+    "check": "確認済み",
+    "year": 1866,
+    "url": "https://oll.libertyfund.org/titles/jevons-the-coal-question",
+    "asOf": 1865
+  },
+  "phrases/robots/adapt": {
+    "name": "ジェヴォンズ『The Coal Question』（OLL版は1866年の第2版）；「Systems thinking and efficiency under emissions constraints」Patterns",
+    "check": "確認済み",
+    "year": 1866,
+    "url": "https://oll.libertyfund.org/titles/jevons-the-coal-question",
+    "asOf": 1865
+  },
+  "phrases/share/adapt": {
+    "name": "Fehr & Gächter「Cooperation and Punishment in Public Goods Experiments」American Economic Review 90(4)",
+    "check": "確認済み",
+    "year": 2000,
+    "url": "https://doi.org/10.1257/aer.90.4.980",
+    "asOf": 2000
+  },
+  "twists/aging_society/news[0].why": {
+    "name": "内閣府「平成29年版高齢社会白書」／厚生労働省「人口動態統計」／韓国統計庁（報道で確認）",
+    "check": "要確認",
+    "year": 2017,
+    "url": "https://www8.cao.go.jp/kourei/whitepaper/w-2017/html/zenbun/s1_1_1.html",
+    "asOf": 2019
+  },
+  "twists/antimatter_bomb/news[0].why": {
+    "name": "広島平和記念資料館「広島・長崎に投下された原爆」（TNT16キロトン）＋E=mc²の計算",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://hpmmuseum.jp/modules/exhibition/index.php?action=ItemView&item_id=9&lang=jpn",
+    "asOf": 1945
+  },
+  "twists/bare_cold/news[0].why": {
+    "name": "Henderson ほか「The cardio-respiratory effects of passive heating and the human thermoneutral zone」Physiological Reports（St",
+    "check": "確認済み",
+    "year": 2021,
+    "url": "https://doi.org/10.14814/phy2.14973",
+    "asOf": 1966
+  },
+  "twists/black_market/news[0].why": {
+    "name": "帝国戦争博物館（IWM）「What You Need To Know About Rationing In The Second World War」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.iwm.org.uk/history/what-you-need-to-know-about-rationing-in-the-second-world-war",
+    "asOf": 1940
+  },
+  "twists/button_echo/news[1].why": {
+    "name": "アーベル賞（ノルウェー科学文学アカデミー）2016年の授賞理由と解説",
+    "check": "確認済み",
+    "year": 2016,
+    "url": "https://abelprize.no/abel-prize-laureates/2016",
+    "asOf": 1995
+  },
+  "twists/button_money/news[1].why": {
+    "name": "（参考）ドイツ歴史博物館 LeMO「Jahreschronik 1923」",
+    "check": "要確認",
+    "year": 2026,
+    "url": "https://www.dhm.de/lemo/jahreschronik/1923",
+    "asOf": 1923
+  },
+  "twists/caution_fatigue/news[0].why": {
+    "name": "WHO欧州地域事務局「Pandemic fatigue – reinvigorating the public to prevent COVID-19」",
+    "check": "確認済み",
+    "year": 2020,
+    "url": "https://iris.who.int/handle/10665/335820",
+    "asOf": 2020
+  },
+  "twists/co2_hunger/news[0].why": {
+    "name": "NOAA Global Monitoring Laboratory「Trends in CO2」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://gml.noaa.gov/ccgg/trends/",
+    "asOf": 2026
+  },
+  "twists/culture_loss/news[0].why": {
+    "name": "国連「International Mother Language Day」（UNESCOの推計）／Cámara-Leret & Bascompte「Language extinction triggers the loss of uniqu",
+    "check": "確認済み",
+    "year": 2021,
+    "url": "https://www.un.org/en/observances/mother-language-day"
+  },
+  "twists/designer_babies/news[0].why": {
+    "name": "第2回ヒトゲノム編集国際サミット組織委員会の声明（米国科学アカデミーほか）／Cyranoski & Ledford「Genome-edited baby claim provokes international outcry」Nature",
+    "check": "確認済み",
+    "year": 2018,
+    "url": "https://www.nationalacademies.org/news/2018/11/statement-by-the-organizing-committee-of-the-second-international-summit-on-human-genome-editing",
+    "asOf": 2018
+  },
+  "twists/double_day/news[0].why": {
+    "name": "（参考）NOAA Climate.gov「Climate change: incoming sunlight」",
+    "check": "要確認",
+    "year": 2026,
+    "url": "https://www.climate.gov/news-features/understanding-climate/climate-change-incoming-sunlight"
+  },
+  "twists/endless_aging/news[0].why": {
+    "name": "総務省統計局「統計からみた我が国の高齢者」（統計トピックスNo.149）",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.stat.go.jp/data/topics/topi1490.html",
+    "asOf": 2026
+  },
+  "twists/firewood_loss/news[0].why": {
+    "name": "WHO ファクトシート「Household air pollution」",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://www.who.int/news-room/fact-sheets/detail/household-air-pollution-and-health",
+    "asOf": 2025
+  },
+  "twists/gold_crash/news[0].why": {
+    "name": "米セントルイス連銀FRED「Consumer Price Index in the United Kingdom」（英中銀「A millennium of macroeconomic data」）",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://fred.stlouisfed.org/series/CPIUKA",
+    "asOf": 1600
+  },
+  "twists/hyperinflation/news[0].why": {
+    "name": "IMF Finance & Development「What Is Monetarism?」（Jahan & Papageorgiou）",
+    "check": "確認済み",
+    "year": 2014,
+    "url": "https://www.imf.org/external/pubs/ft/fandd/2014/03/basics.htm"
+  },
+  "twists/hyperinflation/news[1].why": {
+    "name": "見つからない",
+    "check": "要確認",
+    "asOf": 1923
+  },
+  "twists/land_rush/news[0].why": {
+    "name": "FAO「COP26: Agricultural expansion drives almost 90 percent of global deforestation」（FRA 2020 リモートセンシング調査）",
+    "check": "確認済み",
+    "year": 2021,
+    "url": "https://www.fao.org/newsroom/detail/cop26-agricultural-expansion-drives-almost-90-percent-of-global-deforestation/en",
+    "asOf": 2018
+  },
+  "twists/launch_cost/news[0].why": {
+    "name": "NASA（Jones）「The Recent Large Reduction in Space Launch Cost」（ICES-2018-81）",
+    "check": "確認済み",
+    "year": 2018,
+    "url": "https://ntrs.nasa.gov/citations/20200001093",
+    "asOf": 2018
+  },
+  "twists/machine_rights/news[0].why": {
+    "name": "Reuters（NBC News 掲載）「Google has fired a software engineer who claimed an AI chatbot was sentient」",
+    "check": "確認済み",
+    "year": 2022,
+    "url": "https://www.nbcnews.com/news/us-news/google-fired-software-engineer-claimed-ai-chatbot-was-sentient-rcna39679",
+    "asOf": 2022
+  },
+  "twists/machine_war/news[0].why": {
+    "name": "Center for AI Safety「Statement on AI Risk」",
+    "check": "確認済み",
+    "year": 2023,
+    "url": "https://www.safe.ai/work/statement-on-ai-risk",
+    "asOf": 2023
+  },
+  "twists/meat_taboo/news[0].why": {
+    "name": "Poore & Nemecek「Reducing food's environmental impacts through producers and consumers」Science（査読）",
+    "check": "確認済み",
+    "year": 2018,
+    "url": "https://ora.ox.ac.uk/objects/uuid:b0b53649-5e93-4415-bf07-6b0b1227172f",
+    "asOf": 2018
+  },
+  "twists/monsoon_loss/news[0].why": {
+    "name": "インド政府PIB「The Indian Monsoon: Nature's Pulse and Nation's Lifeline」",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://static.pib.gov.in/WriteReadData/specificdocs/documents/2025/jul/doc2025715586601.pdf"
+  },
+  "twists/nuclear_gap/news[0].why": {
+    "name": "IEA「The Path to a New Era for Nuclear Energy」／RTE「Bilan électrique 2025」",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://www.iea.org/reports/the-path-to-a-new-era-for-nuclear-energy/executive-summary",
+    "asOf": 2025
+  },
+  "twists/ocean_collapse/news[0].why": {
+    "name": "NOAA National Ocean Service「Why is the ocean salty?」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://oceanservice.noaa.gov/facts/whysalty.html"
+  },
+  "twists/ocean_collapse/news[1].why": {
+    "name": "FAO「The State of World Fisheries and Aquaculture 2026」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.fao.org/3/cd8357en/online/sofia-2026/global-fisheries-aquaculture.html",
+    "asOf": 2023
+  },
+  "twists/overwork/news[0].why": {
+    "name": "WHO/ILO ニュースリリース「Long working hours increasing deaths from heart disease and stroke」",
+    "check": "確認済み",
+    "year": 2021,
+    "url": "https://www.who.int/news/item/17-05-2021-long-working-hours-increasing-deaths-from-heart-disease-and-stroke-who-ilo",
+    "asOf": 2021
+  },
+  "twists/plants_stop_absorbing/news[0].why": {
+    "name": "Friedlingstein et al.「Global Carbon Budget 2024」Earth System Science Data（査読）",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://essd.copernicus.org/articles/17/965/2025/",
+    "asOf": 2023
+  },
+  "twists/pop_trap/news[0].why": {
+    "name": "マルサス『An Essay on the Principle of Population』初版（Project Gutenberg）",
+    "check": "確認済み",
+    "url": "https://www.gutenberg.org/ebooks/4239",
+    "asOf": 1798
+  },
+  "twists/rain_loss/news[0].why": {
+    "name": "van der Ent et al.「Origin and fate of atmospheric moisture over continents」Water Resources Research（査読）",
+    "check": "確認済み",
+    "year": 2010,
+    "url": "https://doi.org/10.1029/2010WR009127",
+    "asOf": 2010
+  },
+  "twists/rainforest_dieback/news[0].why": {
+    "name": "NASA Science「Mission: Biomes（Rainforest）」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://science.nasa.gov/kids/earth/mission-biomes/biorainforest/"
+  },
+  "twists/square_cube/news[0].why": {
+    "name": "Biewener「Biomechanical consequences of scaling」Journal of Experimental Biology（査読）",
+    "check": "確認済み",
+    "year": 2005,
+    "url": "https://doi.org/10.1242/jeb.01520"
+  },
+  "twists/stagnant_air/news[0].why": {
+    "name": "WHO「Air pollution」（Health topics）",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www.who.int/health-topics/air-pollution"
+  },
+  "twists/sti_spread/news[0].why": {
+    "name": "WHO ファクトシート「Sexually transmitted infections (STIs)」",
+    "check": "確認済み",
+    "year": 2025,
+    "url": "https://www.who.int/news-room/fact-sheets/detail/sexually-transmitted-infections-(stis)",
+    "asOf": 2020
+  },
+  "twists/storm_age/news[0].why": {
+    "name": "NASA Glenn Research Center「The Drag Equation」",
+    "check": "確認済み",
+    "year": 2026,
+    "url": "https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/drag-equation/"
+  },
+  "twists/wish_bubble/news[0].why": {
+    "name": "Federal Reserve History「Stock Market Crash of 1929」「The Great Recession and Its Aftermath」",
+    "check": "確認済み",
+    "year": 2013,
+    "url": "https://www.federalreservehistory.org/essays/stock-market-crash-of-1929",
+    "asOf": 1929
+  },
+  "unlocks/cascade/card": {
+    "name": "Granovetter「Threshold Models of Collective Behavior」Am. J. Sociol. 83(6):1420-1443",
+    "check": "確認済み",
+    "year": 1978,
+    "url": "https://doi.org/10.1086/226707"
+  },
+  "unlocks/caution/card": {
+    "name": "Funk・Salathé・Jansen「Modelling the influence of human behaviour on the spread of infectious diseases: a review」J. R. Soc.",
+    "check": "確認済み",
+    "year": 2010,
+    "url": "https://doi.org/10.1098/rsif.2010.0142"
+  },
+  "unlocks/chaos/card": {
+    "name": "Zhang ほか「What Is the Predictability Limit of Midlatitude Weather?」J. Atmos. Sci. 76(4):1077-1091",
+    "check": "確認済み",
+    "year": 2019,
+    "url": "https://doi.org/10.1175/JAS-D-18-0269.1",
+    "asOf": 2019
+  },
+  "unlocks/conservation/card": {
+    "name": "OpenStax『College Physics 2e』7.6 Conservation of Energy",
+    "check": "確認済み",
+    "year": 2022,
+    "url": "https://openstax.org/books/college-physics-2e/pages/7-6-conservation-of-energy"
+  },
+  "unlocks/crowding/card": {
+    "name": "Gneezy & Rustichini「A Fine is a Price」J. Legal Stud. 29(1):1-17",
+    "check": "確認済み",
+    "year": 2000,
+    "url": "https://doi.org/10.1086/468061"
+  },
+  "unlocks/delay/card": {
+    "name": "Sterman「Modeling Managerial Behavior: Misperceptions of Feedback in a Dynamic Decision Making Experiment」Management Scie",
+    "check": "確認済み",
+    "year": 1989,
+    "url": "https://doi.org/10.1287/mnsc.35.3.321"
+  },
+  "unlocks/demography/card": {
+    "name": "Our World in Data（Max Roser）「Demographic transition: Why is rapid population growth a temporary phenomenon?」",
+    "check": "確認済み",
+    "year": 2023,
+    "url": "https://ourworldindata.org/demographic-transition"
+  },
+  "unlocks/dilemma/card": {
+    "name": "Jervis「Cooperation under the Security Dilemma」World Politics 30(2):167-214",
+    "check": "確認済み",
+    "year": 1978,
+    "url": "https://doi.org/10.2307/2009958"
+  },
+  "unlocks/fatigue/card": {
+    "name": "WHO 欧州地域事務局「Pandemic fatigue: reinvigorating the public to prevent COVID-19」（2020年11月の改訂版）",
+    "check": "確認済み",
+    "year": 2020,
+    "url": "https://www.who.int/europe/publications/i/item/WHO-EURO-2020-1573-41324-56242"
+  },
+  "unlocks/freeRide/card": {
+    "name": "Fehr & Gächter「Cooperation and Punishment in Public Goods Experiments」Am. Econ. Rev. 90(4):980-994",
+    "check": "確認済み",
+    "year": 2000,
+    "url": "https://doi.org/10.1257/aer.90.4.980"
+  },
+  "unlocks/habituation/card": {
+    "name": "Frederick & Loewenstein「Hedonic Adaptation」（Kahneman・Diener・Schwarz 編『Well-Being: The Foundations of Hedonic Psychology』",
+    "check": "確認済み",
+    "year": 1999,
+    "url": "https://stafforini.com/works/frederick-1999-hedonic-adaptation/"
+  },
+  "unlocks/hoarding/card": {
+    "name": "nippon.com「〈1973年の今日〉11月1日：石油ショックでトイレットペーパーパニック」",
+    "check": "確認済み",
+    "year": 2023,
+    "url": "https://www.nippon.com/ja/japan-topics/today11010/",
+    "asOf": 1973
+  },
+  "unlocks/jcurve/card": {
+    "name": "Lagi・Bertrand・Bar-Yam「The Food Crises and Political Instability in North Africa and the Middle East」（arXiv:1108.2455、NEC",
+    "check": "確認済み",
+    "year": 2011,
+    "url": "https://arxiv.org/abs/1108.2455"
+  },
+  "unlocks/jevons/card": {
+    "name": "Jevons『The Coal Question』第7章「Of the Economy of Fuel」",
+    "check": "確認済み",
+    "year": 1865,
+    "url": "https://www.econlib.org/library/YPDBooks/Jevons/jvnCQ7.html"
+  },
+  "unlocks/logHappiness/card": {
+    "name": "Kahneman & Deaton「High income improves evaluation of life but not emotional well-being」PNAS 107(38):16489-16493",
+    "check": "確認済み",
+    "year": 2010,
+    "url": "https://doi.org/10.1073/pnas.1011492107"
+  },
+  "unlocks/loops/card": {
+    "name": "Meadows・Meadows・Randers・Behrens『The Limits to Growth』（ローマ・クラブへの報告）",
+    "check": "確認済み",
+    "year": 1972,
+    "url": "https://www.clubofrome.org/publication/the-limits-to-growth/"
+  },
+  "unlocks/lossAversion/card": {
+    "name": "Brown・Imai・Vieider・Camerer「Meta-analysis of Empirical Estimates of Loss Aversion」J. Econ. Lit. 62(2):485-516",
+    "check": "確認済み",
+    "year": 2024,
+    "url": "https://doi.org/10.1257/jel.20221698",
+    "asOf": 2024
+  },
+  "unlocks/overshoot/card": {
+    "name": "Klein「The Introduction, Increase, and Crash of Reindeer on St. Matthew Island」J. Wildl. Manage. 32(2):350-367",
+    "check": "確認済み",
+    "year": 1968,
+    "url": "https://doi.org/10.2307/3798981",
+    "asOf": 1966
+  },
+  "unlocks/redundancy/card": {
+    "name": "NASA NPR 8715.3（NASA Safety Manual）付録B 用語集",
+    "check": "確認済み",
+    "year": 2000,
+    "url": "https://nodis3.gsfc.nasa.gov/displayCA.cfm?Internal_ID=N_PR_8715_0003_&page_name=AppendixB"
+  },
+  "unlocks/scarcity/card": {
+    "name": "Mani・Mullainathan・Shafir・Zhao「Poverty Impedes Cognitive Function」Science 341(6149):976-980",
+    "check": "確認済み",
+    "year": 2013,
+    "url": "https://doi.org/10.1126/science.1238041"
+  },
+  "unlocks/slowing/card": {
+    "name": "Scheffer ほか「Early-warning signals for critical transitions」Nature 461:53-59",
+    "check": "確認済み",
+    "year": 2009,
+    "url": "https://doi.org/10.1038/nature08227"
+  },
+  "unlocks/spread/card": {
+    "name": "Centola・Becker・Brackbill・Baronchelli「Experimental evidence for tipping points in social convention」Science 360(6393):111",
+    "check": "確認済み",
+    "year": 2018,
+    "url": "https://doi.org/10.1126/science.aas8827",
+    "asOf": 2018
+  },
+  "unlocks/threeBody/card": {
+    "name": "Poincaré「Sur le problème des trois corps et les équations de la dynamique」Acta Mathematica 13:1-270",
+    "check": "確認済み",
+    "year": 1890,
+    "url": "https://projecteuclid.org/journals/acta-mathematica/volume-13/issue-1-2"
+  },
+  "unlocks/trust/card": {
+    "name": "Slovic「Perceived Risk, Trust, and Democracy」Risk Analysis 13(6):675-682",
+    "check": "確認済み",
+    "year": 1993,
+    "url": "https://doi.org/10.1111/j.1539-6924.1993.tb01329.x"
+  },
+  "unlocks/weights/card": {
+    "name": "OpenStax『College Physics 2e』4.2 Newton's First Law of Motion: Inertia",
+    "check": "確認済み",
+    "year": 2022,
+    "url": "https://openstax.org/books/college-physics-2e/pages/4-2-newtons-first-law-of-motion-inertia"
+  }
+}

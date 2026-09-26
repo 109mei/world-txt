@@ -27,7 +27,7 @@ export function gainsOf(data: GameData, rank: number): string[] {
   const opened = cur.realms.filter((r) => !prev.realms.includes(r)).map((id) => data.access.realms.find((x) => x.id === id)?.name ?? id);
   if (opened.length > 0) out.push(`「${opened.join('」「')}」の行が開く`);
   if (cur.margin !== prev.margin) out.push(cur.margin === null ? '書き足せる行に限りがなくなる' : `書き足せる行が${cur.margin}つになる`);
-  if (cur.depth !== prev.depth) out.push(cur.depth === null ? '世界そのものまで、何でも書ける' : `${cur.reach}まで書ける`);
+  if (cur.depth !== prev.depth) out.push(cur.depth === null ? '世界そのものまで何でも書ける' : `${cur.reach}まで書ける`);
   return out;
 }
 

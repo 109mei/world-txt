@@ -69,7 +69,16 @@ export function City({ v }: { v: SceneView }) {
       : t.spire
         ? `L${t.x + t.w} ${top} L${t.x + t.w / 2} ${top - t.w * 0.9} L${t.x} ${top}`
         : `L${t.x + t.w} ${top} L${t.x} ${top}`;
-    return <path key={i} d={`M${t.x} ${GROUND} L${t.x + t.w} ${GROUND} ${roof} Z`} fill="#121318" stroke={ruined && m(v, 'ruins') > 0 ? strokeOf(v, 'ruins') : color(i)} strokeWidth={0.8} />;
+    // 光は左から来る：塔の右半分（尖塔の右の面も）に影を置く
+    const cx = t.x + t.w / 2;
+    const shadeTop = ruined ? top + 6 : top + 0.4;
+    const shade = !ruined && t.spire ? `M${cx} ${top - t.w * 0.9 + 1} L${t.x + t.w - 0.4} ${top}` : `M${cx} ${shadeTop} L${t.x + t.w - 0.4} ${shadeTop}`;
+    return (
+      <g key={i}>
+        <path d={`M${t.x} ${GROUND} L${t.x + t.w} ${GROUND} ${roof} Z`} fill="var(--sc-fill)" stroke={ruined && m(v, 'ruins') > 0 ? strokeOf(v, 'ruins') : color(i)} strokeWidth={0.8} />
+        <path d={`${shade} L${t.x + t.w - 0.4} ${GROUND} L${cx} ${GROUND} Z`} fill="var(--sc-shade)" opacity={0.22} />
+      </g>
+    );
   };
   const windowRects = (mega: boolean) =>
     order.map(({ w }, i) =>
@@ -80,7 +89,7 @@ export function City({ v }: { v: SceneView }) {
           y={w.y}
           width={2}
           height={3}
-          fill={i < lit ? '#f4f1e6' : '#23252b'}
+          fill={i < lit ? 'var(--sc-window-on)' : 'var(--sc-window-off)'}
           opacity={i < lit ? 0.9 : 1}
           className={i < lit && m(v, 'sleepless') > 0.3 && i % 7 === 0 ? 'sc-twinkle' : undefined}
         />
@@ -94,7 +103,7 @@ export function City({ v }: { v: SceneView }) {
           {[122, 150, 186, 214, 246].map((x, i) => (
             <g key={x} transform={`translate(${x} ${GROUND - (i % 2) * 3})`}>
               <path d="M-7 0 L-7 -7 L0 -13 L7 -7 L7 0 Z" fill={DARK} stroke={strokeOf(v, 'villages')} strokeWidth={0.8} />
-              <rect x={-1.5} y={-5} width={3} height={5} fill={light > 0.2 ? '#f4f1e6' : '#23252b'} opacity={0.8} />
+              <rect x={-1.5} y={-5} width={3} height={5} fill={light > 0.2 ? 'var(--sc-window-on)' : 'var(--sc-window-off)'} opacity={0.8} />
             </g>
           ))}
         </Motif>
@@ -117,7 +126,7 @@ export function City({ v }: { v: SceneView }) {
           {dark > 0.5 && (
             <Ghost v={v} when="noPower" kind="flickerOut">
               {order.slice(0, Math.round(order.length * 0.6)).map(({ w }) => (
-                <rect key={w.key} x={w.x} y={w.y} width={2} height={3} fill="#f4f1e6" opacity={0.9} />
+                <rect key={w.key} x={w.x} y={w.y} width={2} height={3} fill="var(--sc-window-on)" opacity={0.9} />
               ))}
             </Ghost>
           )}
@@ -134,12 +143,12 @@ export function City({ v }: { v: SceneView }) {
           {[118, 276].map((x) => (
             <g key={x} transform={`translate(${x} ${GROUND})`}>
               <path d="M-6 0 L-6 -6 L0 -11 L6 -6 L6 0 Z" fill={DARK} stroke={strokeOf(v, 'villages')} strokeWidth={0.8} />
-              <rect x={-1.5} y={-4.5} width={3} height={4.5} fill={light > 0.2 ? '#f4f1e6' : '#23252b'} opacity={0.8} />
+              <rect x={-1.5} y={-4.5} width={3} height={4.5} fill={light > 0.2 ? 'var(--sc-window-on)' : 'var(--sc-window-off)'} opacity={0.8} />
             </g>
           ))}
         </Motif>
       )}
-      <Landmarks v={v} s={s} villages={villages} />
+      <Landmarks v={v} s={s} villages={villages} light={light} />
       <Borders v={v} s={s} villages={villages} />
       <Industry v={v} s={s} />
     </g>
@@ -156,7 +165,7 @@ function Plant({ v }: { v: SceneView }) {
         <Motif v={v} id={m(v, 'reactor') > 0 ? 'reactor' : 'noReactor'}>
           <path
             d={`M100 ${GROUND} Q 104 ${GROUND - 12} 101 ${GROUND - 22} L115 ${GROUND - 22} Q 112 ${GROUND - 12} 116 ${GROUND} Z`}
-            fill="#15161b"
+            fill="var(--sc-fill)"
             stroke={m(v, 'reactor') > 0 ? strokeOf(v, 'reactor') : SILVER}
             strokeWidth={0.8}
           />
@@ -167,7 +176,7 @@ function Plant({ v }: { v: SceneView }) {
               cx={108 + k * 2}
               cy={GROUND - 26 - k * 5}
               r={3 + k * 1.5 + 2 * m(v, 'reactor')}
-              fill="#c9ced8"
+              fill="var(--sc-steam)"
               opacity={0.5}
               style={{ ...dur(5), ...delay(k * 1.4) }}
             />
@@ -176,7 +185,7 @@ function Plant({ v }: { v: SceneView }) {
       )}
       {m(v, 'noReactor') > 0 && (
         <Motif v={v} id="noReactor">
-          <path d={`M100 ${GROUND} L101 ${GROUND - 6} L115 ${GROUND - 6} L116 ${GROUND}`} fill="#15161b" stroke={strokeOf(v, 'noReactor', SILVER_DIM)} strokeWidth={0.7} strokeDasharray="2 1.5" />
+          <path d={`M100 ${GROUND} L101 ${GROUND - 6} L115 ${GROUND - 6} L116 ${GROUND}`} fill="var(--sc-fill)" stroke={strokeOf(v, 'noReactor', SILVER_DIM)} strokeWidth={0.7} strokeDasharray="2 1.5" />
         </Motif>
       )}
       {m(v, 'fusion') > 0 && (
@@ -191,7 +200,7 @@ function Plant({ v }: { v: SceneView }) {
       {m(v, 'battery') > 0 && (
         <Motif v={v} id="battery">
           <g transform={`translate(256 ${GROUND})`}>
-            <rect x={-4} y={-26} width={8} height={26} rx={2} fill="#15161b" stroke={strokeOf(v, 'battery')} strokeWidth={0.8} />
+            <rect x={-4} y={-26} width={8} height={26} rx={2} fill="var(--sc-fill)" stroke={strokeOf(v, 'battery')} strokeWidth={0.8} />
             <rect x={-2} y={-29} width={4} height={3} fill={strokeOf(v, 'battery')} />
             <g opacity={0.5}>
               <rect className="sc-pulse" x={-2.4} y={-22} width={4.8} height={18} fill={strokeOf(v, 'battery', GOOD)} style={dur(2)} />
@@ -231,8 +240,8 @@ function Plant({ v }: { v: SceneView }) {
   );
 }
 
-/** 学校・病院・研究所・祠・機械の塔・螺旋・像・カメラ・電波塔・競技場・灯籠・市場 */
-function Landmarks({ v, s, villages }: { v: SceneView; s: number; villages: boolean }) {
+/** 学校・病院・研究所・祠・機械の塔・螺旋・像・カメラ・電波塔・競技場・灯籠・市場（light は窓の灯りの割合） */
+function Landmarks({ v, s, villages, light }: { v: SceneView; s: number; villages: boolean; light: number }) {
   const tall = TOWERS[3]!;
   const antennaTop = GROUND - tall.h * s - tall.w * 0.9;
   const scienceGlow = Math.max(m(v, 'lab'), v.science > 0.75 ? 0.4 : 0);
@@ -259,20 +268,31 @@ function Landmarks({ v, s, villages }: { v: SceneView; s: number; villages: bool
           {m(v, 'noSchool') > 0.3 && <line x1={-3} y1={-19} x2={3} y2={-13} stroke={strokeOf(v, 'noSchool')} strokeWidth={0.6} />}
         </g>
       </Motif>
-      {/* 病院 */}
+      {/* 病院：窓の多い2階建てと、屋上の十字の看板（十字は白。薬のない世界では灯らない） */}
       <Motif v={v} id={m(v, 'cureAll') > 0 ? 'cureAll' : 'noMedicine'}>
         <g transform={`translate(214 ${GROUND})`}>
           <rect
-            x={-8}
-            y={-12}
-            width={16}
-            height={12}
+            x={-9}
+            y={-13}
+            width={18}
+            height={13}
             fill={DARK}
             stroke={m(v, 'cureAll') > 0 ? strokeOf(v, 'cureAll') : m(v, 'noMedicine') > 0 ? strokeOf(v, 'noMedicine') : SILVER}
             strokeWidth={0.7}
           />
-          <path d="M-1 -10 L1 -10 L1 -8 L3 -8 L3 -6 L1 -6 L1 -4 L-1 -4 L-1 -6 L-3 -6 L-3 -8 L-1 -8 Z" fill={m(v, 'noMedicine') > 0.3 ? '#23252b' : BAD} opacity={0.9} />
-          {m(v, 'cureAll') > 0 && <circle className="sc-pulse" cx={0} cy={-7} r={8} fill="url(#sc-glow-ink)" style={dur(2.4)} />}
+          <path d="M1 -12.6 L8.6 -12.6 L8.6 -0.4 L1 -0.4 Z" fill="var(--sc-shade)" opacity={0.22} />
+          {[-6.6, -3.4, 1.6, 4.8].map((x) =>
+            [-10.8, -6.4].map((y) => (
+              <rect key={`${x}${y}`} x={x} y={y} width={1.8} height={2.2} fill={m(v, 'noMedicine') > 0.3 || light < 0.2 ? 'var(--sc-window-off)' : 'var(--sc-window-on)'} opacity={0.85} />
+            )),
+          )}
+          <path d="M-1.4 0 L-1.4 -3 L1.4 -3 L1.4 0" fill="none" stroke={SILVER_DIM} strokeWidth={0.5} />
+          <g transform="translate(0 -17)">
+            <rect x={-3.4} y={-3.4} width={6.8} height={6.8} fill={DARK} stroke={SILVER_DIM} strokeWidth={0.4} />
+            <path d="M-0.9 -2.6 L0.9 -2.6 L0.9 -0.9 L2.6 -0.9 L2.6 0.9 L0.9 0.9 L0.9 2.6 L-0.9 2.6 L-0.9 0.9 L-2.6 0.9 L-2.6 -0.9 L-0.9 -0.9 Z" fill={m(v, 'noMedicine') > 0.3 ? 'var(--sc-window-off)' : m(v, 'cureAll') > 0 ? strokeOf(v, 'cureAll', PAPER) : PAPER} opacity={0.95} />
+            <line x1={0} y1={3.4} x2={0} y2={4} stroke={SILVER_DIM} strokeWidth={0.4} />
+          </g>
+          {m(v, 'cureAll') > 0 && <circle className="sc-pulse" cx={0} cy={-9} r={9} fill="url(#sc-glow-ink)" style={dur(2.4)} />}
         </g>
       </Motif>
       {/* 研究所（天文台の丸屋根） */}
@@ -296,13 +316,13 @@ function Landmarks({ v, s, villages }: { v: SceneView; s: number; villages: bool
             stroke={m(v, 'temple') > 0 ? strokeOf(v, 'temple') : m(v, 'noTemple') > 0 ? strokeOf(v, 'noTemple', SILVER_DIM) : SILVER_DIM}
             strokeWidth={0.7}
           />
-          <circle cx={0} cy={-4} r={1.2} fill={m(v, 'noTemple') > 0.3 ? '#23252b' : WARN} opacity={0.9} className={m(v, 'temple') > 0 ? 'sc-pulse' : undefined} style={dur(2.8)} />
+          <circle cx={0} cy={-4} r={1.2} fill={m(v, 'noTemple') > 0.3 ? 'var(--sc-window-off)' : WARN} opacity={0.9} className={m(v, 'temple') > 0 ? 'sc-pulse' : undefined} style={dur(2.8)} />
         </g>
       </Motif>
       {m(v, 'aiCore') > 0 && (
         <Motif v={v} id="aiCore">
           <g transform={`translate(234 ${GROUND})`}>
-            <path d="M-5 0 L-3 -62 L3 -62 L5 0 Z" fill="#0b0c10" stroke={strokeOf(v, 'aiCore')} strokeWidth={0.9} />
+            <path d="M-5 0 L-3 -62 L3 -62 L5 0 Z" fill="var(--sc-fill)" stroke={strokeOf(v, 'aiCore')} strokeWidth={0.9} />
             {[10, 22, 34, 46].map((y, k) => (
               <line key={y} className="sc-pulse" x1={-3} y1={-y} x2={3} y2={-y} stroke={strokeOf(v, 'aiCore', INK)} strokeWidth={0.8} style={{ ...dur(2), ...delay(k * 0.4) }} />
             ))}
@@ -343,7 +363,7 @@ function Landmarks({ v, s, villages }: { v: SceneView; s: number; villages: bool
       {m(v, 'stadium') > 0 && (
         <Motif v={v} id="stadium">
           <g transform={`translate(160 ${GROUND + 5})`}>
-            <ellipse rx={22} ry={6} fill="#14151a" stroke={strokeOf(v, 'stadium')} strokeWidth={0.9} />
+            <ellipse rx={22} ry={6} fill="var(--sc-fill)" stroke={strokeOf(v, 'stadium')} strokeWidth={0.9} />
             <ellipse rx={15} ry={3.2} fill="none" stroke={SILVER_DIM} strokeWidth={0.5} />
             {[-12, -4, 4, 12].map((x, k) => (
               <line key={x} className="sc-twinkle" x1={x} y1={-6} x2={x} y2={-10} stroke={PAPER} strokeWidth={0.6} style={{ ...dur(1.4), ...delay(k * 0.3) }} />
@@ -369,7 +389,7 @@ function Landmarks({ v, s, villages }: { v: SceneView; s: number; villages: bool
           {[128, 166, 238, 262].map((x, i) => (
             <g key={x} transform={`translate(${x} ${GROUND + 4}) scale(1.4)`}>
               <g className="sc-sway" style={{ ...dur(3 + i), ...delay(i) }}>
-                <path d="M-2.4 0 L-2.2 -8 Q 0 -12 2.2 -8 L2.4 0 Z" fill="#000" stroke={strokeOf(v, 'crime', SILVER_DIM)} strokeWidth={0.5} />
+                <path d="M-2.4 0 L-2.2 -8 Q 0 -12 2.2 -8 L2.4 0 Z" fill="var(--sc-void)" stroke={strokeOf(v, 'crime', SILVER_DIM)} strokeWidth={0.5} />
                 <circle cx={-0.8} cy={-8.2} r={0.45} fill={BAD} />
                 <circle cx={0.8} cy={-8.2} r={0.45} fill={BAD} />
               </g>
@@ -385,7 +405,8 @@ function Landmarks({ v, s, villages }: { v: SceneView; s: number; villages: bool
 /** 市場：にぎわう・空の・閉ざされた店、物々交換、金貨、光る支払い端末 */
 function Market({ v }: { v: SceneView }) {
   const busy = m(v, 'marketBusy');
-  const empty = Math.max(m(v, 'marketEmpty'), v.food < 0.3 ? 0.6 : 0);
+  // 食べ物が足りない世界の空の店に、書いた「空の市場」を重ねる（書いたものが埋もれない）
+  const empty = Math.min(1, m(v, 'marketEmpty') + (v.food < 0.3 ? 0.6 : 0));
   const closed = m(v, 'marketClosed');
   const stalls = [150, 176, 228, 252];
   const id = closed > 0 ? 'marketClosed' : busy > 0 ? 'marketBusy' : 'marketEmpty';
@@ -396,10 +417,10 @@ function Market({ v }: { v: SceneView }) {
       <Motif v={v} id={id}>
         {stalls.slice(0, busy > 0.5 ? 4 : 3).map((x, i) => (
           <g key={x} transform={`translate(${x} ${PLAZA - 8})`}>
-            <path d="M-7 -6 L7 -6 L6 -9 L-6 -9 Z" fill="#1a1b21" stroke={i === 3 || busy > 0 || empty > 0 || closed > 0 ? strokeOf(v, id) : SILVER} strokeWidth={0.6} />
+            <path d="M-7 -6 L7 -6 L6 -9 L-6 -9 Z" fill="var(--sc-fill)" stroke={i === 3 || busy > 0 || empty > 0 || closed > 0 ? strokeOf(v, id) : SILVER} strokeWidth={0.6} />
             <path d="M-6 -6 L-6 0 M6 -6 L6 0 M-7 0 L7 0" fill="none" stroke={SILVER_DIM} strokeWidth={0.6} />
             {Array.from({ length: goods }, (_, k) => (
-              <circle key={k} cx={-4 + k * 2} cy={-1.4} r={1} fill={barter ? '#d8c79c' : PAPER} opacity={0.8} />
+              <circle key={k} cx={-4 + k * 2} cy={-1.4} r={1} fill={barter ? 'var(--sc-grain)' : PAPER} opacity={0.8} />
             ))}
             {closed > 0.5 && <path d="M-5 -5 L5 -1 M5 -5 L-5 -1" stroke={strokeOf(v, 'marketClosed')} strokeWidth={0.6} />}
           </g>
@@ -409,8 +430,8 @@ function Market({ v }: { v: SceneView }) {
       {barter && (
         <Motif v={v} id="noMoney">
           <g transform={`translate(202 ${PLAZA - 24})`}>
-            <path d="M-12 2 Q -8 7 -4 2 L-5 -1 L-11 -1 Z" fill="#2a261c" stroke={strokeOf(v, 'noMoney')} strokeWidth={0.6} />
-            <path d="M5 3 Q 4 -3 8 -4 Q 12 -3 11 3 Z" fill="#2a261c" stroke={strokeOf(v, 'noMoney')} strokeWidth={0.6} />
+            <path d="M-12 2 Q -8 7 -4 2 L-5 -1 L-11 -1 Z" fill="var(--sc-sack)" stroke={strokeOf(v, 'noMoney')} strokeWidth={0.6} />
+            <path d="M5 3 Q 4 -3 8 -4 Q 12 -3 11 3 Z" fill="var(--sc-sack)" stroke={strokeOf(v, 'noMoney')} strokeWidth={0.6} />
             <path className="sc-pulse" d="M-3 -4 L3 -4 M1 -6 L3 -4 L1 -2 M3 0 L-3 0 M-1 -2 L-3 0 L-1 2" fill="none" stroke={strokeOf(v, 'noMoney')} strokeWidth={0.6} style={dur(1.8)} />
           </g>
         </Motif>
@@ -433,7 +454,7 @@ function Market({ v }: { v: SceneView }) {
         <Motif v={v} id="cashless">
           {stalls.slice(0, 3).map((x, i) => (
             <g key={x} transform={`translate(${x + 8} ${PLAZA - 10})`}>
-              <rect x={-1.8} y={-3} width={3.6} height={4.6} rx={0.6} fill="#0f141c" stroke={strokeOf(v, 'cashless', INK)} strokeWidth={0.5} />
+              <rect x={-1.8} y={-3} width={3.6} height={4.6} rx={0.6} fill="var(--sc-fill)" stroke={strokeOf(v, 'cashless', INK)} strokeWidth={0.5} />
               <path
                 className="sc-pulse"
                 d="M-1.6 -5 Q 0 -6.4 1.6 -5 M-2.8 -6.4 Q 0 -8.6 2.8 -6.4"
@@ -522,7 +543,7 @@ function Industry({ v, s }: { v: SceneView; s: number }) {
   const idle = m(v, 'factoryIdle');
   const steam = m(v, 'steam');
   const smoke = Math.max(0, Math.min(1, v.industry * 0.5 + v.war * 0.3 + 0.3 * m(v, 'smog'))) * (1 - idle);
-  const smokeFill = steam > 0.3 ? '#e4e6ea' : v.war > 0 ? '#5a5d64' : '#8e9299';
+  const smokeFill = steam > 0.3 ? 'var(--sc-steam)' : v.war > 0 ? 'var(--sc-smoke-war)' : 'var(--sc-smoke)';
   const pumpDry = m(v, 'oilDry');
   const gush = m(v, 'oilGush');
   const cars = Math.round(1 + 3 * v.logistics);
@@ -532,12 +553,23 @@ function Industry({ v, s }: { v: SceneView; s: number }) {
   return (
     <g>
       <Motif v={v} id={idle > 0 ? 'factoryIdle' : 'steam'}>
+        {/* 工場：のこぎり屋根（北向きの明かり取りのガラス面）と煙突。動いている工場は明かり取りが灯る */}
         <path
-          d={`M258 ${GROUND} L258 ${GROUND - 14} L264 ${GROUND - 18} L270 ${GROUND - 14} L270 ${GROUND} Z M266 ${GROUND - 14} L266 ${chimneyTop} L270 ${chimneyTop} L270 ${GROUND - 14}`}
-          fill="#121318"
+          d={`M266.4 ${GROUND - 10} L266.4 ${chimneyTop} L270.4 ${chimneyTop} L270.4 ${GROUND - 9}`}
+          fill="var(--sc-fill)"
           stroke={idle > 0 ? strokeOf(v, 'factoryIdle') : SILVER}
           strokeWidth={0.8}
         />
+        <path
+          d={`M255 ${GROUND} L255 ${GROUND - 14} L260.5 ${GROUND - 9} L260.5 ${GROUND - 14} L266 ${GROUND - 9} L266 ${GROUND - 14} L271.5 ${GROUND - 9} L271.5 ${GROUND} Z`}
+          fill="var(--sc-fill)"
+          stroke={idle > 0 ? strokeOf(v, 'factoryIdle') : SILVER}
+          strokeWidth={0.8}
+        />
+        {[255.6, 261.1, 266.6].map((x) => (
+          <line key={x} x1={x} y1={GROUND - 12.8} x2={x} y2={GROUND - 9.6} stroke={idle > 0.5 || v.industry < 0.2 ? 'var(--sc-window-off)' : 'var(--sc-window-on)'} strokeWidth={0.9} opacity={0.85} />
+        ))}
+        <path d={`M257 ${GROUND} L257 ${GROUND - 4} L260 ${GROUND - 4} L260 ${GROUND}`} fill="none" stroke={SILVER_DIM} strokeWidth={0.5} />
         {smoke > 0.05 &&
           [0, 1, 2, 3].map((k) => (
             <circle
@@ -565,10 +597,10 @@ function Industry({ v, s }: { v: SceneView; s: number }) {
           </g>
           {gush > 0 && (
             <g className="sc-spout" style={dur(1.4)}>
-              <path d="M0 -9 Q -6 -26 -10 -14 M0 -9 Q 6 -28 11 -15 M0 -9 L0 -30" fill="none" stroke="#050506" strokeWidth={2.4} />
+              <path d="M0 -9 Q -6 -26 -10 -14 M0 -9 Q 6 -28 11 -15 M0 -9 L0 -30" fill="none" stroke="var(--sc-oil)" strokeWidth={2.4} />
               <path d="M0 -9 Q -6 -26 -10 -14 M0 -9 Q 6 -28 11 -15 M0 -9 L0 -30" fill="none" stroke={strokeOf(v, 'oilGush')} strokeWidth={0.7} strokeDasharray="2 1.5" />
               {[-10, 11, 0].map((x, k) => (
-                <circle key={k} cx={x} cy={k === 2 ? -31 : -13} r={1.2} fill="#050506" stroke={strokeOf(v, 'oilGush')} strokeWidth={0.4} />
+                <circle key={k} cx={x} cy={k === 2 ? -31 : -13} r={1.2} fill="var(--sc-oil)" stroke={strokeOf(v, 'oilGush')} strokeWidth={0.4} />
               ))}
             </g>
           )}
@@ -587,7 +619,7 @@ function Industry({ v, s }: { v: SceneView; s: number }) {
                 ['--dx' as string]: '120px',
               }}
             >
-              <path d="M-6 0 L-6 -3 L-3 -6 L3 -6 L6 -3 L6 0 Z" fill="#15161b" stroke={auto ? strokeOf(v, 'autoCars') : SILVER} strokeWidth={0.7} />
+              <path d="M-6 0 L-6 -3 L-3 -6 L3 -6 L6 -3 L6 0 Z" fill="var(--sc-fill)" stroke={auto ? strokeOf(v, 'autoCars') : SILVER} strokeWidth={0.7} />
               {auto && <circle cx={7} cy={-2} r={1.2} fill={INK} opacity={0.8} />}
               {slide && <line x1={-16} y1={-1} x2={-8} y2={-1} stroke={strokeOf(v, 'slide')} strokeWidth={0.6} />}
             </g>

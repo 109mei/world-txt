@@ -3,7 +3,7 @@ import { MIGRATIONS } from './migrations';
 import { SaveDataSchema, type Progress, type Settings } from './schema';
 
 /** セーブの版番号。形を変えたら上げて、MIGRATIONS に古い版からの変換を足す */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /**
  * 読み込むセーブの大きさの上限（文字数）。ふつうのセーブは数十KB（何百もの世界を遊んでも100KBほど）。

@@ -6,8 +6,9 @@
  *   - 例外を投げない、時間を進めても数値が壊れない（NaN・無限大にならない）
  *   - その行と関係のない言葉を入れた文が、その行の特定の読み取りや削除にならない
  *   - 書き足した文が、主語の違う行の書き換えとして読まれない
+ *   - 棋譜（P23）：書いて進めた世界を、棋譜から作り直すと同じ世界になる（ずれたら、どこかに乱数か時刻に頼る計算が残っている）
  */
-import { advance, canonical, createGame, originalText, planWrite, write, type GameData, type GameState, type WriteTarget } from '../src/core';
+import { advance, canonical, createGame, kifuOf, originalText, planWrite, replayKifu, write, type GameData, type GameState, type WriteTarget } from '../src/core';
 import { gameData } from '../src/data';
 
 /** 入れてみる名詞（世界の言葉・日常の言葉・知らない言葉・英語・記号） */
@@ -161,6 +162,7 @@ function main(): void {
   const flagged: { c: Case; o: Outcome; why: string }[] = [];
   const errors: string[] = [];
   let simulated = 0;
+  let replayed = 0;
   list.forEach((c, i) => {
     const g = createGame(gameData, 'food', 1);
     g.sim.capacityMax += 40 * 6;
@@ -185,12 +187,19 @@ function main(): void {
         const b = broken(g);
         if (b) errors.push(`数値が壊れた: 「${c.text}」 ${b}`);
         simulated += 1;
+        // 棋譜：手を加えていない世界で書いて進め、棋譜から作り直した世界と比べる
+        const w = createGame(gameData, 'food', 1000 + i);
+        write(w, gameData, c.target, c.text);
+        advance(w, gameData, 5);
+        const again = replayKifu(gameData, kifuOf(w, gameData));
+        if (JSON.stringify([again.sim, again.texts, again.year, again.status]) !== JSON.stringify([w.sim, w.texts, w.year, w.status])) errors.push(`棋譜の再生がずれた: 「${c.text}」`);
+        replayed += 1;
       } catch (e) {
         errors.push(`進めて例外: 「${c.text}」 ${(e as Error).message}`);
       }
     }
   });
-  console.log(`試した文 ${list.length}（時間を進めた ${simulated}）`);
+  console.log(`試した文 ${list.length}（時間を進めた ${simulated}・棋譜から作り直した ${replayed}）`);
   console.log(`結果の種類 ${JSON.stringify(byKind)}`);
   console.log(`例外・数値の破綻 ${errors.length}`);
   for (const e of errors.slice(0, 20)) console.log(`  ${e}`);

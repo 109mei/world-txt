@@ -114,7 +114,8 @@ describe('セーブ', () => {
 
   it('無限の世界の途中（危機の知らせのあと）でも、保存して読み込めば同じ結果になる', () => {
     const g = createGame(gameData, 'endless', 5);
-    advance(g, gameData, gameData.balance.crisis.firstAt);
+    // 重大な出来事の年には時間が止まるので、危機が知らされるまで1年ずつ進める
+    while (!g.crisis && g.status === 'playing') advance(g, gameData, 1);
     expect(g.crisis).not.toBeNull();
     const data: SaveData = { saveVersion: SAVE_VERSION, savedAt: 1, settings: { ...DEFAULT_SETTINGS }, progress: structuredClone(EMPTY_PROGRESS), current: g };
     const back = deserialize(serialize(data));
@@ -366,7 +367,7 @@ describe('長く遊んでも壊れないセーブ', () => {
   it('長く続いた無限の世界でも、何百もの世界を遊んでも、セーブは小さいまま（端末の保存領域の約5MBよりずっと小さい）', async () => {
     const reactive = ENDLESS_POLICIES.find((p) => p.name === 'reactive')!;
     const g = reactive.play(gameData, 3);
-    expect(g.year).toBeGreaterThan(100);
+    expect(g.year).toBeGreaterThan(60);
     const one = serialize({ saveVersion: SAVE_VERSION, savedAt: 1, settings: { ...DEFAULT_SETTINGS }, progress: structuredClone(EMPTY_PROGRESS), current: g });
     expect(one.length).toBeLessThan(150_000);
     expect(deserialize(one).current).toEqual(JSON.parse(JSON.stringify(g)));

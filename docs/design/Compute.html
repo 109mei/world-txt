@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>計算（時間を進める）</title>
+
+</head>
+<body>
+<div>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&amp;family=Shippori+Mincho:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#030304;font-family:'Shippori Mincho',serif;color:#eceae4}
+a{color:#eceae4;text-decoration:none}a:hover{color:#ffffff}
+/* 1年進めたときに1回だけ（約1.2秒）。動くのは「回る年」と「流れる世界」の2つだけ */
+@keyframes roll{from{transform:translateY(0)}to{transform:translateY(-96px)}}
+@keyframes rush{from{transform:translateX(0)}to{transform:translateX(-160px)}}
+.roll{animation:roll 1.2s cubic-bezier(.7,0,.2,1) 1 both}
+.rush{animation:rush 1.2s linear 1 both}
+@media (prefers-reduced-motion: reduce){.roll,.rush{animation:none}}
+</style>
+</helmet>
+<a href="Chain.html" aria-label="計算の演出。タップで飛ばして結果へ" style="width: 390px; height: 844px; box-sizing: border-box; background: #030304; position: relative; overflow: hidden; display: block; font-family: 'Shippori Mincho', serif; color: #eceae4;">
+
+<svg width="390" height="844" viewBox="0 0 390 844" style="position: absolute; left: 0; top: 0;" aria-hidden="true">
+<defs>
+<filter id="vblur" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="0 7"></feGaussianBlur></filter>
+<filter id="hblur" x="-40%" y="-20%" width="180%" height="140%"><feGaussianBlur stdDeviation="7 0"></feGaussianBlur></filter>
+<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"></feGaussianBlur></filter>
+</defs>
+<g stroke="#d8dbe2" stroke-width="0.6" fill="none" opacity="0.18">
+<circle cx="195" cy="330" r="150"></circle>
+<circle cx="195" cy="330" r="112" stroke-dasharray="2 6"></circle>
+<path d="M45 330H345M195 180V480"></path>
+</g>
+<g font-family="'Cormorant Garamond', serif" font-style="italic" fill="#a2a5ac" font-size="15" opacity="0.5">
+<text x="36" y="150">x(t+1) = F( x(t), L )</text>
+<text x="214" y="200">L = WORLD.txt</text>
+<text x="170" y="96">P(t+1) = P(t)(1 + b − d)</text>
+<text x="22" y="236">dT/dt ∝ ln(CO₂/C₀)</text>
+<text x="240" y="150">Σ food − Σ need</text>
+</g>
+</svg>
+
+<div style="position: absolute; left: 0; top: 250px; width: 390px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+<div style="font-family: 'Cormorant Garamond', serif; font-size: 13px; letter-spacing: 0.6em; color: #a2a5ac;">YEAR</div>
+<div style="width: 180px; height: 96px; overflow: hidden; position: relative;">
+<svg class="roll" width="180" height="192" viewBox="0 0 180 192" style="display: block;" aria-hidden="true">
+<text x="90" y="80" text-anchor="middle" font-family="'Cormorant Garamond', serif" font-size="92" font-weight="600" fill="#eceae4" filter="url(#vblur)" opacity="0.8">12</text>
+<text x="90" y="176" text-anchor="middle" font-family="'Cormorant Garamond', serif" font-size="92" font-weight="600" fill="#eceae4">13</text>
+</svg>
+</div>
+<div style="font-size: 13px; color: #a2a5ac; letter-spacing: 0.2em;">12 → 13</div>
+</div>
+
+<svg width="390" height="200" viewBox="0 0 390 200" style="position: absolute; left: 0; top: 640px;" aria-hidden="true">
+<path d="M0 90Q70 60 140 80T280 74T390 70V200H0Z" fill="#08090b" stroke="#3a3d44" stroke-width="1"></path>
+<g stroke="#d8dbe2" stroke-width="1" fill="#0b0c0e"><path d="M170 120V84h12v36"></path><path d="M186 120V70l8-10 8 10v50"></path><path d="M206 120V90h12v30"></path></g>
+<g class="rush">
+<g filter="url(#hblur)" fill="#0c0d10" stroke="#a2a5ac" stroke-width="1"><path d="M60 40c4-9 16-9 20-2 7-4 16 2 14 9H54c-2-5 2-8 6-7z"></path><path d="M300 28c4-8 14-8 17-1 6-3 14 2 12 8H294c-2-4 1-7 6-7z"></path></g>
+<g stroke="#a2a5ac" stroke-width="1" fill="none" opacity="0.35"><path d="M84 40c4-9 16-9 20-2 7-4 16 2 14 9H78"></path></g>
+<g stroke="#d8dbe2" stroke-width="1.2" fill="none" filter="url(#hblur)"><circle cx="120" cy="138" r="2.4"></circle><path d="M120 141v8l-3 6M120 149l3 6"></path><circle cx="150" cy="140" r="2.4"></circle><path d="M150 143v8l-3 6M150 151l3 6"></path><circle cx="250" cy="138" r="2.4"></circle><path d="M250 141v8l-3 6M250 149l3 6"></path></g>
+<g stroke="#8b8f97" stroke-width="1" fill="none" opacity="0.5"><path d="M128 146h18M158 148h18M258 146h18"></path></g>
+<path d="M330 160l14 0-3 6h-8z" fill="none" stroke="#d8dbe2" stroke-width="1" filter="url(#hblur)"></path>
+</g>
+</svg>
+
+<div style="position: absolute; left: 0; top: 486px; width: 390px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+<div style="font-size: 17px; letter-spacing: 0.12em;">世界が、決まりどおりに計算されている</div>
+<div style="margin-top: 14px; font-size: 12px; color: #8b8f97; letter-spacing: 0.2em;">タップで飛ばす</div>
+</div>
+</a>
+</div>
+
+</body>
+</html>

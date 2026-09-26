@@ -266,6 +266,7 @@ export const SCENE_MOTIFS = [
   'seaBubbles', // 海から湧く泡
   'seaCity', // 海底の町
   'springs', // 湧き水
+  'reservoir', // ため池・ダム（水をためる仕組み。貯水池に堤ができ、水位が上がる）
   // 町と技術と社会
   'megacity', // 巨大な塔
   'villages', // 小さな村
@@ -419,7 +420,7 @@ export const NEWS_CATEGORIES = ['WORLD', 'SCIENCE', 'ECONOMY', 'TRANSPORT', 'SOC
 export type NewsCategory = (typeof NEWS_CATEGORIES)[number];
 export const NewsCategorySchema = z.enum(NEWS_CATEGORIES);
 
-export const STAGE_IDS = ['food', 'plague', 'climate', 'war', 'energy', 'tiny', 'loop', 'endless'] as const;
+export const STAGE_IDS = ['prologue', 'food', 'plague', 'climate', 'war', 'energy', 'tiny', 'loop', 'endless'] as const;
 export type StageId = (typeof STAGE_IDS)[number];
 export const StageIdSchema = z.enum(STAGE_IDS);
 
@@ -436,6 +437,8 @@ export const ConceptSchema = z.object({
   id: z.string(),
   name: z.string(),
   icon: IconKeySchema,
+  /** 世界の適応の理由（なぜ？）。書かなければ、その概念の意味は適応しない（変わらない物の理） */
+  adapt: z.string().optional(),
 });
 export type Concept = z.infer<typeof ConceptSchema>;
 
@@ -532,10 +535,82 @@ export const LawSchema = z.object({
   fact: z.string().optional(),
   initial: z.string(),
   options: z.array(LawOptionSchema).min(2),
+  /**
+   * 消して空白になった行を、世界がいちばん起こりやすい形で埋めるときの読み取り（options の id）。
+   * 多くの行は元の文に戻る。争い・兵器・犯罪のような行は「別の形で続く」
+   */
+  voidFill: z.string().default('original'),
+  /** 世界が埋めたときの「なぜ？」（なければ、ふつうの説明） */
+  voidWhy: z.string().optional(),
+  /** この行が支えている行（この行が消えると、頼っている行が宙に浮き、世界が揺らぐ） */
+  supports: z.array(z.string()).default([]),
 });
 export type Law = z.infer<typeof LawSchema>;
 
 // ---------------------------------------------------------------- 書き足した一文の言い回し
+
+// ---------------------------------------------------------------- 開いていく順番（P18・分析の13章）
+
+/** 学問の仕組み（世界の決まり）。物理・工学8、心理学9、社会の学問8。画面では学問の名前を出さず、普通の言葉で呼ぶ */
+export const RuleSchema = z.object({
+  id: z.string(),
+  name: z.string().max(24),
+  field: z.enum(['physics', 'psych', 'social']),
+  text: z.string().max(80),
+  /** 世界で初めて起きたとき、この決まりに出会ったことになるもの（観測記録の id） */
+  found: z.array(z.string()).default([]),
+  /** 出典つきの「現実のカード」 */
+  card: z.object({ text: z.string().max(100), source: z.string().max(60) }),
+});
+export type WorldRule = z.infer<typeof RuleSchema>;
+
+/** 開いていく順番の1段：開く条件（救った世界の数・遊んだステージ・初めて起きたこと）、開くステージと筆の位、紹介する1つの考え、開く画面 */
+export const UnlockStepSchema = z.object({
+  id: z.string(),
+  when: z.object({ clears: z.number().int().nonnegative().optional(), played: StageIdSchema.optional(), found: z.string().optional() }),
+  stage: StageIdSchema.optional(),
+  rank: z.number().int().nonnegative().optional(),
+  idea: z.string().max(60),
+  /** その段で出会う決まりの短い言い方（世界を選ぶ画面で「考え／決まり」と並べる） */
+  meet: z.string().max(40),
+  rules: z.array(z.string()).min(1),
+  screen: z.string().max(80),
+  /** この段が開いたら、すべての決まりを本来の強さで動かす（最後の段） */
+  full: z.boolean().default(false),
+});
+export type UnlockStep = z.infer<typeof UnlockStepSchema>;
+
+/** 発見で開くもの：世界で初めて起きたこと → ノートに増える「わかった世界の決まり」 → 開くもの */
+export const DiscoverySchema = z.object({
+  found: z.string(),
+  rule: z.string().optional(),
+  name: z.string().max(24),
+  opens: z.string().max(60),
+  /** 世界で初めて起きたこと（ロック中の画面に「〇〇が起きると開く」と出す） */
+  event: z.string().max(60),
+});
+
+export const UnlocksSchema = z.object({ rules: z.array(RuleSchema), steps: z.array(UnlockStepSchema), discoveries: z.array(DiscoverySchema) });
+export type Unlocks = z.infer<typeof UnlocksSchema>;
+
+/**
+ * 画面に出る現実の数字の出典（docs/SOURCES.md）。鍵は「ファイル/id/欄」（例：laws/human_food/fact）。
+ * check：確認済み（出典と合う）か、要確認（出典が見つからない・確かめきれない）
+ */
+export const SourceSchema = z.object({
+  name: z.string().max(120),
+  year: z.number().int().min(1800).max(2100).optional(),
+  url: z.string().max(400).optional(),
+  /** 数字がいつの値か */
+  asOf: z.number().int().min(1000).max(2100).optional(),
+  check: z.enum(['確認済み', '要確認']),
+});
+export type Source = z.infer<typeof SourceSchema>;
+export const SourcesSchema = z.record(z.string().regex(/^[a-z]+\/[\w.]+\/[\w.[\]]+$/u), SourceSchema);
+
+/** 書き方の読み分け：性質（心から）・制度（決まりで守らせる）・条件つき（条件を満たした年だけ） */
+export const READ_MODES = ['nature', 'rule', 'conditional'] as const;
+export type ReadMode = (typeof READ_MODES)[number];
 
 export const PhraseSchema = z.object({
   id: z.string(),
@@ -573,6 +648,13 @@ export const PhraseSchema = z.object({
   onset: z.string().max(80),
   /** 情景での描き方 */
   scene: SceneSpecSchema,
+  /** 世界の適応の理由（なぜ？）。書いた概念は年とともに効きが落ちる。書かなければ（宇宙や物の理の言い回し）、落ちない */
+  adapt: z.string().optional(),
+  /**
+   * 人の振る舞いの言い回しの、語尾に手がかりがないときの読まれ方（性質・制度）。
+   * 書かなければ読み分けない（物や自然の言い回し）。語尾に制度・条件つきの手がかりがあれば、そちらに読む
+   */
+  mode: z.enum(READ_MODES).optional(),
 });
 export type Phrase = z.infer<typeof PhraseSchema>;
 
@@ -591,6 +673,15 @@ export const LexiconSchema = z.object({
   kinds: z.record(z.string(), z.array(z.string())).default({}),
   /** 辞書にない言葉の種類を推し量る語尾（「力」→力、「病」→病気） */
   suffixes: z.record(z.string(), z.string()).default({}),
+  /** すぐ後ろの「が」が送りがなになる1文字の漢字（泳がない・防がない）。助詞のゆれをそろえるときに変えない */
+  gaVerbs: z.array(z.string().length(1)).default([]),
+  /** 言い切りの強さの言葉：strong は効きも反動も大きい（すべて・決して）、mild は絞る（少し・ときどき） */
+  strength: z.object({ strong: z.array(z.string()), mild: z.array(z.string()) }).default({ strong: [], mild: [] }),
+  /**
+   * 書き方の読み分けの語尾：rule（制度。〜なければならない・〜させる・〜を配る・法律で）、conditional（条件つき。〜とき・〜なら・余った）。
+   * どちらもなければ性質（心から）。人の振る舞いの言い回し（phrases.json の mode）にだけ効く
+   */
+  modes: z.object({ rule: z.array(z.string()), conditional: z.array(z.string()) }).default({ rule: [], conditional: [] }),
 });
 export type Lexicon = z.infer<typeof LexiconSchema>;
 
@@ -673,6 +764,13 @@ export type EventEffects = z.infer<typeof EventEffectsSchema>;
 export const SEVERITIES = ['info', 'warn', 'critical'] as const;
 export type Severity = (typeof SEVERITIES)[number];
 
+/**
+ * 出来事の打撃を強めた要因（書き換えから来ていれば、その行を原因として示す）。
+ * when が成り立っていれば、その条件を満たしている行を原因にし、via を「行 → via → 出来事」のあいだに出す
+ */
+export const BlameSchema = z.object({ when: ConditionSchema, via: z.string().max(20) });
+export type Blame = z.infer<typeof BlameSchema>;
+
 export const EventSchema = z.object({
   id: z.string(),
   category: NewsCategorySchema,
@@ -681,10 +779,20 @@ export const EventSchema = z.object({
   /** なぜそうなるのか（現実の仕組み） */
   why: z.string().optional(),
   when: z.array(ConditionSchema).default([]),
-  /** 条件を満たした年に起こる確率 */
+  /**
+   * 1年あたりの起きやすさ。1 未満の出来事は、条件のそろった年ごとにこの分だけ「起きる力」がたまり、1 に届いた年に必ず起きる
+   * （さいころは振らない。長い目で見た回数は確率と同じ）
+   */
   chance: unit.default(1),
-  /** 確率に掛ける係数（例 outbreak） */
+  /** 起きやすさに掛ける係数（例 outbreak） */
   chanceChannel: ChannelIdSchema.optional(),
+  /**
+   * 起きる力がたまってきたときの兆し（起きかけていること）。現実に前ぶれのあるものだけに書く
+   * （地震や太陽フレアのように、何年も前に前ぶれの出ないものには書かない）
+   */
+  sign: z.string().max(60).optional(),
+  /** 打撃を強めた要因（上から順に確かめる） */
+  blame: z.array(BlameSchema).default([]),
   once: z.boolean().default(true),
   cooldown: z.number().int().nonnegative().default(0),
   severity: z.enum(SEVERITIES).default('info'),
@@ -731,14 +839,22 @@ export type Ending = z.infer<typeof EndingSchema>;
  * 実績。world：遊んでいる世界の条件（core の条件の書き方）。end：世界が終わったとき（clear / fail / any）。
  * progress：これまでの進み具合（「cleared >= 6」「discovered >= 300」「endlessBest >= 100」「endings >= 5」）
  */
+/** 実績の4つの種類：発見・腕前・物語・遊び方（分析の17章） */
+export const ACHIEVEMENT_KINDS = ['discovery', 'skill', 'story', 'play'] as const;
+
 export const AchievementSchema = z.object({
   id: z.string(),
   name: z.string(),
-  /** 得たあとに見せる説明 */
+  /** 得たときに見せる、何がうまかったかの1行 */
   text: z.string(),
   icon: IconKeySchema,
+  kind: z.enum(ACHIEVEMENT_KINDS),
   /** 得るまで名前も隠す */
   hidden: z.boolean().default(false),
+  /** 隠しのおまけ：達成の数に入れない（負けや放棄で取れるもの） */
+  bonus: z.boolean().default(false),
+  /** 隠し実績の手がかり（図鑑で、種類ごとに1つ見せる） */
+  hint: z.string().max(40).optional(),
   world: z.array(ConditionSchema).default([]),
   end: z.enum(['clear', 'fail', 'any']).optional(),
   progress: z.array(z.string()).default([]),
@@ -776,6 +892,8 @@ export const CrisisSchema = z.object({
   softenedBy: z.array(z.array(ConditionSchema).min(1)).default([]),
   /** 強さ 1 のときの効果（強さに合わせて大きくなる） */
   effects: EventEffectsSchema,
+  /** この危機が突く柱の項目（いちばん弱っている項目の危機がやってくる） */
+  target: IndicatorIdSchema,
 });
 export type Crisis = z.infer<typeof CrisisSchema>;
 
@@ -790,6 +908,8 @@ export const AnomalySchema = z.object({
   /** この整合性より下で起こりうる */
   below: z.number(),
   effects: EventEffectsSchema,
+  /** 関わる概念（世界をいちばん揺らしている行の概念に関わる異常が、先に起きる） */
+  concepts: z.array(z.string()).default([]),
 });
 export type Anomaly = z.infer<typeof AnomalySchema>;
 
@@ -858,6 +978,35 @@ export const IndicatorsSchema = z.object({
   }),
   /** 無限の世界の称号 [この年数以上, 称号] を短い順に */
   ranks: z.array(z.tuple([z.number(), z.string()])).min(1),
+  /**
+   * 4つの柱（命・糧・社会・大地）：一目で追うのは世界の寿命と4つの柱だけ。柱には、いちばん低い項目とその状態の言葉を出す。
+   * items は柱に入る項目（14の項目は、どれかちょうど1つの柱に入る）
+   */
+  pillars: z.array(z.object({ id: z.string(), name: z.string().max(4), icon: IconKeySchema, items: z.array(IndicatorIdSchema).min(1) })).length(4),
+  /** 柱の棒の上の終わりの線の位置（4本とも同じ位置） */
+  pillarLine: z.number().min(0.05).max(0.5),
+  /** 起きかけていること（兆し）の文。twist の {name} は副作用の名前 */
+  signs: z.object({ war: z.string().max(60), twist: z.string().max(40) }),
+  /** 空白の行を世界が埋めたときの知らせ（{text} に埋めた文）と、ふつうの「なぜ？」 */
+  voids: z.object({ filled: z.string().max(60), why: z.string().max(120) }),
+  /** 書いた意味の効きが落ちてきたときの知らせ（{name} に読み取りの名前） */
+  adapt: z.string().max(60),
+  /** 人々の心の知らせ（買いだめが始まった年・限りを超えた暮らしが続いた年）と、起きかけていることの文 */
+  people: z.object({
+    hoard: z.object({ text: z.string().max(60), why: z.string().max(140) }),
+    overshoot: z.object({ text: z.string().max(60), why: z.string().max(140) }),
+    signs: z.object({ slowing: z.string().max(40), overshoot: z.string().max(40), anxiety: z.string().max(40) }),
+    /** 命の柱の中身（人々の心）の言葉。数字ではなく、言葉と棒で見せる */
+    view: z.object({
+      title: z.string().max(20),
+      trust: z.object({ name: z.string().max(12), words: z.tuple([z.string(), z.string(), z.string()]) }),
+      anxiety: z.object({ name: z.string().max(12), words: z.tuple([z.string(), z.string(), z.string()]), line: z.string().max(20) }),
+      habit: z.object({ name: z.string().max(12), words: z.tuple([z.string(), z.string(), z.string()]) }),
+      spread: z.object({ name: z.string().max(16), line: z.string().max(20), none: z.string().max(40) }),
+    }),
+  }),
+  /** 書き方の読み分け（性質・制度・条件つき）の名前と、1行の説明（効き方の違いだけ。結果の向きと大きさは言わない） */
+  modes: z.object({ nature: z.object({ name: z.string().max(8), note: z.string().max(40) }), rule: z.object({ name: z.string().max(8), note: z.string().max(40) }), conditional: z.object({ name: z.string().max(8), note: z.string().max(40) }) }),
 });
 export type Indicators = z.infer<typeof IndicatorsSchema>;
 
@@ -914,8 +1063,81 @@ export const StageSchema = z.object({
   unlock: z.number().int().nonnegative().default(0),
   /** 最初から WORLD.txt が世界容量を超えている（極小世界） */
   overflow: z.boolean().default(false),
+  /** 序章：WORLD.txt に見せる行（書かなければ、すべての行） */
+  lines: z.array(z.string()).optional(),
+  /** 年ごとの一行の手引き（その年に試すこと） */
+  guide: z.array(z.string().max(80)).default([]),
+  /**
+   * 序章の手引き：年ごとに1つの操作（書き換える・書き足す・消す）を、押す順の手順で示す。
+   * done は手順が済んだ印（tab:laws 法則のタブを開いた・edit:行の id か edit:new その行を書く画面を開いた・move その年の操作をした・year 時間を進めた）。
+   * target は光らせる押す物（data-testid）。after は、時間を進めた次の年に結ぶ一文
+   */
+  tutorial: z
+    .array(
+      z.object({
+        title: z.string().max(12),
+        lead: z.string().max(60),
+        move: z.enum(['rewrite', 'add', 'delete']),
+        /** 手本の行と文（テストが、はじめての筆で書けて次の年に世界へ表れることを確かめる。消す手引きは文なし） */
+        law: z.string().optional(),
+        example: z.string().max(40).optional(),
+        steps: z
+          .array(
+            z.object({
+              text: z.string().max(64),
+              done: z.string().regex(/^(tab:laws|edit:new|edit:[a-z0-9_]+|move|year)$/u),
+              target: z.string().max(40).optional(),
+            }),
+          )
+          .min(1)
+          .max(5),
+        after: z.string().max(80),
+      }),
+    )
+    .default([]),
+  /** 作り手の解の手数（書き換え・書き足し・消すの合計。原因の型のない世界）。これ以内で救うと「少ない手で」の印 */
+  par: z.number().int().positive().optional(),
+  /** 3つの印を付ける世界か（序章と無限の世界には付けない） */
+  marks: z.boolean().default(true),
+  /**
+   * 改稿者の試練：その世界の3つの印をそろえると開く難しい版。double は原因の型が2つ重なる（cause が2つ目の型）、
+   * late は型の兆しが late 年遅れて出る、few は書き換えの力が edits だけ（戻る年と上限も）
+   */
+  trial: z
+    .object({
+      kind: z.enum(['double', 'late', 'few']),
+      name: z.string().max(40),
+      cause: z.string().optional(),
+      late: z.number().int().nonnegative().default(0),
+      edits: z.object({ start: z.number().int().nonnegative(), every: z.number().int().positive(), max: z.number().int().positive() }).optional(),
+    })
+    .optional(),
+  /** 兆しの読み方（同じステージで3回負けるごとに1つずつノートに開く。開いたものは閉じない） */
+  hints: z.array(z.string().max(120)).default([]),
   /** 無限の世界：目標の年はなく、文明が滅ぶまで続く。危機がやってくる */
   endless: z.boolean().default(false),
+  /**
+   * 原因の型：同じステージでも、世界番号ごとに危機の原因が違う（食料なら水・届かない・病害）。
+   * mods は型の環境、start ははじめの状態のずれ（足し算）。型の兆しは events.json の「cause:型」の条件で出す。
+   * はじめてそのステージで遊ぶときは first の型から始まる（見立てを覚える前の世界）
+   */
+  causes: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string().max(20),
+        mods: ModsSchema.default({}),
+        start: z.partialRecord(z.enum(['agri', 'industry', 'energyCap', 'oilReserve', 'infra', 'science', 'eco', 'co2', 'temp', 'pathogen', 'immunity', 'stability', 'happiness', 'tension', 'unemployment']), z.number()).default({}),
+        weight: pos.default(1),
+        /** 世界容量が1年にさらに縮む量（使える文字数の型） */
+        capacityDecay: pos.default(0),
+        /** 作り手の解の手数（この型の世界を、この手数以内で救うと「少ない手で」の印） */
+        par: z.number().int().positive().optional(),
+      }),
+    )
+    .default([]),
+  /** はじめてそのステージで遊ぶときの型（causes の id） */
+  firstCause: z.string().optional(),
   /**
    * くり返す世界：years 年目の終わりに breakWhen を満たしていなければ、世界は0年目へ巻き戻る（暦も乱数も戻る）。
    * その前に文明が崩れても巻き戻る。書いた WORLD.txt・観測記録・世界史は残る。
@@ -1079,10 +1301,21 @@ export const BalanceSchema = z.object({
     instability: pos,
     climate: pos,
     rate: unit,
+    /** 物価の上がる速さが、国と国の緊張を上げる（食料価格の高騰と暴動。Lagi ほか 2011） */
+    prices: pos.default(30),
   }),
+  /**
+   * 戦争の始まり（閾値のなだれ）：人々が戦いに加わる閾値は平均 mu・ばらつき sigma の正規分布。
+   * 緊張に、加わった人の割合 × amp を足して加わる人を数え直し、半分を超えると戦争が始まる（さいころは振らない）。
+   * 戦争の起こりやすさ（係数 war）が倍になるごとに、閾値の平均が channelShift だけ下がる（半分になれば上がる）。
+   * 緊張があと signMargin 上がると始まる年は、兆しを出す
+   */
   war: z.object({
-    threshold: pos,
-    scale: pos,
+    mu: pos,
+    sigma: divisor,
+    amp: pos,
+    channelShift: pos,
+    signMargin: pos,
     intensity: unit,
     exhaust: pos,
     exhaustGrowth: pos,
@@ -1165,6 +1398,66 @@ export const BalanceSchema = z.object({
     soften: unit,
   }),
   forecast: z.object({ years: z.number().int().positive(), fast: pos, slow: pos }),
+  /**
+   * 世界番号から決まる、はじめの数値の少しの違い（状態の名前 → ずらす幅。割合で書く量と、足す量）。
+   * 同じ世界番号なら、いつも同じ違いになる
+   */
+  world: z.object({
+    scale: z.partialRecord(z.enum(['pop', 'agri', 'industry', 'energyCap', 'oilReserve', 'infra', 'science']), unit).default({}),
+    shift: z.partialRecord(z.enum(['eco', 'co2', 'temp', 'stability', 'happiness', 'tension', 'pathogen']), pos).default({}),
+  }),
+  /** 起きかけていること：出来事の起きる力がこれ以上たまったら兆しを出す。副作用は育ち具合がこれ以上で兆し */
+  signs: z.object({ eventAt: unit, twistAt: unit, max: z.number().int().positive() }),
+  /**
+   * 空白：消した行は years 年のうちに書き換え・書き足しで埋めなければ、世界が埋める。
+   * scar は消し跡（消した行の字数のうち、世界容量に残る割合）。supportIncoherence は、支えている行が消えたときに頼っている行1つが下げる整合性
+   */
+  voids: z.object({ years: z.number().int().positive(), scar: unit, supportIncoherence: pos }),
+  /**
+   * 言い切りの強さ：書いた文の強さで、効き目（係数の動き）が strong・plain・mild 倍になる。
+   * 反動（副作用の育ち方）は、その強さの backlash 乗で大きくなる（強く言い切るほど、効きより反動が大きく育つ）
+   */
+  strength: z.object({ strong: pos, plain: pos, mild: pos, backlash: pos }),
+  /** 上書きの傷：同じ行を2度目から書き直すたびに、世界整合性を incoherence だけ下げる */
+  overwrite: z.object({ incoherence: pos }),
+  /**
+   * 世界の適応：書いた意味は、書いてから after 年たつと効きが落ち始め、さらに span 年かけて floor 倍まで落ちる
+   * （病原体が別の道を見つける・害虫が慣れる・効率が上がると使う量が増える）。変わらない物の理（steady）の概念は落ちない
+   */
+  adapt: z.object({ after: z.number().nonnegative(), span: divisor, floor: unit, noticeAt: unit }),
+  /**
+   * 効き始めまでの遅れ（年）：書き換えた行・書き足した行の意味は、書いてからこの年数たって効き始める（遅れと行きすぎ）。
+   * 行の概念ごと（concepts）と、書き足す仕組みごと（phrases）。書いていないものは遅れなし（翌年から効く）
+   */
+  delays: z.object({ concepts: z.record(z.string(), z.number().int().nonnegative()).default({}), phrases: z.record(z.string(), z.number().int().nonnegative()).default({}) }),
+  /** 紹介する前の決まりの強さ（本来の強さの割合）と、紹介した年から1年に戻る量（P18） */
+  intro: z.object({ before: unit, ramp: unit, hintEvery: z.number().int().positive() }),
+  /** 世界の人々の心と、社会の学問の振る舞い（src/core/people.ts） */
+  people: z.object({
+    start: z.object({ trust: pos, anxiety: pos }),
+    living: z.object({ food: pos, water: pos, energy: pos, unemp: pos, min: pos, max: pos }),
+    ref: z.object({ rate: unit, happy: pos, stability: pos, loss: pos }),
+    peak: z.object({ decay: pos, tension: pos }),
+    trust: z.object({ up: pos, upStability: pos, down: z.object({ shortage: pos, blackMarket: pos, coherence: pos, war: pos }), ruleMin: unit, ruleRef: divisor }),
+    anxiety: z.object({ base: pos, shortage: pos, prices: pos, stock: pos, trust: pos, rate: unit, hoardAt: pos, hoardTrust: pos, hoardHit: unit }),
+    caution: z.object({ gain: pos, relax: unit, effect: unit }),
+    overshoot: z.object({ eco: pos, water: pos, amp: pos, max: pos, signAt: pos }),
+    slowing: z.object({ line: pos, civSpan: divisor, floor: unit, signAt: unit }),
+    scarcity: z.object({ science: unit }),
+    demography: z.object({ science: pos, medicine: pos }),
+    spread: z.object({ seed: unit, rate: pos, tipping: unit, boost: pos, trustStop: pos, trustFull: pos, crowdOut: unit, crowdCap: unit, freeRideFrom: unit, freeRide: unit }),
+  }),
+  /**
+   * 書き方の読み分け：性質は考え方が広がった分だけ効き（people.spread）、国家の行がなくても効く。制度は翌年から効くが、国家の行が
+   * 消えている年・空白の年は効かず、信頼が低いと形だけ守られ、ruleTwists（闇市・働く意欲の低下）が育つ。
+   * 条件つきは、足りない年・揺らいだ年だけ conditionalScale 倍で効く
+   */
+  modes: z.object({
+    conditionalScale: unit,
+    /** 条件つきが効く年：食べ物・水・エネルギーのどれかがこれを下回るか、社会の安定がこれを下回る年 */
+    needBelow: z.object({ supply: pos, stability: pos }),
+    ruleTwists: z.array(TwistRefSchema).default([]),
+  }),
   news: z.object({ perYear: z.number().int().positive(), historyMax: z.number().int().positive() }),
   /**
    * 書き換えの勢い：世界の定義を書き換えると、ゆっくり動く量（産業・社会・心・気温など）の向かう先が動く。
@@ -1188,6 +1481,27 @@ const SceneMotifsSchema = z.partialRecord(SceneMotifSchema, z.number().min(0).ma
  * anomalies・eventIcons：その年に起きた世界異常と、重大な出来事（アイコンごと）／kinds：言葉の種類ごとの小さな絵の形
  */
 export const SceneDataSchema = z.object({
+  /**
+   * 情景の名前（P14）：施設の名前と、添える項目の状態の言葉、絵の上の位置（390×220 の座標）。
+   * icons は、そのアイコンの「起きかけていること」のカードを押したときに光らせる名前
+   */
+  labels: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string().max(8),
+        /** 添える状態の言葉の項目（ないと、状態の言葉は出さない） */
+        item: IndicatorIdSchema.optional(),
+        x: z.number().min(0).max(390),
+        y: z.number().min(0).max(220),
+        icons: z.array(IconKeySchema),
+        /** 世界の中の量（sim）がこれを超えたら、状態の言葉の代わりに出す言葉（例：作物の病気が広がると「病気」） */
+        alert: z.object({ sim: z.enum(['blight']), above: z.number().min(0), word: z.string().max(4) }).optional(),
+        /** 出すとき：その項目の点数がこれより低いとき（item と below）／空白の行（消した行）があるとき（voids）。ないといつも出す */
+        when: z.union([z.object({ item: IndicatorIdSchema, below: z.number().min(0).max(100) }), z.literal('voids')]).optional(),
+      }),
+    )
+    .default([]),
   twists: z.record(z.string(), SceneMotifsSchema),
   crises: z.record(z.string(), SceneMotifsSchema),
   endings: z.record(z.string(), SceneMotifsSchema),

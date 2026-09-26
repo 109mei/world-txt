@@ -6,7 +6,7 @@ const PORT = 4174;
 export default defineConfig({
   testDir: 'e2e',
   testMatch: /.*\.spec\.ts/,
-  testIgnore: /screens\.spec\.ts/,
+  testIgnore: /(screens|perf)\.spec\.ts/,
   fullyParallel: true,
   workers: process.env.CI ? 2 : 4,
   forbidOnly: !!process.env.CI,

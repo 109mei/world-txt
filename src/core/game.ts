@@ -5,36 +5,48 @@ import {
   type Crisis,
   type Ending,
   type EventDef,
+  type Stage,
   type EventEffects,
   type IconKey,
   type ImpulseKey,
   type IndicatorId,
+  type Phrase,
   type StageId,
   type StateEffectKey,
   type TwistRef,
 } from '../data/schema';
-import { activeMeanings, carriedIncoherence, computeChannels, lawTotals, NOISE_INCOHERENCE } from './channels';
+import { activeMeanings, adaptFactor, carriedIncoherence, computeChannels, delayOf, lawTotals, lineMode, modeFactor, NOISE_INCOHERENCE, onsetFactor, writtenYear } from './channels';
 import { checkAll, checkCondition, parseCondition } from './conditions';
 import { capacityLevel, coherenceLevel, computeScores, indicatorLevel, trendOf } from './indicators';
-import { originalText, phraseName } from './interpret';
+import { originalText, phraseName, textCost } from './interpret';
 import { carriesPhrase, eachLine, lineWithPhrase, NO_MEANING, type LineRef } from './lines';
 import { clamp } from './math';
+import { hash01, hashSigned, startCharge } from './hash';
 import { measure, simulateYear, targetsOf } from './model';
-import { nextRandom, seedRng } from './rng';
+import { balanceFor, rampIntro } from './intro';
+import { noticeBranch } from './marks';
+import { hoarding, livingLevel, overshootScale, recovery, spreadYear } from './people';
 import { activeTags } from './summary';
 import type { CauseRef, Channels, FailReason, GameData, GameState, HistoryEntry, IndicatorChange, IndicatorMove, NewsItem, SimState, StepReport, WorldSnapshot, WriteAccess } from './types';
 
 /**
  * GameState の形の版（セーブの版とは別）。3：行が運ぶ意味（carried）。4：無限の世界の危機と今日の世界。5：結末（ending）。6：心・物価・くり返す世界。
- * 7：去年効いていた意味（inEffect）と書き換えの勢い（impulse）。8：書き換えられる範囲（access。筆の位）
+ * 7：去年効いていた意味（inEffect）と書き換えの勢い（impulse）。8：書き換えられる範囲（access。筆の位）。
+ * 9：遊んでいる間の乱数（rng）をなくし、出来事の起きる力（charge）にした。届かなかった文の数（stats.noise）。
+ * 10：空白の行（voids）・消し跡（scars）・世界が埋めた行（filled）。
+ * 11：言い切りの強さ（strength）・書き直した回数（rewrites）・短く言い換えた行（trims）。
+ * 12：原因の型（cause）・効きが落ちたと知らせた意味（adapted）
+ * 13：書き方の読み分けの手がかり（modes）
+ * 14：人々の心（sim の ref・peak・trust・anxiety・caution・overshoot）・考え方の広がり（spread・crowded）
+ * 15：棋譜（moves）・世界の決まりの強さ（intro）・分かれ道からやり直した世界（branched）・分かれ道の年（branch）・原因に効く手の年（countered）
  */
-export const STATE_SCHEMA = 8;
+export const STATE_SCHEMA = 15;
 
 export const FAIL_TEXT: Record<FailReason, string> = {
-  humanity: '人類の多くが失われ、文明を支えられなくなった。',
-  civilization: '文明が崩壊した。',
-  coherence: '世界整合性が崩壊し、世界は意味を失った。',
-  capacity: '世界容量が限界を超え、世界を維持できなくなった。',
+  humanity: '人類の多くが失われて文明を支えられなくなった',
+  civilization: '文明が崩壊した',
+  coherence: '世界整合性が崩壊して世界は意味を失った',
+  capacity: '使える文字数を超えて世界を維持できなくなった',
 };
 
 function option(data: GameData, lawId: string, optionId: string) {
@@ -52,14 +64,17 @@ export function refresh(g: GameState, data: GameData): Channels {
   const { ch, combos } = computeChannels(g, data);
   g.combos = combos;
   const t = lawTotals(data, g);
-  g.derived = measure(g.sim, ch, data.balance, g.startPop, t.cost, t.incoherence);
+  g.derived = measure(g.sim, ch, balanceFor(g, data), g.startPop, t.cost, t.incoherence);
   return ch;
 }
 
 /** 古い形の GameState（セーブ）に、あとから足した項目を補う */
 export function upgradeState(g: GameState, data: GameData): GameState {
   if (!Array.isArray(g.found)) g.found = [];
-  if (!g.trace || !Array.isArray(g.trace.pop) || !Array.isArray(g.trace.civ)) g.trace = { pop: [], civ: [] };
+  if (!g.trace || !Array.isArray(g.trace.pop) || !Array.isArray(g.trace.civ)) g.trace = { pop: [], civ: [], living: [], ref: [] };
+  // 版15から：慣れの折れ線（暮らしの水準と、慣れた水準）
+  if (!Array.isArray(g.trace.living)) g.trace.living = [];
+  if (!Array.isArray(g.trace.ref)) g.trace.ref = [];
   // 版2まで：書き足した行の読み取りは extras[].phrase にあった
   if (!g.carried || typeof g.carried !== 'object') g.carried = {};
   for (const x of g.extras) {
@@ -85,6 +100,45 @@ export function upgradeState(g: GameState, data: GameData): GameState {
   if (!g.impulse || typeof g.impulse !== 'object') g.impulse = {};
   // 版7まで：書き換えられる範囲はなかった（それまでの世界は、すべて書き換えられるまま遊べる）
   if (g.access === undefined) g.access = null;
+  // 版8まで：遊んでいる間の乱数（rng）で出来事を決めていた。起きる力に置き換える（はじめのたまり具合は世界番号から決まる）
+  if (!g.charge || typeof g.charge !== 'object') g.charge = {};
+  delete (g as { rng?: unknown }).rng;
+  if (g.loop?.snapshot) {
+    const snap = g.loop.snapshot as WorldSnapshot & { rng?: unknown };
+    if (!snap.charge || typeof snap.charge !== 'object') snap.charge = {};
+    delete snap.rng;
+  }
+  if (typeof g.stats.noise !== 'number') g.stats.noise = 0;
+  // 版9まで：消した行は空白にならなかった。今消えている行は、読み込んだ年から空白として数える（消し跡はない）
+  if (!g.voids || typeof g.voids !== 'object') {
+    g.voids = {};
+    for (const law of data.laws) if ((g.texts[law.id] ?? '') === '') g.voids[law.id] = g.year;
+  }
+  if (!g.scars || typeof g.scars !== 'object') g.scars = {};
+  if (!g.filled || typeof g.filled !== 'object') g.filled = {};
+  // 版11まで：原因の型と、世界の適応はなかった（その世界は型のない世界として遊ぶ）
+  if (g.cause === undefined) g.cause = null;
+  if (!Array.isArray(g.adapted)) g.adapted = [];
+  // 版10まで：言い切りの強さ・上書きの傷・短く言い換えた行はなかった
+  if (!g.strength || typeof g.strength !== 'object') g.strength = {};
+  if (!g.modes || typeof g.modes !== 'object') g.modes = {};
+  if (!g.spread || typeof g.spread !== 'object') g.spread = {};
+  if (!g.crowded || typeof g.crowded !== 'object') g.crowded = {};
+  // 棋譜と、世界の決まりの強さ（版15から）
+  if (!Array.isArray(g.moves)) g.moves = [];
+  if (!g.intro || typeof g.intro !== 'object') g.intro = {};
+  if (!g.introStart || typeof g.introStart !== 'object') g.introStart = { ...g.intro };
+  if (typeof g.branched !== 'boolean') g.branched = false;
+  if (g.branch === undefined) g.branch = null;
+  if (g.countered === undefined) g.countered = null;
+  if (g.trial === undefined) g.trial = null;
+  // 人々の心（版14から）
+  const pp = data.balance.people.start;
+  for (const [k, v] of [['ref', 0], ['peak', 0], ['trust', pp.trust], ['anxiety', pp.anxiety], ['caution', 0], ['overshoot', 0]] as const) {
+    if (typeof g.sim[k] !== 'number' || !Number.isFinite(g.sim[k])) g.sim[k] = v;
+  }
+  if (!g.rewrites || typeof g.rewrites !== 'object') g.rewrites = {};
+  if (!g.trims || typeof g.trims !== 'object') g.trims = {};
   // 画面の項目が増えたときは、足りない項目の点数だけを今の様子から求める
   if (g.derived && INDICATOR_IDS.some((id) => typeof g.scores?.[id] !== 'number')) {
     const now = computeScores(g.sim, { ...g.derived, money: g.derived.money ?? 1 }, data.balance, g.startPop);
@@ -105,9 +159,12 @@ export function syncPhraseFlags(g: GameState, data: GameData): void {
 }
 
 /** 年ごとの人口と文明を記録する（セーブが大きくならないよう丸める） */
-function traceYear(g: GameState): void {
+function traceYear(g: GameState, data: GameData): void {
   g.trace.pop.push(Math.round(g.sim.pop * 10) / 10);
   g.trace.civ.push(Math.round(g.derived.civ));
+  // 慣れ：暮らしの水準と、慣れた水準（柱の中身で、折れ線2本にする）
+  g.trace.living.push(Math.round(livingLevel(g.sim, g.derived, data.balance) * 1000) / 1000);
+  g.trace.ref.push(Math.round(g.sim.ref * 1000) / 1000);
 }
 
 /** 観測記録に残す（同じものは一度だけ） */
@@ -120,10 +177,60 @@ export function discoverTags(g: GameState, data: GameData): void {
 }
 
 /**
- * 新しい世界を作る。access は書き換えられる範囲（筆の位。core の accessFor で作る）。
+ * 世界番号から、はじめの数値を少しずらす（同じ世界番号なら、いつも同じずれ）。
+ * 割合でずらす量（石油の残り・農業の規模など）と、足してずらす量（生態系・緊張など）がある
+ */
+function varyStart(sim: SimState, data: GameData, seed: number): void {
+  const w = data.balance.world;
+  for (const [k, v] of Object.entries(w.scale) as [keyof typeof w.scale, number][]) sim[k] = sim[k] * (1 + v * hashSigned(seed, `start:${k}`));
+  for (const [k, v] of Object.entries(w.shift) as [keyof typeof w.shift, number][]) sim[k] = sim[k] + v * hashSigned(seed, `start:${k}`);
+  sim.eco = clamp(sim.eco, 0, 100);
+  sim.stability = clamp(sim.stability, 0, 100);
+  sim.happiness = clamp(sim.happiness, 0, 100);
+  sim.tension = clamp(sim.tension, 0, 100);
+  sim.pathogen = clamp(sim.pathogen, 0, 100);
+}
+
+/** 起きる力のたまり具合（まだたまり始めていなければ、世界番号から決まるはじめの量） */
+export function chargeOf(g: GameState, key: string): number {
+  return g.charge[key] ?? startCharge(g.seed, key);
+}
+
+/** 世界番号から原因の型を決める（重みつき。同じ世界番号なら、いつも同じ型） */
+export function causeFor(data: GameData, stageId: StageId, seed: number): string | null {
+  const causes = data.stageById.get(stageId)?.causes ?? [];
+  if (causes.length === 0) return null;
+  const total = causes.reduce((n, c) => n + c.weight, 0);
+  let x = hash01(seed, `cause:${stageId}`) * total;
+  for (const c of causes) {
+    x -= c.weight;
+    if (x < 0) return c.id;
+  }
+  return causes[causes.length - 1]!.id;
+}
+
+/** 世界を作るときの選び方：cause を渡すと、その原因の型の世界（はじめてのステージは、決まった型から） */
+export interface CreateOptions {
+  cause?: string | null;
+  /**
+   * 学問の仕組み（世界の決まり）の強さ（決まりの id → 0〜1）。紹介する前の決まりは弱く動かす（開いていく順番。P18）。
+   * 書かなければ、すべて本来の強さ
+   */
+  intro?: Record<string, number>;
+  /** 改稿者の試練として作る（そのステージに試練があるとき） */
+  trial?: boolean;
+}
+
+/** その世界の書き換えの力の決まり（改稿者の試練の「書き換えが少ない」版は、試練の決まり） */
+export function editRule(g: Pick<GameState, 'trial'>, stage: Stage): Stage['edits'] {
+  return g.trial?.kind === 'few' && stage.trial?.edits ? stage.trial.edits : stage.edits;
+}
+
+/**
+ * 新しい世界を作る。seed は世界番号（世界の初期条件を決める）。access は書き換えられる範囲（筆の位。core の accessFor で作る）。
  * 渡さなければ、すべての行と概念を自由に書き換えられる（シミュレーターやテストの世界）
  */
-export function createGame(data: GameData, stageId: StageId, seed: number, access: WriteAccess | null = null): GameState {
+export function createGame(data: GameData, stageId: StageId, seed: number, access: WriteAccess | null = null, opts: CreateOptions = {}): GameState {
   const stage = stageOf(data, stageId);
   const laws: Record<string, string> = {};
   const texts: Record<string, string> = {};
@@ -133,16 +240,46 @@ export function createGame(data: GameData, stageId: StageId, seed: number, acces
     texts[law.id] = originalText(law);
     understood[law.id] = true;
   }
-  const sim: SimState = { ...stage.start, blight: 0, foodStock: 0, war: 0, coherence: 100, capacityMax: stage.capacity, mind: data.balance.mind.base, prices: 1 };
+  const pp = data.balance.people.start;
+  const sim: SimState = {
+    ...stage.start,
+    blight: 0,
+    foodStock: 0,
+    war: 0,
+    coherence: 100,
+    capacityMax: stage.capacity,
+    mind: data.balance.mind.base,
+    prices: 1,
+    ref: 0,
+    peak: 0,
+    trust: pp.trust,
+    anxiety: pp.anxiety,
+    caution: 0,
+    overshoot: 0,
+  };
+  varyStart(sim, data, seed);
+  // 原因の型：世界番号で決まる（選んで渡されたときは、その型）。型ははじめの状態を少しずらす
+  const cause = opts.cause !== undefined && stage.causes.some((c) => c.id === opts.cause) ? opts.cause : causeFor(data, stageId, seed);
+  for (const [k, v] of Object.entries(stage.causes.find((c) => c.id === cause)?.start ?? {}) as [keyof SimState, number][]) sim[k] = sim[k] + v;
+  // 改稿者の試練：原因の型が2つ重なる（2つ目は、1つ目と違う型）・兆しが遅れる・書き換えが少ない
+  const tr = opts.trial ? stage.trial : undefined;
+  let cause2: string | null = null;
+  if (tr?.kind === 'double') {
+    cause2 = tr.cause && tr.cause !== cause ? tr.cause : (stage.causes.find((c) => c.id !== cause)?.id ?? null);
+    for (const [k, v] of Object.entries(stage.causes.find((c) => c.id === cause2)?.start ?? {}) as [keyof SimState, number][]) sim[k] = sim[k] + v;
+  }
+  const trial = tr ? { kind: tr.kind, cause2, late: tr.kind === 'late' ? tr.late : 0 } : null;
+  const k = data.balance.crisis;
   const g: GameState = {
     schema: STATE_SCHEMA,
     seed,
-    rng: seedRng(seed),
     stageId,
+    cause,
+    adapted: [],
     year: 0,
     status: 'playing',
     failReason: null,
-    startPop: stage.start.pop,
+    startPop: sim.pop,
     sim,
     derived: null as never,
     scores: {} as Record<IndicatorId, number>,
@@ -155,7 +292,23 @@ export function createGame(data: GameData, stageId: StageId, seed: number, acces
     carried: {},
     nextExtra: 1,
     lawYear: {},
-    edits: { left: stage.edits.start, used: 0, nextAt: stage.edits.every },
+    voids: {},
+    scars: {},
+    filled: {},
+    strength: {},
+    modes: {},
+    spread: {},
+    crowded: {},
+    moves: [],
+    intro: { ...(opts.intro ?? {}) },
+    introStart: { ...(opts.intro ?? {}) },
+    branched: false,
+    branch: null,
+    countered: null,
+    trial,
+    rewrites: {},
+    trims: {},
+    edits: { left: editRule({ trial }, stage).start, used: 0, nextAt: editRule({ trial }, stage).every },
     twists: {},
     twistAge: {},
     effects: [],
@@ -165,11 +318,13 @@ export function createGame(data: GameData, stageId: StageId, seed: number, acces
     counters: { civLow: 0, capOver: 0, peaceYears: 0, warCooldown: 0, warYears: 0 },
     history: [],
     report: null,
-    stats: { edits: 0, wars: 0, anomalies: 0, minPop: stage.start.pop, maxPop: stage.start.pop },
+    stats: { edits: 0, wars: 0, anomalies: 0, minPop: sim.pop, maxPop: sim.pop, noise: 0 },
+    charge: {},
     found: [],
-    trace: { pop: [], civ: [] },
+    trace: { pop: [], civ: [], living: [], ref: [] },
     crisis: null,
-    nextCrisis: stage.endless ? data.balance.crisis.firstAt : -1,
+    // 最初の危機の知らせは、世界番号で少しずれる
+    nextCrisis: stage.endless ? k.firstAt + Math.floor(hash01(seed, 'crisis:first') * (k.jitter + 1)) : -1,
     crises: { averted: 0, softened: 0, struck: 0 },
     daily: null,
     ending: null,
@@ -190,7 +345,7 @@ export function createGame(data: GameData, stageId: StageId, seed: number, acces
   for (const id of INDICATOR_IDS) g.prevScores[id] = 2 * g.scores[id] - next[id];
   g.prevMeta = { capacityRatio: g.derived.capacityRatio, coherence: g.sim.coherence, civ: g.derived.civ };
   g.history.push({ year: 0, kind: 'start', icon: stage.icon, text: `MISSION：${stage.mission}`, why: null, severity: 'info', cause: null });
-  traceYear(g);
+  traceYear(g, data);
   // くり返す世界：巻き戻る先は、はじまりの年の世界
   if (stage.loop) g.loop = { start: 0, snapshot: worldSnapshot(g), count: 0, done: false };
   return g;
@@ -207,9 +362,13 @@ function causeOf(g: GameState, data: GameData, src: Source): CauseRef | null {
     return line ? { text: line.text, deleted: false, year: line.year } : null;
   }
   const law = data.lawById.get(src.id);
-  const year = g.lawYear[src.id];
-  if (!law || year === undefined) return null;
+  if (!law) return null;
   const text = g.texts[src.id] ?? '';
+  // 空白を世界が埋めた行は、世界の書いた文として示す
+  const filled = g.filled[src.id];
+  if (filled !== undefined && text !== '') return { text, deleted: false, year: filled, world: true };
+  const year = g.lawYear[src.id];
+  if (year === undefined) return null;
   return text === '' ? { text: originalText(law), deleted: true, year } : { text, deleted: false, year };
 }
 
@@ -217,6 +376,41 @@ type TwistCauses = Map<string, { ref: TwistRef; src: Source }[]>;
 
 function lineRef(data: GameData, id: string): Source {
   return data.lawById.has(id) ? { kind: 'law', id } : { kind: 'line', id };
+}
+
+/** 性質として書いた行の考え方を広げる（同じ振る舞いを制度でも書いていれば、締め出される） */
+function spreadMinds(g: GameState, data: GameData): void {
+  const nature: { lineId: string; phrase: Phrase }[] = [];
+  const ruled = new Set<string>();
+  for (const m of activeMeanings(g, data)) {
+    for (const p of m.phrases) {
+      const mode = lineMode(g, m.lineId, p);
+      if (mode === 'nature') nature.push({ lineId: m.lineId, phrase: p });
+      // 効いている制度が動かすもの
+      if (mode === 'rule' && modeFactor(g, data, m.lineId, p) > 0) for (const k of Object.keys(p.mods)) ruled.add(k);
+    }
+  }
+  spreadYear(g, data, nature, ruled, balanceFor(g, data));
+}
+
+/** 人々の心の変わり目を知らせる（買いだめが始まった年・限りを超えた暮らしが続いた年。一度ずつ） */
+function noticePeople(g: GameState, data: GameData, news: NewsItem[]): void {
+  const words = data.indicators.people;
+  const say = (flag: string, on: boolean, n: { text: string; why: string }, icon: IconKey) => {
+    if (on && !g.flags[flag]) {
+      g.flags[flag] = true;
+      discover(g, `h:${flag.slice(1)}`);
+      news.push({ year: g.year, category: 'SOCIETY', icon, text: n.text, why: n.why, severity: 'warn', surprise: true, cause: null });
+      g.history.push({ year: g.year, kind: 'event', icon, text: n.text, why: n.why, severity: 'warn', cause: null, ref: `h:${flag.slice(1)}` });
+    } else if (!on) delete g.flags[flag];
+  };
+  const b = balanceFor(g, data);
+  say('_hoard', hoarding(g.sim, b), words.hoard, 'food');
+  say('_overshoot', g.sim.overshoot >= b.people.overshoot.signAt, words.overshoot, 'eco');
+  // 初めて起きたこと（開いていく順番で、ノートに「わかった世界の決まり」として残る）
+  if (recovery(g.derived.civ, b.people.slowing.line, b) <= b.people.slowing.signAt) discover(g, 'h:slowing');
+  if (Object.values(g.spread).some((s) => s >= b.people.spread.tipping)) discover(g, 'h:spread');
+  if (Object.keys(g.crowded).length > 0) discover(g, 'h:crowded');
 }
 
 /** 副作用ごとに、それを育てている行（法則の読み取り・行が運ぶ概念・重ね書き）を集める */
@@ -235,6 +429,10 @@ function twistCauses(g: GameState, data: GameData): TwistCauses {
   for (const m of activeMeanings(g, data)) {
     const src = lineRef(data, m.lineId);
     for (const p of m.phrases) for (const ref of p.twists) add(ref, src);
+    // 物の分け方を制度として決めた行は、効いているあいだ、闇市と働く意欲の低下を育てる（配給の外の闇市）
+    if (m.phrases.some((p) => p.mods.distribution !== undefined && lineMode(g, m.lineId, p) === 'rule' && modeFactor(g, data, m.lineId, p) > 0)) {
+      for (const ref of balanceFor(g, data).modes.ruleTwists) add(ref, src);
+    }
     if (m.law) for (const ref of option(data, m.law.id, m.law.option)!.twists) add(ref, src);
   }
   return causes;
@@ -282,8 +480,16 @@ function sourceOfCondition(g: GameState, data: GameData, src: string, tc: TwistC
   return s ? causeOf(g, data, s) : null;
 }
 
-/** 出来事の条件に書かれた行（書き換えた法則・書き足した言い回し・副作用の元）から原因を探す */
+/**
+ * 出来事の原因の行。打撃を強めた要因（blame：農業の縮小 など）が書き換えから来ていれば、それを先に示す。
+ * なければ、出来事の条件に書かれた行（書き換えた法則・書き足した言い回し・副作用の元）から探す
+ */
 function eventCause(g: GameState, data: GameData, ev: EventDef, tc: TwistCauses): CauseRef | null {
+  for (const b of ev.blame) {
+    if (!checkCondition(g, b.when)) continue;
+    const cause = sourceOfCondition(g, data, b.when, tc);
+    if (cause) return { ...cause, via: b.via };
+  }
   for (const src of ev.when) {
     const cause = sourceOfCondition(g, data, src, tc);
     if (cause) return cause;
@@ -339,14 +545,18 @@ export function meaningsInEffect(g: GameState, data: GameData): Meaning[] {
     seen.add(m.key);
     out.push(m);
   };
+  // 効き始めまでの遅れのある意味は、効き始めた年から世界に表れる（知らせも情景も、その年から）
   for (const law of data.laws) {
     const opt = g.laws[law.id] ?? law.initial;
-    if (opt !== law.initial) push({ key: `o:${law.id}.${opt}`, law: law.id, option: opt, phrase: null, src: { kind: 'law', id: law.id } });
+    if (opt === law.initial || onsetFactor(g, law.id, delayOf(data, law.concept, null)) === 0) continue;
+    push({ key: `o:${law.id}.${opt}`, law: law.id, option: opt, phrase: null, src: { kind: 'law', id: law.id } });
   }
   for (const m of activeMeanings(g, data)) {
     const src = lineRef(data, m.lineId);
-    for (const p of m.phrases) push({ key: `p:${p.id}`, law: null, option: null, phrase: p.id, src });
-    if (m.law) push({ key: `o:${m.law.id}.${m.law.option}`, law: m.law.id, option: m.law.option, phrase: null, src });
+    for (const p of m.phrases) if (onsetFactor(g, m.lineId, delayOf(data, null, p.id)) > 0) push({ key: `p:${p.id}`, law: null, option: null, phrase: p.id, src });
+    if (m.law && onsetFactor(g, m.lineId, delayOf(data, data.lawById.get(m.law.id)?.concept ?? '', null)) > 0) {
+      push({ key: `o:${m.law.id}.${m.law.option}`, law: m.law.id, option: m.law.option, phrase: null, src });
+    }
   }
   return out;
 }
@@ -382,13 +592,13 @@ function returnText(g: GameState, data: GameData, key: string): { text: string; 
     const p = data.phraseById.get(key.slice(2));
     // 「{X}がいなくなる」のような言い回しは、何のことだったか分からなくなるので知らせない
     if (!p || p.name.includes('{X')) return null;
-    return { text: `「${p.name.replace(/（[^）]*）$/u, '')}」世界は、終わった`, icon: p.icon, src: null };
+    return { text: `「${p.name.replace(/（[^）]*）$/u, '')}」の世界は終わった`, icon: p.icon, src: null };
   }
   const m = /^o:([^.]+)\./u.exec(key);
   const law = m ? data.lawById.get(m[1]!) : undefined;
   // 別の読み取りに書き換えたときは、新しい読み取りの知らせだけを出す
   if (!law || (g.laws[law.id] ?? law.initial) !== law.initial) return null;
-  return { text: `「${originalText(law)}」が、世界に戻った`, icon: data.conceptById.get(law.concept)?.icon ?? 'edit', src: { kind: 'law', id: law.id } };
+  return { text: `「${originalText(law)}」が世界に戻った`, icon: data.conceptById.get(law.concept)?.icon ?? 'edit', src: { kind: 'law', id: law.id } };
 }
 
 /**
@@ -424,8 +634,9 @@ function announceMeanings(g: GameState, data: GameData, now: readonly Meaning[],
 export function targetsNow(g: GameState, data: GameData): Record<ImpulseKey, number> {
   const { ch } = computeChannels(g, data);
   const t = lawTotals(data, g);
-  const d = measure(g.sim, ch, data.balance, g.startPop, t.cost, t.incoherence);
-  return targetsOf(g.sim, d, ch, data.balance);
+  const b = balanceFor(g, data);
+  const d = measure(g.sim, ch, b, g.startPop, t.cost, t.incoherence);
+  return targetsOf(g.sim, d, ch, b);
 }
 
 /** 書き換えの前と後の向かう先の差を、次の1年に届ける勢いとして貯める */
@@ -470,7 +681,7 @@ function applyImpulse(g: GameState, data: GameData): void {
 
 /** 今の世界を、出来事なしで years 年進めたときの点数（最初の変化の向きに使う） */
 export function projectScores(g: GameState, data: GameData, years: number): Record<IndicatorId, number> {
-  const b = data.balance;
+  const b = balanceFor(g, data);
   const c: GameState = structuredClone({ ...g, history: [], report: null });
   for (let i = 0; i < years; i++) {
     const { ch } = computeChannels(c, data);
@@ -513,8 +724,10 @@ export function blightResilience(g: GameState, data: GameData): number {
   return clamp(f.resBase + f.resAgri * Math.min(1, g.sim.agri) + f.resSci * clamp(g.sim.science - 1, 0, 1), 0, 0.9);
 }
 
-function applyEffects(g: GameState, data: GameData, ch: Channels, eff: EventEffects, source: string, news: NewsItem[]): void {
+function applyEffects(g: GameState, data: GameData, ch: Channels, raw: EventEffects, source: string, news: NewsItem[]): void {
   const s = g.sim;
+  // 限りを超えた暮らしが続いた世界では、ふだんなら耐えられる出来事で大きく崩れる
+  const eff = s.overshoot > 0 ? scaleEffects(raw, overshootScale(s, data.balance)) : raw;
   for (const [k, v] of Object.entries(eff.add) as [StateEffectKey, number][]) {
     const [lo, hi] = STATE_RANGE[k];
     s[k] = clamp(s[k] + v, lo, hi);
@@ -539,11 +752,28 @@ function applyEffects(g: GameState, data: GameData, ch: Channels, eff: EventEffe
   if (eff.vanishLaw) vanishLaw(g, data, news);
 }
 
-/** 世界異常「存在消失」：法則を1つ、書換の権利を使わずに消す */
+/** その法則の行が、世界をどれだけ揺らしているか（読み取りの無理さと、運んでいる意味の無理さ） */
+function lineIncoherence(g: GameState, data: GameData, lawId: string): number {
+  const opt = option(data, lawId, g.laws[lawId] ?? '');
+  return (opt?.incoherence ?? 0) + carriedIncoherence(data, g.carried[lawId] ?? NO_MEANING);
+}
+
+/**
+ * 世界異常「存在消失」：法則を1つ、書換の権利を使わずに消す。
+ * 消えるのは、世界をいちばん揺らしている行（同じなら、世界番号で決まる行）
+ */
 function vanishLaw(g: GameState, data: GameData, news: NewsItem[]): void {
   const pool = data.laws.filter((law) => (g.texts[law.id] ?? '') !== '' && law.options.some((o) => o.kind === 'delete'));
   if (pool.length === 0) return;
-  const law = pool[Math.floor(nextRandom(g) * pool.length)]!;
+  let law = pool[0]!;
+  let best = -1;
+  for (const l of pool) {
+    const v = lineIncoherence(g, data, l.id) + hash01(g.seed, `vanish:${g.stats.anomalies}:${l.id}`) * 0.5;
+    if (v > best) {
+      best = v;
+      law = l;
+    }
+  }
   const del = law.options.find((o) => o.kind === 'delete')!;
   const before = g.texts[law.id]!;
   // 文章ごと消えるので、その行が運んでいた意味も消える
@@ -552,6 +782,10 @@ function vanishLaw(g: GameState, data: GameData, news: NewsItem[]): void {
   g.understood[law.id] = true;
   g.lawYear[law.id] = g.year;
   g.carried[law.id] = NO_MEANING;
+  // 消えた行も空白になり、世界がやがて埋める。消し跡が残る
+  g.voids[law.id] = g.year;
+  g.scars[law.id] = Math.round(textCost(before) * clamp(data.balance.voids.scar, 0, 1));
+  delete g.filled[law.id];
   syncPhraseFlags(g, data);
   const text = `「${before}」が世界から消えた`;
   news.push({ year: g.year, category: 'ANOMALY', icon: 'anomaly', text, why: null, severity: 'warn', surprise: true, cause: null });
@@ -570,8 +804,10 @@ function growTwists(g: GameState, data: GameData, tc: TwistCauses, news: NewsIte
       let rate = 0;
       for (const { ref, src } of refs) {
         if (age <= ref.delay || !checkAll(g, ref.when)) continue;
-        rate += ref.rate;
-        if (!top || ref.rate > top.rate) top = { rate: ref.rate, src };
+        // 反動は、書いた文の言い切りの強さに比例して（強いほど、効きより大きく）育つ
+        const r = ref.rate * Math.pow(g.strength[src.id] ?? 1, data.balance.strength.backlash);
+        rate += r;
+        if (!top || r > top.rate) top = { rate: r, src };
       }
       level = rate > 0 ? Math.min(1, level + rate) : Math.max(0, level - t.decay * 0.5);
     } else {
@@ -585,21 +821,47 @@ function growTwists(g: GameState, data: GameData, tc: TwistCauses, news: NewsIte
         const why = n.why ?? null;
         const cause = top ? causeOf(g, data, top.src) : null;
         discover(g, `t:${t.id}`);
+        // 初めて、因果の線が想定外の所に届いた（開いていく順番で、因果の地図を開く）
+        if (cause) discover(g, 'h:causal');
         news.push({ year: g.year, category: n.category, icon: t.icon, text: n.text, why, severity: 'warn', surprise: true, cause });
-        g.history.push({ year: g.year, kind: 'twist', icon: t.icon, text: n.text, why, severity: 'warn', cause });
+        g.history.push({ year: g.year, kind: 'twist', icon: t.icon, text: n.text, why, severity: 'warn', cause, ref: `t:${t.id}` });
       }
     }
   }
 }
 
+/** 原因の型の兆し（型の条件と年の条件だけの知らせ）が出はじめる年。兆しでなければ null */
+function signYear(ev: EventDef): number | null {
+  if (ev.severity !== 'info' || !ev.when.some((c) => c.startsWith('cause:'))) return null;
+  for (const c of ev.when) {
+    const m = /^year\s*>=\s*(\d+)$/u.exec(c);
+    if (m) return Number(m[1]);
+  }
+  return null;
+}
+
 function runEvents(g: GameState, data: GameData, ch: Channels, tc: TwistCauses, news: NewsItem[]): void {
   for (const ev of data.events) {
     if (ev.stages && !ev.stages.includes(g.stageId)) continue;
+    // 改稿者の試練：型の兆しが遅れて出る
+    if (g.trial && g.trial.late > 0) {
+      const at = signYear(ev);
+      if (at !== null && g.year < at + g.trial.late) continue;
+    }
     const last = g.fired[ev.id];
     if (last !== undefined && (ev.once || g.year - last < ev.cooldown)) continue;
     if (!checkAll(g, ev.when)) continue;
-    const p = ev.chance * (ev.chanceChannel ? ch[ev.chanceChannel] : 1);
-    if (p < 1 && nextRandom(g) >= p) continue;
+    // 起きやすさが 1 未満の出来事は、条件のそろった年ごとに起きる力をため、1 に届いた年に起きる
+    const p = Math.max(0, ev.chance * (ev.chanceChannel ? ch[ev.chanceChannel] : 1));
+    if (p < 1) {
+      const key = `e:${ev.id}`;
+      const c = chargeOf(g, key) + p;
+      if (c < 1) {
+        g.charge[key] = c;
+        continue;
+      }
+      g.charge[key] = c - 1;
+    }
     g.fired[ev.id] = g.year;
     discover(g, `e:${ev.id}`);
     const cause = eventCause(g, data, ev, tc);
@@ -607,28 +869,138 @@ function runEvents(g: GameState, data: GameData, ch: Channels, tc: TwistCauses, 
     const why = ev.why ?? null;
     news.push({ year: g.year, category: ev.category, icon: ev.icon, text: ev.text, why, severity: ev.severity, surprise: ev.surprise, cause });
     if (ev.history ?? ev.severity !== 'info') {
-      g.history.push({ year: g.year, kind: 'event', icon: ev.icon, text: ev.text, why, severity: ev.severity, cause });
+      g.history.push({ year: g.year, kind: 'event', icon: ev.icon, text: ev.text, why, severity: ev.severity, cause, ref: `e:${ev.id}` });
     }
   }
+}
+
+/** 世界をいちばん揺らしている行の概念（書き足した行は、重ねて書いた法則の概念） */
+function mostIncoherentConcept(g: GameState, data: GameData): string | null {
+  let best = 0;
+  let concept: string | null = null;
+  for (const { ref, carried } of eachLine(g, data)) {
+    let inc = carriedIncoherence(data, carried);
+    let c: string | null = carried.law ? (data.lawById.get(carried.law.id)?.concept ?? null) : null;
+    if (ref.kind === 'law') {
+      inc += option(data, ref.id, g.laws[ref.id] ?? '')?.incoherence ?? 0;
+      c = data.lawById.get(ref.id)?.concept ?? c;
+    }
+    if (inc > best && c) {
+      best = inc;
+      concept = c;
+    }
+  }
+  return concept;
+}
+
+type AnomalyDef = GameData['anomalies'][number];
+
+/**
+ * 起きる世界異常を選ぶ：世界をいちばん揺らしている行の概念に関わるものを先に、
+ * その中では長く起きていないもの、重いもの、世界番号で決まる順
+ */
+function pickAnomaly(g: GameState, data: GameData, pool: readonly AnomalyDef[]): AnomalyDef {
+  const concept = mostIncoherentConcept(g, data);
+  const related = concept ? pool.filter((a) => a.concepts.includes(concept)) : [];
+  const list = related.length > 0 ? related : pool;
+  const last = (id: string) => g.fired[`anomaly:${id}`] ?? -1;
+  return [...list].sort(
+    (a, b) => last(a.id) - last(b.id) || b.weight - a.weight || hash01(g.seed, `anomaly:${a.id}`) - hash01(g.seed, `anomaly:${b.id}`),
+  )[0]!;
 }
 
 function runAnomaly(g: GameState, data: GameData, ch: Channels, news: NewsItem[]): void {
   const c = data.balance.coherence;
   const coh = g.sim.coherence;
   if (coh >= c.anomalyFrom) return;
+  // 整合性が線を下回っているあいだ、下回った深さの分だけ世界異常の起きる力がたまる
   const p = Math.min(c.anomalyMax, (c.anomalyFrom - coh) / c.anomalyScale);
-  if (nextRandom(g) >= p) return;
+  const charge = chargeOf(g, 'anomaly') + p;
+  if (charge < 1) {
+    g.charge.anomaly = charge;
+    return;
+  }
+  g.charge.anomaly = charge - 1;
   const pool = data.anomalies.filter((a) => coh < a.below);
-  const total = pool.reduce((sum, a) => sum + a.weight, 0);
-  if (total <= 0) return;
-  let roll = nextRandom(g) * total;
-  const pick = pool.find((a) => (roll -= a.weight) < 0) ?? pool[pool.length - 1]!;
+  if (pool.length === 0) return;
+  const pick = pickAnomaly(g, data, pool);
+  g.fired[`anomaly:${pick.id}`] = g.year;
   g.stats.anomalies += 1;
   discover(g, `a:${pick.id}`);
   const cause = mostIncoherent(g, data);
   news.push({ year: g.year, category: 'ANOMALY', icon: 'anomaly', text: pick.text, why: pick.why ?? null, severity: 'warn', surprise: true, cause });
-  g.history.push({ year: g.year, kind: 'anomaly', icon: 'anomaly', text: pick.text, why: pick.why ?? null, severity: 'warn', cause });
+  g.history.push({ year: g.year, kind: 'anomaly', icon: 'anomaly', text: pick.text, why: pick.why ?? null, severity: 'warn', cause, ref: `a:${pick.id}` });
   applyEffects(g, data, ch, pick.effects, pick.id, news);
+}
+
+// ---------------------------------------------------------------- 世界の適応（同じ手は、年とともに効きが落ちる）
+
+/**
+ * 効きが落ちてきた意味を、一度だけ知らせる（なぜ？：病原体が別の道を見つける・害虫が慣れる など）。
+ * 書き直せば効きが戻るので、書いた年ごとに数える（鍵は「意味@書いた年」）
+ */
+function noticeAdaptation(g: GameState, data: GameData, news: NewsItem[]): void {
+  const at = data.balance.adapt.noticeAt;
+  const now = meaningsInEffect(g, data);
+  const keyOf = (m: Meaning) => `${m.key}@${writtenYear(g, m.src.id) ?? ''}`;
+  for (const m of now) {
+    if (g.adapted.includes(keyOf(m))) continue;
+    const why = m.phrase ? data.phraseById.get(m.phrase)?.adapt : data.conceptById.get(data.lawById.get(m.law ?? '')?.concept ?? '')?.adapt;
+    if (!why) continue;
+    const f = adaptFactor(g, data, m.src.id);
+    if (f > at) continue;
+    g.adapted.push(keyOf(m));
+    const name = m.phrase ? phraseName(data.phraseById.get(m.phrase)!.name, lineText(g, m.src)) : (data.optionOf.get(m.law ?? '')?.get(m.option ?? '')?.label ?? '');
+    const text = data.indicators.adapt.replace('{name}', name.replace(/（[^）]*）$/u, ''));
+    const icon = meaningIcon(data, m);
+    const cause = causeOf(g, data, m.src);
+    news.push({ year: g.year, category: 'WORLD', icon, text, why, severity: 'warn', surprise: true, cause });
+    g.history.push({ year: g.year, kind: 'event', icon, text, why, severity: 'warn', cause });
+  }
+  // 世界から消えた意味・書き直した意味は、知らせたことを忘れる
+  const live = new Set(now.map(keyOf));
+  g.adapted = g.adapted.filter((k) => live.has(k));
+}
+
+// ---------------------------------------------------------------- 空白（消した行）
+
+/**
+ * 空白の行を、世界がいちばん起こりやすい形で埋める（消してから balance.voids.years 年たっても、誰も書かなかった行）。
+ * 埋めた文は世界が書いたもの（赤いインク）で、プレイヤーが書き直せば消える
+ */
+function fillVoids(g: GameState, data: GameData, news: NewsItem[]): void {
+  const years = data.balance.voids.years;
+  const words = data.indicators.voids;
+  let changed = false;
+  const before = targetsNow(g, data);
+  for (const law of data.laws) {
+    const since = g.voids[law.id];
+    if (since === undefined) continue;
+    if ((g.texts[law.id] ?? '') !== '') {
+      delete g.voids[law.id];
+      continue;
+    }
+    if (g.year - since < years) continue;
+    const fill = option(data, law.id, law.voidFill);
+    if (!fill) continue;
+    const deleted: CauseRef = { text: originalText(law), deleted: true, year: g.lawYear[law.id] ?? since };
+    g.laws[law.id] = fill.id;
+    g.texts[law.id] = fill.text ?? originalText(law);
+    g.understood[law.id] = true;
+    g.carried[law.id] = NO_MEANING;
+    delete g.voids[law.id];
+    delete g.scars[law.id];
+    g.filled[law.id] = g.year;
+    changed = true;
+    const text = words.filled.replace('{text}', g.texts[law.id]!);
+    const why = law.voidWhy ?? words.why;
+    const icon = data.conceptById.get(law.concept)?.icon ?? 'edit';
+    news.push({ year: g.year + 1, category: 'WORLD', icon, text, why, severity: 'warn', surprise: true, cause: deleted });
+    g.history.push({ year: g.year + 1, kind: 'event', icon, text, why, severity: 'warn', cause: deleted });
+  }
+  if (!changed) return;
+  syncPhraseFlags(g, data);
+  addImpulse(g, before, targetsNow(g, data));
 }
 
 // ---------------------------------------------------------------- 危機（無限の世界）
@@ -653,11 +1025,10 @@ function scaleEffects(eff: EventEffects, s: number): EventEffects {
   };
 }
 
-/** 危機が去ってから、次の危機が知らされるまでの年数（年とともに縮む） */
+/** 危機が去ってから、次の危機が知らされるまでの年数（年とともに縮む決まった式） */
 function crisisGap(g: GameState, data: GameData): number {
   const k = data.balance.crisis;
-  const base = Math.max(k.gapMin, k.gapStart - k.gapShrink * g.year);
-  return Math.round(base + nextRandom(g) * k.jitter);
+  return Math.round(Math.max(k.gapMin, k.gapStart - k.gapShrink * g.year));
 }
 
 function crisisNews(g: GameState, c: Crisis, text: string, why: string | null, severity: NewsItem['severity'], cause: CauseRef | null): NewsItem {
@@ -697,7 +1068,7 @@ function runCrisis(g: GameState, data: GameData, ch: Channels, news: NewsItem[])
       else g.crises.struck += 1;
       discover(g, soft ? `k:${c.id}.softened` : `k:${c.id}`);
       news.push(crisisNews(g, c, text, c.why, severity, cause));
-      g.history.push({ year: g.year, kind: 'crisis', icon: c.icon, text, why: c.why, severity, cause });
+      g.history.push({ year: g.year, kind: 'crisis', icon: c.icon, text, why: c.why, severity, cause, ref: `k:${c.id}` });
       applyEffects(g, data, ch, scaleEffects(c.effects, g.crisis.strength * (soft ? k.soften : 1)), `crisis:${c.id}`, news);
     }
     g.crisis = null;
@@ -716,13 +1087,13 @@ function runCrisis(g: GameState, data: GameData, ch: Channels, news: NewsItem[])
     }
   }
   const pool = data.crises.filter((c) => c.minYear <= g.year && c.id !== last);
-  const total = pool.reduce((sum, c) => sum + c.weight, 0);
-  if (total <= 0) {
+  if (pool.length === 0) {
     g.nextCrisis = g.year + 1;
     return;
   }
-  let roll = nextRandom(g) * total;
-  const c = pool.find((x) => (roll -= x.weight) < 0) ?? pool[pool.length - 1]!;
+  // いちばん弱っている柱を突く危機がやってくる（弱さ × 重み。並んだときは世界番号で決まる）
+  const weakness = (x: Crisis) => x.weight * (100 - (g.scores[x.target] ?? 50)) + 5 * hash01(g.seed, `crisis:${g.year}:${x.id}`);
+  const c = [...pool].sort((a, b) => weakness(b) - weakness(a))[0]!;
   g.fired[`crisis:${c.id}`] = g.year;
   g.crisis = { id: c.id, at: g.year + c.lead, strength: Math.min(k.maxStrength, 1 + k.growth * g.year) };
   const text = c.warn.replace('{n}', String(c.lead));
@@ -736,7 +1107,7 @@ function runCrisis(g: GameState, data: GameData, ch: Channels, news: NewsItem[])
 function worldSnapshot(g: GameState): WorldSnapshot {
   return structuredClone({
     sim: g.sim,
-    rng: g.rng,
+    charge: g.charge,
     twists: g.twists,
     twistAge: g.twistAge,
     effects: g.effects,
@@ -748,7 +1119,7 @@ function worldSnapshot(g: GameState): WorldSnapshot {
 }
 
 /**
- * 世界を、くり返しが始まった年の様子に巻き戻す。暦も乱数も戻るので、同じ書き方なら同じ出来事がくり返す。
+ * 世界を、くり返しが始まった年の様子に巻き戻す。暦も起きる力も戻るので、同じ書き方なら同じ出来事がくり返す。
  * 書いた WORLD.txt・観測記録・世界史は残る。巻き戻るたびに世界の頁が擦り切れて世界容量が減り、書換の力が少し戻る
  */
 function rewindWorld(g: GameState, data: GameData, text: string, news: NewsItem[]): void {
@@ -761,7 +1132,7 @@ function rewindWorld(g: GameState, data: GameData, text: string, news: NewsItem[
   // 世界容量の限界を超えていた年数は、書き手の側のものなので戻らない
   const capOver = g.counters.capOver;
   g.sim = { ...snap.sim, capacityMax };
-  g.rng = snap.rng;
+  g.charge = snap.charge ?? {};
   g.twists = snap.twists;
   g.twistAge = snap.twistAge;
   g.effects = snap.effects;
@@ -771,8 +1142,10 @@ function rewindWorld(g: GameState, data: GameData, text: string, news: NewsItem[
   g.endingYears = snap.endingYears;
   g.year = loop.start;
   loop.count += 1;
-  // くり返しの中で書いた行は、戻った年に書いたことになる
+  // くり返しの中で書いた行は、戻った年に書いたことになる（空白になった年・世界が埋めた年も）
   for (const [id, y] of Object.entries(g.lawYear)) if (y > g.year) g.lawYear[id] = g.year;
+  for (const [id, y] of Object.entries(g.voids)) if (y > g.year) g.voids[id] = g.year;
+  for (const [id, y] of Object.entries(g.filled)) if (y > g.year) g.filled[id] = g.year;
   for (const x of g.extras) if (x.year > g.year) x.year = g.year;
   g.edits.left = Math.min(st.edits.max, g.edits.left + cfg.ink);
   syncPhraseFlags(g, data);
@@ -785,9 +1158,15 @@ function rewindWorld(g: GameState, data: GameData, text: string, news: NewsItem[
 
 // ---------------------------------------------------------------- 結末
 
+/** いくつかの文を1つの知らせにする（2つ以上なら文の区切りと終わりに「。」を置き、1つだけなら「。」を付けない） */
+function sentences(...parts: string[]): string {
+  const s = parts.map((p) => p.replace(/。$/u, '')).filter(Boolean);
+  return s.length > 1 ? `${s.join('。')}。` : (s[0] ?? '');
+}
+
 /** 無限の世界では、何年続いたかを添える */
 function withYears(g: GameState, text: string): string {
-  return g.nextCrisis >= 0 || g.crisis ? `${text}人類文明は${g.year}年続いた。` : text;
+  return g.nextCrisis >= 0 || g.crisis ? sentences(text, `人類文明は${g.year}年続いた`) : text;
 }
 
 /** 特別な結末で世界を終える */
@@ -857,7 +1236,7 @@ function endGame(g: GameState, data: GameData, reason: FailReason | null, news: 
     const flavor = physical ? (data.endings.find((e) => e.type === 'flavor' && e.kind === 'fail' && checkAll(g, e.when)) ?? null) : null;
     g.ending = flavor?.id ?? reason;
     if (flavor) discover(g, `x:${flavor.id}`);
-    const text = withYears(g, flavor ? `${FAIL_TEXT[reason]}${flavor.text}` : FAIL_TEXT[reason]);
+    const text = withYears(g, flavor ? sentences(FAIL_TEXT[reason], flavor.text) : FAIL_TEXT[reason]);
     const why = flavor?.why ?? null;
     news.push({ year: g.year, category: 'WORLD', icon: flavor?.icon ?? 'warning', text, why, severity: 'critical', surprise: false, cause: null });
     g.history.push({ year: g.year, kind: 'end', icon: flavor?.icon ?? 'warning', text: flavor ? `「${flavor.title}」${text}` : text, why, severity: 'critical', cause: null });
@@ -881,19 +1260,28 @@ export function stepYear(g: GameState, data: GameData): NewsItem[] {
   // 書き換えで生まれた組み合わせも、時間を進めて初めて知らせる（書き換えただけでは結果を見せない）
   const known = g.combos;
 
+  // 0) 誰も書かなかった空白の行を、世界が埋める
+  fillVoids(g, data, news);
   // 1) 書き換えの勢いを届け、今の法則で世界を1年動かす
   applyImpulse(g, data);
   const meanings = meaningsInEffect(g, data);
   const ch0 = refresh(g, data);
-  const out = simulateYear(g, ch0, b, false);
+  const out = simulateYear(g, ch0, balanceFor(g, data), false);
   g.year += 1;
-  g.sim.capacityMax = Math.max(stage.capacity * 0.5, g.sim.capacityMax - stage.capacityDecay);
+  const causeDecay = stage.causes.filter((c) => c.id === g.cause || c.id === g.trial?.cause2).reduce((n, c) => n + c.capacityDecay, 0);
+  g.sim.capacityMax = Math.max(stage.capacity * 0.5, g.sim.capacityMax - stage.capacityDecay - causeDecay);
   // 去年書いた一文が、今年から世界に効き始めた（世界がそのとおりに変わった姿を、まず知らせる）
   announceMeanings(g, data, meanings, news);
 
-  // 2) 遅れて効く副作用が育ち、一時的な出来事の効果が切れていく
+  // 同じ手は年とともに効きが落ちる（効きが落ちてきた意味を知らせる）
+  noticeAdaptation(g, data, news);
+  // 2) 遅れて効く副作用が育ち、一時的な出来事の効果が切れていく。性質として書いた考え方が広がる
   const tc = twistCauses(g, data);
   growTwists(g, data, tc, news);
+  spreadMinds(g, data);
+  noticePeople(g, data, news);
+  // この世界で出会った決まりは、本来の強さへ近づく
+  rampIntro(g, data);
   g.effects = g.effects.map((e) => ({ ...e, remaining: e.remaining - 1 })).filter((e) => e.remaining > 0);
 
   // 3) 出来事（戦争の始まり・終わりもここでニュースになる）
@@ -917,9 +1305,10 @@ export function stepYear(g: GameState, data: GameData): NewsItem[] {
   runCrisis(g, data, ch1, news);
 
   // 4) 書換の権利が戻る
+  const rule = editRule(g, stage);
   if (g.year >= g.edits.nextAt) {
-    if (g.edits.left < stage.edits.max) g.edits.left += 1;
-    g.edits.nextAt += stage.edits.every;
+    if (g.edits.left < rule.max) g.edits.left += 1;
+    g.edits.nextAt += rule.every;
   }
 
   // 5) 測り直して、終わりの条件を確かめる
@@ -927,8 +1316,13 @@ export function stepYear(g: GameState, data: GameData): NewsItem[] {
   g.scores = computeScores(g.sim, g.derived, b, g.startPop);
   g.stats.minPop = Math.min(g.stats.minPop, g.sim.pop);
   g.stats.maxPop = Math.max(g.stats.maxPop, g.sim.pop);
-  traceYear(g);
+  traceYear(g, data);
   discoverTags(g, data);
+  // そのステージで見る項目が、初めて「不安」（注意の段）より悪くなった（開いていく順番で、柱の中身を開く）
+  const uneasy = (id: (typeof stage.focus)[number]) => !['good', 'ok'].includes(indicatorLevel(data.indicators, id, g.scores[id] ?? 100, g.sim, g.derived).tone);
+  if (stage.focus.some(uneasy)) discover(g, 'h:pillar');
+  // 分かれ道の年（原因の壁の兆しが最初に出た年）を残す（敗因の振り返りと、印の「早く見抜いた」）
+  noticeBranch(g, data);
 
   // 特別な結末（重力の消失・宇宙の消滅・星々への旅立ち・楽園 など）
   const special = runEndings(g, data, news);
@@ -973,7 +1367,7 @@ export function stepYear(g: GameState, data: GameData): NewsItem[] {
         year: g.year,
         category: 'ANOMALY',
         icon: 'capacity',
-        text: `世界容量が限界を超えている。あと${left}年で世界が維持できなくなる`,
+        text: `使える文字数を超えている。あと${left}年で世界が維持できなくなる`,
         why: null,
         severity: 'critical',
         surprise: false,
@@ -1045,7 +1439,10 @@ export function advance(g: GameState, data: GameData, years: number): StepReport
     moves.push({ id, trend: trendOf(per, t.fast, t.slow), better: delta > 0 });
   }
   const became = g.inEffect.filter((k) => !effectBefore.has(k));
-  const report: StepReport = { from, to: g.year, requested: years, interrupted, changes, moves, pop: { from: popFrom, to: g.sim.pop }, became, news };
+  // 静かな年：状態語の変わった項目も、注意の知らせも、効き始めた一文もない（新しい兆しがないかは、画面の側で signsOf を比べる）
+  const loud = news.some((n) => n.severity !== 'info' || n.surprise || n.onset || n.category === 'CRISIS' || n.category === 'ANOMALY');
+  const quiet = g.status === 'playing' && changes.length === 0 && !loud && became.length === 0;
+  const report: StepReport = { from, to: g.year, requested: years, interrupted, changes, moves, pop: { from: popFrom, to: g.sim.pop }, became, news, quiet };
   g.report = report;
   return report;
 }

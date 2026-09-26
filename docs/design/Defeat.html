@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>敗因の振り返り</title>
+
+</head>
+<body>
+<div>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&amp;family=Shippori+Mincho:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#050506;font-family:'Shippori Mincho',serif;color:#eceae4}
+a{color:#eceae4;text-decoration:none}a:hover{color:#ffffff}
+@keyframes trace{from{stroke-dashoffset:420}to{stroke-dashoffset:0}}
+@keyframes fork{0%,100%{opacity:.55}50%{opacity:1}}
+.trace{stroke-dasharray:420;animation:trace 2.4s ease-out 1 both}  /* 開いたときに1回だけ、崩れた年から原因へさかのぼる */
+.fork{animation:fork 1.2s ease-in-out 2.4s 3}  /* 線が届いたあと、分かれ道だけ3回光って止まる */
+@media (prefers-reduced-motion: reduce){.trace{animation:none;stroke-dasharray:none}.fork{animation:none}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #050506; display: flex; flex-direction: column; overflow: hidden; font-family: 'Shippori Mincho', serif; color: #eceae4;">
+
+<header style="flex-shrink: 0; padding: 18px 16px 12px; display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid rgba(214,220,232,0.14);">
+<div style="display: flex; justify-content: space-between; font-family: 'Cormorant Garamond', serif; font-size: 12px; letter-spacing: 0.3em; color: #a2a5ac;"><span>WORLD #0007</span><span style="font-family: 'Shippori Mincho', serif; letter-spacing: 0.1em;">食料危機</span></div>
+<div style="font-size: 22px; color: #f2a393;">世界が崩れた</div>
+<div style="font-size: 13px; color: #d8dbe2;"><span style="font-family: 'Cormorant Garamond', serif; font-size: 17px; font-weight: 600;">16</span>年目に、<b style="color: #f2a393;">糧</b>が線を割った（大飢饉）</div>
+</header>
+
+<div style="flex-shrink: 0; padding: 12px 16px 4px; display: flex; justify-content: space-between; align-items: baseline;">
+<span style="font-size: 11px; letter-spacing: 0.3em; color: #a2a5ac;">原因を、さかのぼる</span>
+<span style="font-size: 10px; color: #8b8f97; display: flex; align-items: center; gap: 4px;"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style="vertical-align: -1px;"><circle cx="5" cy="5" r="3.6" fill="#0a0f16" stroke="#a6cdff" stroke-width="1.4"></circle></svg>書いた一文　<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style="vertical-align: -1px;"><circle cx="5" cy="5" r="3.6" fill="#160f0d" stroke="#f2a393" stroke-width="1.4"></circle></svg>出来事　<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style="vertical-align: -1px;"><path d="M5 0.8L9.2 5 5 9.2 0.8 5z" fill="#13120d" stroke="#ead08f" stroke-width="1.2"></path></svg>分かれ道</span>
+</div>
+
+<div style="flex-shrink: 0; position: relative; height: 424px; margin: 0 16px;">
+<svg width="358" height="424" viewBox="0 0 358 424" style="position: absolute; left: 0; top: 0;" aria-hidden="true">
+<path d="M22 20V396" stroke="#26282e" stroke-width="2"></path>
+<path class="trace" d="M22 20V396" stroke="#d8dbe2" stroke-width="1.4" fill="none"></path>
+<circle cx="22" cy="24" r="7" fill="#1a0f0d" stroke="#f2a393" stroke-width="1.6"></circle>
+<circle cx="22" cy="102" r="6" fill="#160f0d" stroke="#f2a393" stroke-width="1.4"></circle>
+<circle cx="22" cy="172" r="6" fill="#13120d" stroke="#ead08f" stroke-width="1.4"></circle>
+<g class="fork"><path d="M22 244l8 8-8 8-8-8z" fill="#13120d" stroke="#ead08f" stroke-width="1.6"></path></g>
+<circle cx="22" cy="328" r="6" fill="#0e0f12" stroke="#a2a5ac" stroke-width="1.4"></circle>
+<circle cx="22" cy="392" r="7" fill="#0a0f16" stroke="#a6cdff" stroke-width="1.8"></circle>
+</svg>
+
+<div style="position: absolute; left: 44px; top: 4px; right: 0; box-sizing: border-box; padding: 8px 10px; background: #160f0d; border: 1px solid rgba(242,163,147,0.65); border-radius: 6px; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 10px; letter-spacing: 0.15em; color: #f2a393;"><span style="font-family: 'Cormorant Garamond', serif; font-size: 13px;">Y16</span>　崩れた</span>
+<span style="font-size: 14px;">糧が線を割り、大飢饉になった</span>
+</div>
+<div style="position: absolute; left: 44px; top: 80px; right: 0; box-sizing: border-box; padding: 8px 10px; background: #111214; border: 1px solid rgba(242,163,147,0.4); border-radius: 6px; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 10px; color: #a2a5ac;"><span style="font-family: 'Cormorant Garamond', serif; font-size: 13px; color: #f2a393;">Y15</span>　なぜ？ ↑</span>
+<span style="font-size: 14px;">作物の病が、世界の畑に広がった</span>
+</div>
+<div style="position: absolute; left: 44px; top: 150px; right: 0; box-sizing: border-box; padding: 8px 10px; background: #111214; border: 1px solid rgba(234,208,143,0.35); border-radius: 6px; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 10px; color: #a2a5ac;"><span style="font-family: 'Cormorant Garamond', serif; font-size: 13px; color: #ead08f;">Y13</span>　なぜ？ ↑　想定外</span>
+<span style="font-size: 14px;">作物の研究が止まり、畑が病に弱くなった</span>
+</div>
+<div style="position: absolute; left: 44px; top: 220px; right: 0; box-sizing: border-box; padding: 8px 10px; background: #13120d; border: 1px solid rgba(234,208,143,0.6); border-radius: 6px; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 10px; color: #ead08f; letter-spacing: 0.1em;"><span style="font-family: 'Cormorant Garamond', serif; font-size: 13px;">Y12</span>　分かれ道　兆しが最初に出た年</span>
+<span style="font-size: 14px;">「作物の病が、畑でぶり返している」</span>
+<span style="font-size: 11px; color: #a2a5ac;">このとき、世界の寿命はあと約4年だった</span>
+</div>
+<div style="position: absolute; left: 44px; top: 306px; right: 0; box-sizing: border-box; padding: 8px 10px; background: #111214; border: 1px solid rgba(214,220,232,0.2); border-radius: 6px; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 10px; color: #a2a5ac;"><span style="font-family: 'Cormorant Garamond', serif; font-size: 13px;">Y4</span>　なぜ？ ↑　つながって</span>
+<span style="font-size: 14px;">農と食の仕事が減った</span>
+</div>
+<div style="position: absolute; left: 44px; top: 370px; right: 0; box-sizing: border-box; padding: 8px 10px; background: #0a0f16; border: 1px solid rgba(166,205,255,0.6); border-radius: 6px; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 10px; color: #a6cdff; letter-spacing: 0.1em;"><span style="font-family: 'Cormorant Garamond', serif; font-size: 13px;">Y0</span>　あなたが書いた一文</span>
+<span style="font-size: 14px; color: #a6cdff;">人間は二日に一度食べる。</span>
+</div>
+</div>
+
+<div style="flex-shrink: 0; margin: 10px 16px 0; box-sizing: border-box; padding: 8px 12px; background: #0c0d10; border-radius: 6px; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 11px; letter-spacing: 0.3em; color: #8b8f97;">現実では</span>
+<span style="font-size: 12px; line-height: 1.65; color: #d8dbe2;">1845年からのアイルランドの大飢饉では、ジャガイモの疫病が広がり、<b style="color: #eceae4;">約100万人</b>が亡くなった。畑の多くが同じ品種だった。</span>
+<span style="font-size: 10px; color: #8b8f97;">アイルランド大飢饉（1845〜1852年）</span>
+</div>
+
+<div style="flex-grow: 1;"></div>
+<div style="flex-shrink: 0; padding: 10px 16px 16px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid rgba(214,220,232,0.10); background: #08090b;">
+<a href="Main.html" style="height: 52px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; background: #1a1b1f; border: 1px solid #d8dbe2; border-radius: 6px; font-size: 15px; letter-spacing: 0.1em;">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"></path><path d="M4 4v4h4"></path></svg>
+同じ世界でもう一度<span style="font-size: 11px; color: #ead08f;">　分かれ道は Y12</span></a>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+<a href="Notebook.html" style="height: 48px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(214,220,232,0.32); border-radius: 6px; font-size: 14px; color: #d8dbe2;">ノートに残す</a>
+<a href="Main.html" style="height: 48px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(214,220,232,0.32); border-radius: 6px; font-size: 14px; color: #d8dbe2;">世界を選ぶ</a>
+</div>
+</div>
+</div>
+</div>
+
+</body>
+</html>

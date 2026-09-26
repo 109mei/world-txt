@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { features, interpretAsLaw, interpretLaw, interpretLine, kindOf, matchPhrases, phraseName, textCost } from '../src/core';
+import { ADD, REWRITE, runAdd, runRewrite, understoodRate } from '../scripts/corpus';
+import { createGame, features, interpretAsLaw, interpretLaw, interpretLine, kindOf, matchPhrases, phraseName, planWrite, textCost } from '../src/core';
 import { gameData } from '../src/data';
+import type { StageId } from '../src/data/schema';
 
 function reading(lawId: string, text: string): string {
   const law = gameData.lawById.get(lawId)!;
@@ -138,5 +140,61 @@ describe('言葉の種類と、種類ごとの読み取り', () => {
     expect(phraseName(gone, 'ChatGPTは存在しない。')).toBe('ChatGPTがなくなる');
     expect(phraseName(gone)).toBe('ある機械がなくなる');
     expect(phraseName(gameData.phraseById.get('gen_gone_disease')!.name, 'がんは存在しない。')).toBe('がんがなくなる');
+  });
+});
+
+// ---------------------------------------------------------------- 初めて遊ぶ人の文（scripts/corpus.ts。P1）
+
+/** 食料危機の世界（筆の位の制限なし）に書き足したときの読み取り（読めなければ「意味なし」） */
+function added(text: string): string {
+  const g = createGame(gameData, 'food', 1);
+  const plan = planWrite(g, gameData, { kind: 'new' }, text);
+  if (plan.block) return `止まる:${plan.block}`;
+  return plan.result.understood ? (plan.result.reading ?? '') : '意味なし';
+}
+
+describe('初めて遊ぶ人の文が通じる（P1）', () => {
+  it('書き足しは、どのステージでも通じる文が多い（全体で70%以上）', () => {
+    const all = (Object.keys(ADD) as StageId[]).flatMap((s) => runAdd(s, false));
+    expect(all.length).toBeGreaterThanOrEqual(480);
+    expect(understoodRate(all)).toBeGreaterThanOrEqual(0.7);
+    for (const s of Object.keys(ADD) as StageId[]) expect(understoodRate(runAdd(s, false)), s).toBeGreaterThanOrEqual(0.6);
+  });
+
+  it('行の書き換えは90%以上が通じる', () => {
+    const list = runRewrite(true);
+    expect(list.length).toBeGreaterThanOrEqual(Object.keys(REWRITE).length * 5);
+    expect(understoodRate(list)).toBeGreaterThanOrEqual(0.9);
+  });
+
+  it('結果を願う文は「願い」として読む（重く、反動がある）', () => {
+    expect(added('食料が増える。')).toBe('食べ物が満ちる（願い）');
+    expect(added('気温が下がる。')).toBe('地球が冷える（願い）');
+    expect(added('経済が豊かになる。')).toBe('暮らしが豊かになる（願い）');
+    for (const id of ['wish_food', 'wish_cool', 'wish_economy']) {
+      const p = gameData.phraseById.get(id)!;
+      expect(p.weight, id).toBeGreaterThanOrEqual(18);
+      expect(p.twists.length, id).toBeGreaterThan(0);
+    }
+  });
+
+  it('48行にない仕組みを書き足せる（蔵・ため池・隔離・再生可能エネルギー・配給）', () => {
+    expect(added('蔵に食料を蓄える。')).toBe('蔵に食べ物を蓄える');
+    expect(added('村ごとにため池を作る。')).toBe('水をためておく');
+    expect(added('感染者を隔離する。')).toBe('人が離れて暮らす');
+    expect(added('太陽光発電が広がる。')).toBe('風と太陽の電気が広がる');
+    expect(added('国が食料を配る。')).toBe('国が物を配る');
+  });
+
+  it('言い方の違いで、別の意味や広すぎる意味に読まない', () => {
+    expect(added('病気で死ぬ人はいない。')).not.toContain('人類が消える');
+    expect(added('兵器を作る人はいない。')).not.toContain('人類が消える');
+    expect(added('水をめぐる争いは起きない。')).toBe('戦争が起きない');
+    expect(added('お金の価値は変わらない。')).toBe('物価が上がらなくなる');
+    expect(added('太陽光発電が増える。')).not.toContain('太陽が二つ');
+    expect(added('核兵器がなくなる。')).toBe('核兵器がなくなる');
+    expect(added('人は免疫を持って生まれる。')).not.toContain('子が少なく');
+    expect(added('作物は干ばつに強い。')).toBe('植物が少しの水で育つ');
+    expect(added('犯罪は起きない。')).toBe('人が決まりを破らない');
   });
 });

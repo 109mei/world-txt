@@ -68,12 +68,12 @@ describe('筆の位（救った世界の数で、書き換えられる範囲が�
   it('書き足せる行の数（余白）には限りがあり、書き足した行を消せば、また書ける', () => {
     const g = world('food', 0);
     const margin = g.access!.margin!;
-    const lines = ['人間は空を飛べる。', '人間は光合成できる。', '人間は肉を食べない。', '人は歌うと元気になる。'];
+    const lines = ['人は毎日手を洗う。', '村ごとにため池を作る。', '人間は肉を食べない。', '町ごとに蔵を建てる。'];
     for (const t of lines.slice(0, margin)) expect(addLine(g, gameData, t).block, t).toBeNull();
     expect(g.extras).toHaveLength(margin);
     expect(addLine(g, gameData, lines[margin]!).block).toBe('margin');
     // 書き足した行の書き換えは、余白を使わない
-    expect(rewriteLine(g, gameData, g.extras[0]!.id, '人間は空を少しだけ飛べる。').block).toBeNull();
+    expect(rewriteLine(g, gameData, g.extras[0]!.id, '人はいつも手を洗う。').block).toBeNull();
     expect(rewriteLine(g, gameData, g.extras[0]!.id, '').block).toBeNull();
     expect(addLine(g, gameData, lines[margin]!).block).toBeNull();
   });

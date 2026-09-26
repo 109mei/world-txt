@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>因果の連鎖と結果・明るい画面</title>
+
+</head>
+<body>
+<div>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&amp;family=Shippori+Mincho:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#f6f4ef;font-family:'Shippori Mincho',serif;color:#1c1d21}
+a{color:#1c1d21;text-decoration:none}a:hover{color:#000000}
+/* 1年の結果を開いたときに1回だけ。線は直接 → つながって → 想定外の順に約0.3秒ずつ伸び、想定外に着いたところで輪が1回広がる */
+@keyframes draw{from{stroke-dashoffset:240}to{stroke-dashoffset:0}}
+@keyframes ring{0%{opacity:0;transform:scale(.3)}40%{opacity:.9}100%{opacity:0;transform:scale(1.6)}}
+.d1{stroke-dasharray:240;animation:draw .5s ease-out 0s 1 both}
+.d2{stroke-dasharray:240;animation:draw .5s ease-out .3s 1 both}
+.d3{stroke-dasharray:240;animation:draw .5s ease-out .6s 1 both}
+.ring{transform-box:fill-box;transform-origin:center;opacity:0;animation:ring .8s ease-out 1.1s 1 both}
+@media (prefers-reduced-motion: reduce){.d1,.d2,.d3{animation:none;stroke-dasharray:none}.ring{animation:none;opacity:.6}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #f6f4ef; display: flex; flex-direction: column; overflow: hidden; font-family: 'Shippori Mincho', serif; color: #1c1d21;">
+
+<header style="height: 56px; flex-shrink: 0; box-sizing: border-box; padding: 0 8px 0 16px; display: flex; align-items: center; gap: 10px; background: #eeebe4; border-bottom: 1px solid rgba(40,42,48,0.14);">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="#1c1d21" aria-hidden="true"><path d="M7 4l12 8-12 8z"></path></svg>
+<span style="font-size: 18px;">1年経過</span>
+<span style="font-family: 'Cormorant Garamond', serif; font-size: 14px; letter-spacing: 0.2em; color: #50555e;">YEAR 12 → 13</span>
+<span style="flex-grow: 1;"></span>
+<a href="MainLight.html" aria-label="閉じる" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #30333a;">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></a>
+</header>
+
+<div style="flex-shrink: 0; padding: 12px 16px 0; font-size: 11px; letter-spacing: 0.3em; color: #50555e;">因果の連鎖</div>
+<div style="flex-shrink: 0; position: relative; width: 390px; height: 300px;">
+<svg width="390" height="300" viewBox="0 0 390 300" style="position: absolute; left: 0; top: 0;" aria-hidden="true">
+<defs><filter id="cglow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"></feGaussianBlur></filter></defs>
+<path d="M110 70C150 90 200 92 250 104" fill="none" stroke="#1b5aa6" stroke-width="5" opacity="0.35" filter="url(#cglow)"></path>
+<path class="d1" d="M110 70C150 90 200 92 250 104" fill="none" stroke="#1b5aa6" stroke-width="1.6"></path>
+<path class="d2" d="M270 136C262 160 220 176 170 186" fill="none" stroke="#30333a" stroke-width="1.4"></path>
+<path class="d3" d="M110 212C102 236 140 252 176 256" fill="none" stroke="#ad3f2a" stroke-width="1.6"></path>
+<circle class="ring" cx="178" cy="256" r="16" fill="none" stroke="#ad3f2a" stroke-width="1.2"></circle>
+</svg>
+
+<div style="position: absolute; left: 16px; top: 18px; width: 204px; box-sizing: border-box; padding: 8px 10px; background: #e9f0fa; border: 1px solid rgba(27,90,166,0.55); border-radius: 6px; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 10px; letter-spacing: 0.2em; color: #1b5aa6;">書いた一文　YEAR 0</span>
+<span style="font-size: 14px; color: #1b5aa6; white-space: nowrap;">人間は二日に一度食べる。</span>
+</div>
+
+<div style="position: absolute; left: 212px; top: 88px; width: 162px; box-sizing: border-box; padding: 8px 10px; background: #e8f4ee; border: 1px solid rgba(29,107,70,0.55); border-radius: 6px; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 10px; color: #50555e;"><span style="font-family: 'Cormorant Garamond', serif; font-size: 12px;">1</span>　直接</span>
+<span style="font-size: 14px;">糧　<span style="color: #50555e;">不足 →</span> <span style="color: #1d6b46; font-weight: 600;">十分</span> <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1d6b46" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="良くなった" style="vertical-align: -2px;"><path d="M7 17L17 7M9 7h8v8"></path></svg></span>
+</div>
+
+<div style="position: absolute; left: 16px; top: 168px; width: 176px; box-sizing: border-box; padding: 8px 10px; background: #fbf4e2; border: 1px solid rgba(131,95,12,0.5); border-radius: 6px; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 10px; color: #50555e;"><span style="font-family: 'Cormorant Garamond', serif; font-size: 12px;">2</span>　つながって</span>
+<span style="font-size: 14px;">農と食の仕事が減る <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ad3f2a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="悪くなった" style="vertical-align: -2px;"><path d="M7 7l10 10M17 9v8H9"></path></svg></span>
+</div>
+
+<div style="position: absolute; left: 180px; top: 236px; width: 194px; box-sizing: border-box; padding: 8px 10px; background: #fbece8; border: 1px solid rgba(173,63,42,0.65); border-radius: 6px; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-size: 10px; color: #ad3f2a; letter-spacing: 0.1em;"><span style="font-family: 'Cormorant Garamond', serif; font-size: 12px;">3</span>　想定外</span>
+<span style="font-size: 14px; line-height: 1.5;">作物の研究が止まり、畑が病に弱くなる</span>
+</div>
+</div>
+
+<div style="flex-shrink: 0; padding: 8px 16px 0; display: flex; flex-direction: column;">
+<div style="font-size: 11px; letter-spacing: 0.3em; color: #50555e; padding-bottom: 4px;">今年の大きな変化</div>
+<div style="height: 40px; display: flex; align-items: center; border-bottom: 1px solid rgba(40,42,48,0.10); font-size: 15px;"><span style="flex-grow: 1;">糧</span><span style="color: #50555e;">不足 → </span><span style="color: #1d6b46; font-weight: 600; padding-left: 4px;">十分</span><span style="width: 28px; display: flex; justify-content: flex-end;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1d6b46" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="良くなった" style="vertical-align: -2px;"><path d="M7 17L17 7M9 7h8v8"></path></svg></span></div>
+<div style="height: 40px; display: flex; align-items: center; border-bottom: 1px solid rgba(40,42,48,0.10); font-size: 15px;"><span style="flex-grow: 1;">社会</span><span style="color: #50555e;">平穏 → </span><span style="color: #835f0c; font-weight: 600; padding-left: 4px;">不満</span><span style="width: 28px; display: flex; justify-content: flex-end;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ad3f2a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="悪くなった" style="vertical-align: -2px;"><path d="M7 7l10 10M17 9v8H9"></path></svg></span></div>
+<div style="height: 40px; display: flex; align-items: center; border-bottom: 1px solid rgba(40,42,48,0.10); font-size: 15px;"><span style="flex-grow: 1;">人口</span><span style="font-family: 'Cormorant Garamond', serif; font-size: 17px; color: #50555e;">約79億人 → </span><span style="font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; padding-left: 4px;">約80億人</span></div>
+<button style="height: 44px; background: transparent; border: none; color: #30333a; font-family: inherit; font-size: 13px; text-align: left; padding: 0; display: flex; align-items: center; gap: 6px;">ほかの変化 <span style="font-family: 'Cormorant Garamond', serif; font-size: 15px;">4</span>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+</div>
+
+<div style="flex-grow: 1; padding: 0 16px; overflow: hidden;">
+<div style="box-sizing: border-box; padding: 10px 12px; background: #ffffff; border: 1px solid rgba(40,42,48,0.14); border-radius: 6px; display: flex; flex-direction: column; gap: 4px;">
+<span style="font-family: 'Cormorant Garamond', serif; font-size: 12px; letter-spacing: 0.2em; color: #50555e;">Y13　SCIENCE</span>
+<span style="font-size: 14px; line-height: 1.6;">農業が縮み、作物の研究が止まりつつある</span>
+<span style="font-size: 12px; line-height: 1.6; color: #50555e;">なぜ？ 農業の研究費と研究者は、農業という産業の大きさに支えられている。</span>
+</div>
+</div>
+
+<div style="flex-shrink: 0; padding: 10px 16px 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; border-top: 1px solid rgba(40,42,48,0.10); background: #eeebe4;">
+<a href="MainLight.html" style="height: 52px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(40,42,48,0.32); border-radius: 6px; font-size: 15px; color: #30333a;">世界を見る</a>
+<a href="ComputeLight.html" style="height: 52px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; background: #ffffff; border: 1px solid #30333a; border-radius: 6px; font-size: 15px;">
+<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 4l12 8-12 8z"></path></svg>次の1年</a>
+</div>
+</div>
+</div>
+
+</body>
+</html>

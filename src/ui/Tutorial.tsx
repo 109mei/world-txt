@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react';
 import { gameData } from '../data';
-import { Icon } from './icons';
+import { Icon, TrendArrow } from './icons';
 
 /**
  * あそびかた（タイトルから開く）：ゲームの流れを5枚で短く見せる。
@@ -16,8 +16,8 @@ interface Step {
 
 const STEPS: Step[] = [
   {
-    title: '世界は、文章でできている',
-    text: 'WORLD.txt の一行一行が、この世界の決まり。いま、人類文明は危機にある。',
+    title: '世界は文章でできている',
+    text: 'WORLD.txt の一行一行がこの世界の決まり。いま人類文明は危機にある。',
     art: (
       <div className="tut-file">
         <div className="tut-comment"># 人間</div>
@@ -33,30 +33,27 @@ const STEPS: Step[] = [
   },
   {
     title: '兆しを読む',
-    text: '「世界」のタブで、いまの世界の姿と、終わりの線まであとどれぐらいかを確かめる。',
+    text: '「世界」のタブで、悪くなっている所と起きかけていること（兆し）を読む。それが書き換える所の手がかりになる',
     art: (
       <div className="tut-signs">
         <div className="tut-tile">
           <Icon name="food" size={16} />
-          <span className="tut-tile-label">食料</span>
+          <span className="tut-tile-label">食料が</span>
           <b className="tone-bad">深刻</b>
-          <span className="trend trend-down2">⇊</span>
+          <TrendArrow trend="down2" />
         </div>
-        <div className="tut-limit">
-          <span>文明</span>
-          <span className="limit-track">
-            <span className="limit-zone" style={{ width: '20%' }} />
-            <span className="limit-fill tone-bg-warn" style={{ width: '34%' }} />
-            <span className="limit-line" style={{ left: '20%' }} />
+        <div className="tut-sign">
+          <span className="tut-sign-label">
+            <Icon name="water" size={14} /> 起きかけていること
           </span>
-          <b className="tone-warn">近い</b>
+          <span className="tut-sign-text">雨の少ない季節が続き、川の水位が下がっている</span>
         </div>
       </div>
     ),
   },
   {
     title: '書き換える',
-    text: '「定義」のタブで行をタップし、自由な文章で書き換える。消すことも、新しい一文を書き足すこともできる。',
+    text: '「法則」のタブで行をタップし、自由な文章で書き換える。消すことも新しい一文を書き足すこともできる。',
     art: (
       <div className="tut-file">
         <div className="tut-line">
@@ -71,7 +68,7 @@ const STEPS: Step[] = [
   },
   {
     title: '時間を進める',
-    text: '「▶ 1年」で時間が流れ、書いた一文がその年に世界の姿になる。何が起きるかは、進めてはじめてわかる。',
+    text: '「1年進める」で時間が流れ、書いた一文がその年に世界の姿になる。何が起きるかは進めてはじめてわかる。',
     art: (
       <div className="tut-time">
         <span className="tut-play">
@@ -86,7 +83,7 @@ const STEPS: Step[] = [
   },
   {
     title: '世界を救う',
-    text: '決められた年まで文明を保てば、世界を救える。救うたびに筆の位が上がり、書き換えられる行・書き足せる行・書ける物が広がる。最後は、すべてが自由になる。',
+    text: '決められた年まで文明を保てば世界を救える。救うたびに筆の位が上がり、書き換えられる行・書き足せる行・書ける物が広がる。最後はすべてが自由になる。',
     art: (
       <div className="tut-pen">
         {gameData.access.ranks.map((r, i) => (

@@ -24,10 +24,10 @@ export function PenPanel({ clears }: { clears: number }) {
         </span>
       </div>
       {pen.free ? (
-        <p className="pen-now">すべての行を、自由に書き換えられる。書き足せる行にも、書ける物にも限りはない。</p>
+        <p className="pen-now">すべての行を自由に書き換えられる。書き足せる行にも書ける物にも限りはない。</p>
       ) : (
         <ul className="pen-now">
-          <li>書き換えられる行：{pen.realms.map((r) => `「${r.name}」`).join('')}の行と、その世界の危機に関わる行</li>
+          <li>書き換えられる行：{pen.realms.map((r) => `「${r.name}」`).join('')}の行とその世界の危機に関わる行</li>
           <li>書き足せる行：{pen.margin === null ? '限りなし' : `${pen.margin}行まで`}</li>
           <li>書ける物：{pen.reach}まで</li>
         </ul>

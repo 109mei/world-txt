@@ -51,7 +51,7 @@ export function LimitRow({ limit: l, onClick, testId }: { limit: LimitView; onCl
   );
 }
 
-/** 両端に言葉のあるメーター（例：余裕 ━━━╸━━ 限界）。pos は 0〜1 */
+/** 両端に言葉のあるメーター（左右の端の言葉と、今の位置の印と言葉）。pos は 0〜1 */
 export function Meter({ ends, pos, word, tone, trend, label, testId }: { ends: [string, string]; pos: number; word: string; tone: Tone; trend?: Trend; label?: ReactNode; testId?: string }) {
   return (
     <div className="meter" data-testid={testId}>
@@ -65,7 +65,13 @@ export function Meter({ ends, pos, word, tone, trend, label, testId }: { ends: [
         <span className="meter-end">{ends[1]}</span>
       </div>
       <div className="meter-word" style={{ paddingLeft: `calc(${pos * 100}% - 1.5em)` }}>
-        <span className={`tone-${tone}`}>▲ {word}</span>
+        <span className={`meter-now tone-${tone}`}>
+          {/* 上の印を指す小さな三角（記号の文字ではなく絵で描く） */}
+          <svg className="meter-pointer" viewBox="0 0 10 8" aria-hidden="true">
+            <path d="M5 0 L10 8 L0 8 Z" fill="currentColor" />
+          </svg>
+          {word}
+        </span>
         {trend && <TrendArrow trend={trend} />}
       </div>
     </div>
@@ -137,7 +143,7 @@ export function LawText({ line }: { line: Pick<LawLine, 'text' | 'state' | 'unde
 export function CostPips({ cost }: { cost: number }) {
   if (cost <= 0) return <span className="pips pips-zero">0字</span>;
   return (
-    <span className="pips" aria-label={`世界容量 ${cost}字`}>
+    <span className="pips" aria-label={`使える文字数 ${cost}字`}>
       {cost}字
     </span>
   );
@@ -149,6 +155,14 @@ export function CauseLine({ cause }: { cause: CauseRef | null | undefined }) {
   return (
     <div className="cause" data-testid="cause">
       <span className="cause-arrow">←</span>
+      {cause.via && (
+        <>
+          <span className="cause-via" data-testid="cause-via">
+            {cause.via}
+          </span>
+          <span className="cause-arrow">←</span>
+        </>
+      )}
       <span className={cause.deleted ? 'cause-text deleted' : 'cause-text'}>
         {cause.deleted ? '消した' : ''}「{cause.text}」
       </span>

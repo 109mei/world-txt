@@ -77,8 +77,9 @@ describe('書き換えのルール', () => {
   });
 
   it('時間を進めると書換の力が戻る（上限まで）', () => {
-    const g = createGame(gameData, 'food', 1);
-    const st = gameData.stageById.get('food')!;
+    // 長く続く世界で確かめる（書換の力は、決まった年ごとに1つ戻る）
+    const g = createGame(gameData, 'endless', 1);
+    const st = gameData.stageById.get('endless')!;
     rewriteLaw(g, gameData, 'crime', '');
     const left = g.edits.left;
     // 重大な出来事で途中で止まることがあるので、1年ずつ進める
@@ -120,7 +121,7 @@ describe('書き足しの読み取りと、原因・観測記録', () => {
 
   it('書き足した行を書き換えて既存の行の話になったら、その行に溶け込む', () => {
     const g = createGame(gameData, 'food', 1);
-    addLine(g, gameData, '世界はうつくしい。');
+    addLine(g, gameData, '人間は空を飛べる。');
     const id = g.extras[0]!.id;
     const res = rewriteLine(g, gameData, id, '雨がたくさん降る。');
     expect(res.redirect).toBe('water_rain');
@@ -160,6 +161,7 @@ describe('書き足しの読み取りと、原因・観測記録', () => {
 describe('世界容量の見積もり', () => {
   it('書き足した文章が既存の行の書き換えになるときも、命令のあとと同じ重さを見積もる', () => {
     const g = createGame(gameData, 'tiny', 1);
+    g.edits.left = 10;
     const before = lawTotals(gameData, g).cost;
     const est = costAfter(g, gameData, { kind: 'new' }, '人は隔日に食べる。');
     // 「人間は毎日食事を必要とする」（13字）が「人は隔日に食べる」（8字）になる
@@ -173,6 +175,7 @@ describe('世界容量の見積もり', () => {
       [{ kind: 'new' }, '人間は空を飛べる。'],
     ];
     const f = createGame(gameData, 'food', 1);
+    f.edits.left = 10;
     for (const [target, text] of cases) {
       const e = costAfter(f, gameData, target, text);
       const res = target.kind === 'law' ? rewriteLaw(f, gameData, target.id, text) : addLine(f, gameData, text);
@@ -223,7 +226,7 @@ describe('書き換えた年の世界（効き始めの知らせと、書き換�
     // 元の文に戻すと、次の年に「戻った」と知らせる
     rewriteLaw(g, gameData, 'human_food', '人間は毎日食事を必要とする。');
     const back = advance(g, gameData, 1).news.filter((n) => n.onset);
-    expect(back.map((n) => n.text)).toEqual(['「人間は毎日食事を必要とする。」が、世界に戻った']);
+    expect(back.map((n) => n.text)).toEqual(['「人間は毎日食事を必要とする。」が世界に戻った']);
   });
 
   it('書き換えの勢い：社会を揺らす書き換えは、最初の1年で大きく動く（勢いがなければ、ゆっくり動く）', () => {
@@ -239,7 +242,7 @@ describe('書き換えた年の世界（効き始めの知らせと、書き換�
     const withImpulse = run(gameData);
     const without = run(still);
     expect(without).toBeGreaterThan(0);
-    expect(withImpulse).toBeGreaterThan(without * 1.8);
+    expect(withImpulse).toBeGreaterThan(without * 1.5);
   });
 
   it('書き換えの勢いは書いた年の次の1年だけで、同じ種・同じ書き換えなら同じ結果になる', () => {

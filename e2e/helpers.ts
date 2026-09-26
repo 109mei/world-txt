@@ -17,7 +17,8 @@ export async function startFood(page: Page, free = false): Promise<void> {
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await expect(page.getByTestId('title')).toBeVisible();
-  if (free) await debug(page, 'clears(7)');
+  // 食料危機は、序章を遊び終えると開く
+  await debug(page, free ? 'clears(7)' : 'played("prologue")');
   await page.getByTestId('start').click();
   await page.getByTestId('stage-food').click();
   await page.getByTestId('open-world').click();

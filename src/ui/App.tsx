@@ -2,6 +2,7 @@ import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useGame } from '../store/game';
 import { Passing } from './Passing';
+import { applyTheme, watchTheme } from './theme';
 import { Briefing } from './screens/Briefing';
 import { Game } from './screens/Game';
 import { Records } from './screens/Records';
@@ -12,6 +13,7 @@ import { EditSheet } from './sheets/EditSheet';
 import { IndicatorSheet } from './sheets/IndicatorSheet';
 import { MenuSheet } from './sheets/MenuSheet';
 import { MetaSheet } from './sheets/MetaSheet';
+import { LifeSheet, PillarSheet } from './sheets/PillarSheet';
 import { ReportSheet } from './sheets/ReportSheet';
 
 export function App() {
@@ -22,6 +24,10 @@ export function App() {
   const saveWarning = useGame((s) => s.saveWarning);
   // 情景を動かさない設定（電池を節約したい・動きが気になる人のため）
   const motion = useGame((s) => s.settings.motion);
+  // 画面の明るさ（自動・明るい・暗い）
+  const theme = useGame((s) => s.settings.theme);
+  useEffect(() => applyTheme(theme), [theme]);
+  useEffect(() => watchTheme(() => useGame.getState().settings.theme), []);
   // 閉じた知らせ（同じ知らせは、この画面ではもう出さない。別の知らせが来たら出す）
   const [hiddenWarning, setHiddenWarning] = useState<string | null>(null);
   // 画面を移ったら、新しい画面を先頭から見せる（前の画面のスクロール位置を持ち越さない）
@@ -40,6 +46,8 @@ export function App() {
       {sheet?.kind === 'edit' && <EditSheet key={JSON.stringify(sheet.target)} target={sheet.target} />}
       {sheet?.kind === 'report' && <ReportSheet />}
       {sheet?.kind === 'indicator' && <IndicatorSheet id={sheet.id} />}
+      {sheet?.kind === 'pillar' && <PillarSheet id={sheet.id} />}
+      {sheet?.kind === 'life' && <LifeSheet />}
       {sheet?.kind === 'menu' && <MenuSheet />}
       {sheet?.kind === 'meta' && <MetaSheet which={sheet.which} />}
 
@@ -47,8 +55,8 @@ export function App() {
       {elsewhere && (
         <div className="elsewhere" role="alertdialog" aria-modal="true" data-testid="elsewhere">
           <div className="elsewhere-box">
-            <p>別の画面で、この世界が開かれた。</p>
-            <p className="dim small">世界は1つだけ。2つの画面で書き換えると、世界が混ざってしまう。</p>
+            <p>別の画面でこの世界が開かれた</p>
+            <p className="dim small">世界は1つだけ。2つの画面で書き換えると世界が混ざってしまう。</p>
             <button className="btn btn-primary wide" onClick={() => window.location.reload()} data-testid="elsewhere-reload">
               この画面で読み込み直す
             </button>

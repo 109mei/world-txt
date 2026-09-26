@@ -42,7 +42,7 @@ const REWRITES: [string, string, string][] = [
   ["plant_grow", "植物は水がなくても育つ", "law:plant_grow.light_only"],
   ["plant_grow", "植物は少しの水で育つ", "law:plant_grow.less_water"],
   ["plant_grow", "植物は水と光で育つ", "law:plant_grow.no_co2"],
-  ["plant_grow", "植物は育つ", "law:plant_grow.self_grow"],
+  ["plant_grow", "植物は育つ", "law:plant_grow.original"],
   ["plant_grow", "植物は水なしでは育たない", "law:plant_grow.original"],
   ["electric", "電気は導線なしで伝わる", "law:electric.wireless"],
   ["electric", "電気は導線を必要としない", "law:electric.wireless"],
@@ -84,7 +84,7 @@ const REWRITES: [string, string, string][] = [
   ["ocean_co2", "海は二酸化炭素を吐き出す", "law:ocean_co2.emit"],
   ["energy_conserve", "エネルギーは形を変えると消える", "law:energy_conserve.decay"],
   ["science_repro", "実験は毎回結果が変わる", "law:science_repro.delete"],
-  ["seasons", "地球はずっと春だ", "law:seasons.delete"],
+  ["seasons", "地球はずっと春だ", "law:seasons.spring"],
   ["seasons", "地球はずっと冬だ", "law:seasons.winter"],
   ["money", "お金は無価値だ", "law:money.delete"],
   ["automation", "機械は人の仕事を奪う", "law:automation.all"],
@@ -171,7 +171,7 @@ const ADDITIONS: [string, string, string][] = [
   ["+", "地震が起きる", "noise:unclear"],
   ["+", "地震は起きない", "phrase:no_quake"],
   ["+", "永久機関は存在しない", "noise:unclear"],
-  ["+", "時間は戻らない", "noise:unclear"],
+  ["+", "時間は戻らない", "phrase:wish_no_loop"],
   ["+", "時間が止まる", "phrase:time_stop"],
   ["+", "熊は冬眠する", "noise:unclear"],
   ["+", "人工知能は死なない", "noise:unclear"],
@@ -237,7 +237,7 @@ const ADDITIONS: [string, string, string][] = [
   ["+", "人は3日に1回ごはんを食べる", "law:human_food.few_days"],
   ["+", "石油は無限にある", "law:oil_finite.delete"],
   ["+", "人は長生きする", "law:human_aging.slow"],
-  ["+", "地球が冷える", "law:heat_escape.faster"],
+  ["+", "地球が冷える", "phrase:wish_cool"],
   ["+", "地球はもっと暑くなる", "law:heat_escape.slower"],
   ["+", "犯罪はない", "law:crime.delete"],
   ["+", "人間は食事も睡眠も必要としない", "law:human_food.delete"],
@@ -371,7 +371,7 @@ const ADDITIONS: [string, string, string][] = [
   ["+", "猫はもういない", "phrase:gen_gone_animal"],
   ["+", "パンはない", "phrase:gen_gone_food"],
   ["+", "猫は犬に違いない", "noise:unclear"],
-  ["+", "戦争は起きない", "phrase:no_war"],
+  ["+", "戦争は起きない", "law:war.delete"],
   ["+", "重力が働かない", "phrase:gravity_zero"],
   ["+", "摩擦は存在しない", "phrase:friction_void"],
   ["+", "化学反応は起きない", "phrase:chemistry_void"],
@@ -496,7 +496,7 @@ const ADDITIONS: [string, string, string][] = [
   ["+", "スマホが禁止される", "phrase:gen_gone_machine"],
   ["+", "戦争が禁止される", "phrase:no_war"],
   ["+", "兵器はどこにでもある", "law:weapons.more"],
-  ["+", "戦争が起きる", "noise:unclear"],
+  ["+", "戦争が起きる", "block:redundant"],
   ["+", "戦争が続く", "phrase:world_war_rule"],
   ["+", "地球が太陽に近づく", "phrase:earth_closer"],
   // 専門の言葉（技術・科学・経済）、無茶な決まり、種類ごとの読み取り
@@ -607,6 +607,35 @@ const ADDITIONS: [string, string, string][] = [
   ["+", "SNSは存在しない", "phrase:gen_gone_machine"],
   ["+", "ポポポ", "noise:unknown-words"],
 ];
+
+/**
+ * 逆の読み取り（P2。scripts/polarity.ts で見つけたもの）：書いた文と逆の意味に読まない。
+ * [書く場所, 文, 読んではいけない結果の頭（逆の読み取り）, 読むべき結果（null なら「逆でなければよい」）]
+ */
+const NOT_REVERSED: [string, string, string, string | null][] = [
+  ['+', '隕石は大気で燃え尽きる', 'phrase:meteor', 'phrase:no_meteor'],
+  ['+', '小惑星は地球を避ける', 'phrase:meteor', 'phrase:no_meteor'],
+  ['+', '隕石はそれていく', 'phrase:meteor', 'phrase:no_meteor'],
+  ['plant_grow', '植物は水が少なくても育つ', 'law:plant_grow.dark', 'law:plant_grow.less_water'],
+  ['+', '植物は水が少なくても育つ', 'law:plant_grow.dark', 'law:plant_grow.less_water'],
+  ['+', '宇宙人は地球を避ける', 'phrase:aliens', null],
+  ['+', '宇宙人は大気で燃え尽きる', 'phrase:aliens', null],
+  ['+', 'ブラックホールは地球を避ける', 'phrase:black_hole_near', null],
+  ['+', '氷河期はそれていく', 'phrase:ice_age', null],
+  ['+', '人は人を食べない', 'law:human_food.delete', null],
+  ['human_food', '人間は食べなくても生きられない', 'law:human_food.delete', null],
+  ['human_water', '人間はたくさんの水を必要としない', 'law:human_water.more', 'law:human_water.less'],
+  ['human_food', '人間は一日に何度も食事を必要としない', 'law:human_food.more', null],
+  ['human_water', '人間は少しの水も必要としない', 'law:human_water.less', 'law:human_water.delete'],
+];
+
+describe('逆の読み取りをしない（P2）', () => {
+  it.each(NOT_REVERSED)('%s に「%s」→ %s ではない', (target, text, reversed, expected) => {
+    const got = outcome(target, text);
+    expect(got.startsWith(reversed), got).toBe(false);
+    if (expected) expect(got).toBe(expected);
+  });
+});
 
 describe('無茶な書き換え', () => {
   it.each(REWRITES)('%s を「%s」に → %s', (target, text, expected) => {

@@ -16,6 +16,9 @@ const FORBIDDEN: [RegExp, string][] = [
   [/\bwindow\./, 'window'],
   [/\bdocument\./, 'document'],
   [/Math\.random/, 'Math.random'],
+  // 遊んでいる間の乱数（ラプラスの決まり）：さいころの関数はもうない。世界番号から決まる値（hash01）だけを使う
+  [/nextRandom|seedRng|mulberry/, '遊んでいる間の乱数'],
+  [/crypto\./, 'crypto'],
   [/Date\.now/, 'Date.now'],
   [/performance\.now/, 'performance.now'],
 ];

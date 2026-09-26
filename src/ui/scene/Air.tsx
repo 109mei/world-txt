@@ -22,7 +22,7 @@ export function Clouds({ v }: { v: SceneView }) {
     return (
       <g key={i} transform={`translate(${x} ${y})`}>
         <g className="sc-drift" style={{ ...dur(60 + (i % 4) * 14), ...delay(i * 9) }}>
-          <path d={cloudPath(w)} fill={dark ? '#15161b' : '#1c1d24'} stroke={stroke} strokeWidth={0.7} opacity={0.9} />
+          <path d={cloudPath(w)} fill={dark ? 'var(--sc-cloud-dark)' : 'var(--sc-cloud)'} stroke={stroke} strokeWidth={0.7} opacity={0.9} />
         </g>
       </g>
     );
@@ -92,14 +92,14 @@ export function SkyTraffic({ v }: { v: SceneView }) {
               <g opacity={0.14 * m(v, 'ufo')}>
                 <path d="M-8 60 L-3 6 L3 6 L8 60 Z" className="sc-beam" fill={v.inked.includes('ufo') ? INK : PAPER} />
               </g>
-              <ellipse rx={20} ry={5} fill="#15161b" stroke={strokeOf(v, 'ufo')} strokeWidth={1} />
-              <path d="M-8 -2 Q 0 -12 8 -2" fill="#15161b" stroke={strokeOf(v, 'ufo')} strokeWidth={0.9} />
+              <ellipse rx={20} ry={5} fill="var(--sc-fill)" stroke={strokeOf(v, 'ufo')} strokeWidth={1} />
+              <path d="M-8 -2 Q 0 -12 8 -2" fill="var(--sc-fill)" stroke={strokeOf(v, 'ufo')} strokeWidth={0.9} />
               {[-12, -4, 4, 12].map((x, k) => (
                 <circle key={x} className="sc-twinkle" cx={x} cy={1.5} r={1} fill={PAPER} style={{ ...dur(1.2), ...delay(k * 0.3) }} />
               ))}
             </g>
           </g>
-          {m(v, 'ufo') > 0.6 && <ellipse cx={110} cy={30} rx={9} ry={2.4} fill="#15161b" stroke={strokeOf(v, 'ufo')} strokeWidth={0.7} className="sc-hover" style={dur(5)} />}
+          {m(v, 'ufo') > 0.6 && <ellipse cx={110} cy={30} rx={9} ry={2.4} fill="var(--sc-fill)" stroke={strokeOf(v, 'ufo')} strokeWidth={0.7} className="sc-hover" style={dur(5)} />}
         </Motif>
       )}
       {m(v, 'rockets') > 0 && (
@@ -107,7 +107,7 @@ export function SkyTraffic({ v }: { v: SceneView }) {
           {Array.from({ length: 1 + Math.round(2 * m(v, 'rockets')) }, (_, i) => (
             <g key={i} transform={`translate(${246 + i * 16} ${GROUND_ROCKET})`}>
               <g className="sc-launch" style={{ ...dur(7 + i * 2), ...delay(i * 2.6) }}>
-                <path d="M0 -12 L3 -6 L3 4 L-3 4 L-3 -6 Z" fill="#15161b" stroke={strokeOf(v, 'rockets')} strokeWidth={0.8} />
+                <path d="M0 -12 L3 -6 L3 4 L-3 4 L-3 -6 Z" fill="var(--sc-fill)" stroke={strokeOf(v, 'rockets')} strokeWidth={0.8} />
                 <path d="M-2 5 L0 12 L2 5 Z" fill={WARN} opacity={0.8} />
                 <line x1={0} y1={12} x2={0} y2={60} stroke={SILVER_DIM} strokeWidth={2.4} opacity={0.35} />
               </g>
@@ -152,8 +152,8 @@ export function SkyTraffic({ v }: { v: SceneView }) {
           ].map(([x, y, kind], i) => (
             <g key={i} transform={`translate(${x} ${y})`}>
               <g className="sc-hover" style={{ ...dur(5 + i), ...delay(i * 1.4) }} opacity={0.3 + 0.7 * m(v, 'float')}>
-                {kind === 'house' && <path d="M-6 0 L-6 -7 L0 -12 L6 -7 L6 0 Z" fill="#15161b" stroke={strokeOf(v, 'float')} strokeWidth={0.7} />}
-                {kind === 'car' && <path d="M-7 0 L-7 -3 L-4 -6 L4 -6 L7 -3 L7 0 Z" fill="#15161b" stroke={strokeOf(v, 'float')} strokeWidth={0.7} />}
+                {kind === 'house' && <path d="M-6 0 L-6 -7 L0 -12 L6 -7 L6 0 Z" fill="var(--sc-fill)" stroke={strokeOf(v, 'float')} strokeWidth={0.7} />}
+                {kind === 'car' && <path d="M-7 0 L-7 -3 L-4 -6 L4 -6 L7 -3 L7 0 Z" fill="var(--sc-fill)" stroke={strokeOf(v, 'float')} strokeWidth={0.7} />}
                 {kind === 'drop' && <path d="M0 -6 Q 4 -1 0 1 Q -4 -1 0 -6 Z" fill="none" stroke={strokeOf(v, 'float')} strokeWidth={0.7} />}
               </g>
             </g>
@@ -167,8 +167,8 @@ export function SkyTraffic({ v }: { v: SceneView }) {
             <g key={i} transform={`translate(${60 + i * 56} ${110 + (i % 3) * 14})`}>
               <g className="sc-wisp" style={{ ...dur(7 + i), ...delay(i * 1.8) }}>
                 <path d="M-4 6 Q -5 -4 0 -6 Q 5 -4 4 6 Q 2 3 0 6 Q -2 3 -4 6 Z" fill={v.inked.includes('ghosts') ? INK : PAPER} opacity={0.22} />
-                <circle cx={-1.4} cy={-2} r={0.6} fill="#000" opacity={0.5} />
-                <circle cx={1.4} cy={-2} r={0.6} fill="#000" opacity={0.5} />
+                <circle cx={-1.4} cy={-2} r={0.6} fill="var(--sc-void)" opacity={0.5} />
+                <circle cx={1.4} cy={-2} r={0.6} fill="var(--sc-void)" opacity={0.5} />
               </g>
             </g>
           ))}
@@ -179,7 +179,7 @@ export function SkyTraffic({ v }: { v: SceneView }) {
           {Array.from({ length: 3 + Math.round(4 * m(v, 'dreams')) }, (_, i) => (
             <g key={i} transform={`translate(${128 + i * 20} ${132 - (i % 2) * 10})`}>
               <g className="sc-bubble" style={{ ...dur(8 + (i % 3) * 2), ...delay(i * 1.3) }}>
-                <circle r={5 + (i % 3) * 1.5} fill="rgba(166,205,255,0.06)" stroke={strokeOf(v, 'dreams')} strokeWidth={0.7} opacity={0.8} />
+                <circle r={5 + (i % 3) * 1.5} fill="rgb(var(--ink-rgb) / 0.06)" stroke={strokeOf(v, 'dreams')} strokeWidth={0.7} opacity={0.8} />
                 {i % 2 === 0 ? (
                   <path d="M-2 1 A2.6 2.6 0 1 0 1 -2 A2 2 0 1 1 -2 1 Z" fill={strokeOf(v, 'dreams')} opacity={0.7} />
                 ) : (
@@ -258,7 +258,7 @@ function Birds({ v }: { v: SceneView }) {
           {Array.from({ length: crows }, (_, i) => (
             <g key={i} transform={`translate(${30 + i * 18} ${120 - (i % 2) * 9})`}>
               <g className="sc-flap" style={{ ...dur(0.6), ...delay(i * 0.2) }}>
-                <path d="M-5 0 Q -2 -3 0 0 Q 2 -3 5 0 Q 2 -1 0 1 Q -2 -1 -5 0 Z" fill="#050506" stroke={strokeOf(v, 'crows', SILVER_DIM)} strokeWidth={0.6} />
+                <path d="M-5 0 Q -2 -3 0 0 Q 2 -3 5 0 Q 2 -1 0 1 Q -2 -1 -5 0 Z" fill="var(--sc-oil)" stroke={strokeOf(v, 'crows', SILVER_DIM)} strokeWidth={0.6} />
               </g>
             </g>
           ))}
@@ -280,15 +280,15 @@ function Falling({ v }: { v: SceneView }) {
     },
     {
       id: 'paperMoney',
-      draw: (c) => <rect x={-3} y={-1.6} width={6} height={3.2} fill="#d9d6c9" stroke={c} strokeWidth={0.4} opacity={0.8} />,
+      draw: (c) => <rect x={-3} y={-1.6} width={6} height={3.2} fill="var(--sc-paper)" stroke={c} strokeWidth={0.4} opacity={0.8} />,
     },
     {
       id: 'papers',
-      draw: (c) => <path d="M-2.5 -3 L2.5 -3 L2.5 3 L-2.5 3 Z M-1.5 -1.5 L1.5 -1.5 M-1.5 0 L1.5 0" fill="#cfccbf" stroke={c} strokeWidth={0.4} opacity={0.8} />,
+      draw: (c) => <path d="M-2.5 -3 L2.5 -3 L2.5 3 L-2.5 3 Z M-1.5 -1.5 L1.5 -1.5 M-1.5 0 L1.5 0" fill="var(--sc-paper)" stroke={c} strokeWidth={0.4} opacity={0.8} />,
     },
     {
       id: 'manna',
-      draw: (c) => <ellipse rx={2.6} ry={1.6} fill="#d8c79c" stroke={c} strokeWidth={0.4} />,
+      draw: (c) => <ellipse rx={2.6} ry={1.6} fill="var(--sc-grain)" stroke={c} strokeWidth={0.4} />,
     },
     {
       id: 'stones',
@@ -334,8 +334,9 @@ function Falling({ v }: { v: SceneView }) {
 /** 手前の天気：雨・雪・陽炎・風・汚れた空気・瘴気・霧 */
 export function Weather({ v }: { v: SceneView }) {
   const rain = Math.max(m(v, 'rain'), m(v, 'acidRain'), m(v, 'storm') * 0.8);
-  const snow = Math.max(m(v, 'snow'), v.heat < -0.25 ? -v.heat : 0);
-  const haze = Math.max(m(v, 'heatHaze'), v.heat > 0.25 ? v.heat * 0.8 : 0);
+  // 書き換えから来た雪・陽炎は、寒さ・暑さから来るものに重ねて描く（どちらか強いほうだけにすると、書いたものが見えなくなる）
+  const snow = Math.min(1.8, m(v, 'snow') + (v.heat < -0.25 ? -v.heat : 0));
+  const haze = Math.min(1, m(v, 'heatHaze') + (v.heat > 0.25 ? v.heat * 0.8 : 0));
   const fog = Math.max(0, Math.min(1, (0.55 - v.health) * 0.9));
   const acid = m(v, 'acidRain') > 0.3;
   return (
@@ -353,7 +354,7 @@ export function Weather({ v }: { v: SceneView }) {
                 y1={y}
                 x2={x - 3}
                 y2={y + 9}
-                stroke={acid ? 'rgba(163,220,191,0.55)' : 'rgba(216,219,226,0.4)'}
+                stroke={acid ? 'rgb(var(--good-rgb) / 0.55)' : 'rgb(var(--sc-line-rgb) / 0.4)'}
                 strokeWidth={0.6}
                 style={{ ...dur(0.7 + (i % 4) * 0.12), ...delay(i * 0.07) }}
               />
@@ -370,8 +371,8 @@ export function Weather({ v }: { v: SceneView }) {
               cx={rnd(v.seed, 600 + i) * W}
               cy={rnd(v.seed, 640 + i) * H - 20}
               r={0.7 + (i % 3) * 0.35}
-              fill="#ffffff"
-              opacity={0.35 + 0.5 * snow}
+              fill="var(--sc-snow)"
+              opacity={Math.min(0.95, 0.35 + 0.5 * snow)}
               style={{ ...dur(6 + (i % 5)), ...delay(i * 0.6) }}
             />
           ))}
@@ -413,9 +414,9 @@ export function Weather({ v }: { v: SceneView }) {
         <Motif v={v} id="smog">
           <defs>
             <linearGradient id="sc-smog" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#6b6150" stopOpacity="0" />
-              <stop offset="0.55" stopColor="#7a6d56" stopOpacity="1" />
-              <stop offset="1" stopColor="#6b6150" stopOpacity="0.4" />
+              <stop offset="0" stopColor="var(--sc-dust-edge)" stopOpacity="0" />
+              <stop offset="0.55" stopColor="var(--sc-dust)" stopOpacity="1" />
+              <stop offset="1" stopColor="var(--sc-dust-edge)" stopOpacity="0.4" />
             </linearGradient>
           </defs>
           <rect x={0} y={HORIZON - 70} width={W} height={H - HORIZON + 70} fill="url(#sc-smog)" opacity={0.3 * m(v, 'smog')} />
@@ -426,16 +427,16 @@ export function Weather({ v }: { v: SceneView }) {
           {Array.from({ length: 5 }, (_, i) => (
             <g key={i} transform={`translate(${120 + i * 34} ${170 - (i % 2) * 12})`}>
               <g className="sc-wisp" style={{ ...dur(9 + i), ...delay(i * 2) }}>
-                <ellipse rx={22} ry={8} fill={v.inked.includes('miasma') ? INK : '#9aa69a'} opacity={0.24 * m(v, 'miasma')} />
+                <ellipse rx={22} ry={8} fill={v.inked.includes('miasma') ? INK : 'var(--sc-miasma)'} opacity={0.24 * m(v, 'miasma')} />
                 {[0, 1, 2, 3, 4].map((k) => (
-                  <circle key={k} cx={-12 + k * 6} cy={-3 + (k % 2) * 4} r={1.1} fill="none" stroke="#b7c2b2" strokeWidth={0.5} opacity={0.8 * m(v, 'miasma')} />
+                  <circle key={k} cx={-12 + k * 6} cy={-3 + (k % 2) * 4} r={1.1} fill="none" stroke="var(--sc-miasma-bubble)" strokeWidth={0.5} opacity={0.8 * m(v, 'miasma')} />
                 ))}
               </g>
             </g>
           ))}
         </Motif>
       )}
-      {fog > 0.08 && <ellipse className="sc-fogdrift" cx={186} cy={GROUND_FOG} rx={170} ry={18} fill="#c9ced8" opacity={fog * 0.45} filter="url(#sc-soft)" style={dur(14)} />}
+      {fog > 0.08 && <ellipse className="sc-fogdrift" cx={186} cy={GROUND_FOG} rx={170} ry={18} fill="var(--sc-fog)" opacity={fog * 0.45} filter="url(#sc-soft)" style={dur(14)} />}
       {m(v, 'insects') > 0 && (
         <Motif v={v} id="insects">
           {Array.from({ length: Math.round(8 + 14 * m(v, 'insects')) }, (_, i) => (
@@ -459,7 +460,7 @@ export function Weather({ v }: { v: SceneView }) {
             return (
               <g key={x} transform={`translate(${x} ${184 - (i % 2) * 2})`}>
                 <path d={droop ? 'M0 0 Q 0 -4 2 -5' : 'M0 0 L0 -5'} fill="none" stroke={SILVER_DIM} strokeWidth={0.5} />
-                <circle cx={droop ? 2.4 : 0} cy={droop ? -4.4 : -6} r={1.3} fill={droop ? '#5b574c' : strokeOf(v, 'bees', PAPER)} opacity={droop ? 0.8 : 0.9} />
+                <circle cx={droop ? 2.4 : 0} cy={droop ? -4.4 : -6} r={1.3} fill={droop ? 'var(--sc-dead)' : strokeOf(v, 'bees', PAPER)} opacity={droop ? 0.8 : 0.9} />
               </g>
             );
           })}
@@ -479,7 +480,7 @@ export function Weather({ v }: { v: SceneView }) {
           {Array.from({ length: 3 + Math.round(5 * m(v, 'rats')) }, (_, i) => (
             <g key={i} transform={`translate(${120 + i * 18} ${PLAZA_RAT + (i % 2) * 3})`}>
               <g className="sc-drive" style={{ ...dur(4 + (i % 3)), ...delay(i * 0.8), ['--dx' as string]: '40px' }}>
-                <path d="M-2.5 0 Q 0 -2.4 2.5 0 Z M2.5 0 L3.4 -0.6 M-2.5 -0.2 Q -4.5 -0.6 -5 0.8" fill="#3a3b40" stroke={strokeOf(v, 'rats', SILVER_DIM)} strokeWidth={0.4} />
+                <path d="M-2.5 0 Q 0 -2.4 2.5 0 Z M2.5 0 L3.4 -0.6 M-2.5 -0.2 Q -4.5 -0.6 -5 0.8" fill="var(--sc-rat)" stroke={strokeOf(v, 'rats', SILVER_DIM)} strokeWidth={0.4} />
               </g>
             </g>
           ))}
@@ -520,9 +521,9 @@ export function Disaster({ v }: { v: SceneView }) {
         <Motif v={v} id="mushroom">
           <g transform="translate(66 146)" opacity={0.5 + 0.5 * m(v, 'mushroom')}>
             <g className="sc-swell" style={dur(6)}>
-              <path d="M-4 0 L-3 -30 L3 -30 L4 0 Z" fill="#6f6a60" opacity={0.8} />
-              <ellipse cx={0} cy={-36} rx={20} ry={11} fill="#8a8377" stroke={strokeOf(v, 'mushroom')} strokeWidth={0.7} />
-              <ellipse cx={0} cy={-30} rx={13} ry={4} fill="#5e5a52" />
+              <path d="M-4 0 L-3 -30 L3 -30 L4 0 Z" fill="var(--sc-ash-stem)" opacity={0.8} />
+              <ellipse cx={0} cy={-36} rx={20} ry={11} fill="var(--sc-ash-cap)" stroke={strokeOf(v, 'mushroom')} strokeWidth={0.7} />
+              <ellipse cx={0} cy={-30} rx={13} ry={4} fill="var(--sc-ash-dark)" />
               <ellipse cx={0} cy={0} rx={18} ry={3} fill={WARN} opacity={0.35} />
             </g>
           </g>

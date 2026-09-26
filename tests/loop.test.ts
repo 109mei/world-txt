@@ -25,13 +25,13 @@ describe('くり返す十年', () => {
     expect(g.history.some((h) => h.text.startsWith('10年目の終わり'))).toBe(true);
   });
 
-  it('巻き戻ると世界の様子と乱数が0年目に戻り、同じ書き方なら同じ出来事がくり返す', () => {
+  it('巻き戻ると世界の様子と起きる力が0年目に戻り、同じ書き方なら同じ出来事がくり返す', () => {
     const g = createGame(gameData, 'loop', 7);
     const sim0 = structuredClone(g.sim);
-    const rng0 = g.rng;
+    const charge0 = structuredClone(g.charge);
     const first = years(g, cfg.years);
     expect(g.sim).toEqual({ ...sim0, capacityMax: sim0.capacityMax - cfg.wear });
-    expect(g.rng).toEqual(rng0);
+    expect(g.charge).toEqual(charge0);
     const second = years(g, cfg.years);
     // 巻き戻りの知らせ（何回目か）を除けば、2周目は1周目と同じ
     const strip = (ys: string[][]) => ys.map((ns) => ns.filter((t) => !t.includes('巻き戻り')));
@@ -49,9 +49,9 @@ describe('くり返す十年', () => {
     expect(g.extras.map((x) => x.text)).toEqual(['人間は肉を食べない。']);
   });
 
-  it('破局の原因を断てば、くり返しがほどけて11年目へ進む', () => {
+  it('破局の原因を断てば、くり返しがほどけて11年目へ進む（消すだけでは空白を世界が埋めるので、打ち消して書く）', () => {
     const g = createGame(gameData, 'loop', 1);
-    rewriteLaw(g, gameData, 'zoonosis', '');
+    rewriteLaw(g, gameData, 'zoonosis', '病原体は動物から人間にうつらない。');
     years(g, cfg.years);
     expect(g.year).toBe(cfg.years);
     expect(g.loop!.done).toBe(true);

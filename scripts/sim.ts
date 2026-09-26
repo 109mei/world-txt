@@ -3,11 +3,12 @@
  *   npm run sim -- food baseline        （ステージ・作戦）
  *   npm run sim -- food all 20          （全作戦を種20個ずつ回して、成否を集計）
  */
-import { addLine, advance, createGame, rewriteLaw, type GameData, type GameState } from '../src/core';
+import { introFor, reviewOf, type GameData, type GameState, type Journey } from '../src/core';
 import { gameData } from '../src/data';
 import type { StageId } from '../src/data/schema';
-import { playRandom } from './bots';
+import { playRandom, playReader } from './bots';
 import { ENDLESS_CAP, ENDLESS_POLICIES, spread } from './endless';
+import { runEdits } from './run';
 import { STRATEGIES, type Strategy } from './strategies';
 
 function row(g: GameState): string {
@@ -39,35 +40,96 @@ function row(g: GameState): string {
 
 const HEADER = 'yr    pop   food  water energy   agri    eco   temp    co2   path   stab   tens    war    ind    sci  unemp    civ    coh    cap';
 
-export function play(data: GameData, stage: StageId, strat: Strategy, seed: number, log = false): GameState {
-  const g = createGame(data, stage, seed);
-  if (log) {
-    console.log(HEADER);
-    console.log(row(g));
-  }
-  const goal = data.stageById.get(stage)!.goalYears;
-  // くり返す世界では暦が戻るので、書き手の年数（進めた回数）にも上限を置く
-  let steps = 0;
-  while (g.status === 'playing' && g.year < goal && steps++ < 600) {
-    for (const e of strat.edits) {
-      if (e.year === g.year && (e.pass === undefined || e.pass === (g.loop?.count ?? 0))) {
-        const res = e.law ? rewriteLaw(g, data, e.law, e.text) : addLine(g, data, e.text);
-        if (log) console.log(`  ✎ ${e.law ?? '＋'}「${e.text}」→ ${res.block ? `不可: ${res.block}` : res.reading ?? (res.understood ? '受け入れた' : '読み取れない')}`);
-        // 世界異常（存在消失）で先に消えていた行は、そのまま進める
-        if (res.block && res.block !== 'same' && !log) throw new Error(`作戦 ${strat.name}: ${e.law ?? '追加'} が不可（${res.block}）`);
+/**
+ * 作戦を最後まで遊ぶ。そのステージをはじめて遊べる筆の位で（作戦に clears があれば、その位で）。
+ * 書換の力が足りない年の手は、力が戻った年に書く。cause を渡すと、その原因の型の世界で遊ぶ
+ */
+export function play(data: GameData, stage: StageId, strat: Strategy, seed: number, log = false, cause?: string | null): GameState {
+  if (log) console.log(HEADER);
+  const { g, blocks } = runEdits(data, stage, strat.edits, seed, {
+    clears: strat.clears,
+    cause,
+    onEdit: (e, res) => {
+      if (log) console.log(`  ✎ ${e.law ?? '＋'}「${e.text}」→ ${res.block ? `不可: ${res.block}` : res.reading ?? (res.understood ? '受け入れた' : '読み取れない')}`);
+    },
+    onYear: (w) => {
+      if (!log) return;
+      console.log(row(w));
+      for (const n of w.report?.news ?? []) if (n.severity !== 'info' || n.surprise) console.log(`      ${n.severity === 'critical' ? '!!' : n.surprise ? '??' : ' -'} [${n.category}] ${n.text}`);
+    },
+  });
+  // 筆の位で書けない手のある作戦は、作戦の書き間違い
+  if (blocks.length > 0 && !log) throw new Error(`作戦 ${strat.name}: ${blocks.join(' / ')}`);
+  return g;
+}
+
+/** その世界がちょうど開いた記録（手前の世界は遊び終えた。はじめて遊ぶ世界） */
+export const FIRST_JOURNEY: Record<Exclude<StageId, 'endless'>, Journey> = {
+  prologue: { cleared: [], played: [], discovered: [] },
+  food: { cleared: [], played: ['prologue'], discovered: [] },
+  plague: { cleared: [], played: ['prologue', 'food'], discovered: [] },
+  climate: { cleared: [], played: ['prologue', 'food'], discovered: [] },
+  war: { cleared: ['food'], played: ['prologue', 'food'], discovered: [] },
+  energy: { cleared: ['food'], played: ['prologue', 'food'], discovered: [] },
+  loop: { cleared: ['food', 'plague'], played: ['prologue', 'food', 'plague'], discovered: [] },
+  tiny: { cleared: ['food', 'plague', 'climate'], played: ['prologue', 'food', 'plague', 'climate'], discovered: [] },
+};
+
+/**
+ * 紹介前の決まりが、負けの主な原因になった割合（開いていく順番の確かめ。目標0%）。はじめて遊ぶ世界（紹介前の決まりは弱く動く）で、
+ * 見立てるボットが負けた世界を2つの測り方で数える。
+ * top：敗因の振り返りのいちばん上（崩れの直前の原因）が、紹介前の決まりの出来事（買いだめ・限りを超えた暮らしなど）だった。
+ * blamed：紹介前の決まりを1つずつ止めて遊び直し、救えた（その決まりがなければ負けなかった。より厳しい測り方）
+ */
+export function introBlame(seeds: number): { stage: StageId; worlds: number; fails: number; top: number; blamed: number; who: Record<string, number> }[] {
+  const out = [];
+  for (const [stage, j] of Object.entries(FIRST_JOURNEY) as [StageId, Journey][]) {
+    const intro = introFor(gameData, j);
+    const weak = Object.keys(intro).filter((id) => (intro[id] ?? 1) < 1);
+    let fails = 0;
+    let top = 0;
+    let blamed = 0;
+    const who: Record<string, number> = {};
+    for (let i = 0; i < seeds; i++) {
+      const { g } = playReader(gameData, stage, 1000 + i, { intro });
+      if (g.status !== 'failed') continue;
+      fails += 1;
+      const ref = reviewOf(g, gameData)?.top?.ref ?? null;
+      const rule = ref ? gameData.unlocks.rules.find((r) => r.found.includes(ref)) : undefined;
+      if (rule && weak.includes(rule.id)) top += 1;
+      for (const id of weak) {
+        const { g: h } = playReader(gameData, stage, 1000 + i, { intro: { ...intro, [id]: 0 } });
+        if (h.status === 'cleared') {
+          blamed += 1;
+          who[id] = (who[id] ?? 0) + 1;
+          break;
+        }
       }
     }
-    const rep = advance(g, data, 1);
-    if (log) {
-      console.log(row(g));
-      for (const n of rep.news) if (n.severity !== 'info' || n.surprise) console.log(`      ${n.severity === 'critical' ? '!!' : n.surprise ? '??' : ' -'} [${n.category}] ${n.text}`);
-    }
+    out.push({ stage, worlds: seeds, fails, top, blamed, who });
   }
-  return g;
+  return out;
 }
 
 function main(): void {
   const [stage = 'food', name = 'baseline', seedsArg = '1'] = process.argv.slice(2);
+  if (stage === 'intro') {
+    // npm run sim -- intro 20：はじめて遊ぶ世界で、紹介前の決まりが負けの主な原因になった割合（INTRO_BEFORE で紹介前の強さを試せる）
+    if (process.env.INTRO_BEFORE) gameData.balance.intro.before = Number(process.env.INTRO_BEFORE);
+    const seeds = Number(name === 'baseline' ? 20 : name);
+    let fails = 0;
+    let top = 0;
+    let blamed = 0;
+    for (const r of introBlame(seeds)) {
+      fails += r.fails;
+      top += r.top;
+      blamed += r.blamed;
+      console.log(`${r.stage.padEnd(9)} 負け ${String(r.fails).padStart(2)}/${r.worlds}  振り返りのいちばん上 ${r.top}  止めると救えた ${r.blamed}  ${JSON.stringify(r.who)}`);
+    }
+    const pct = (n: number) => (fails ? ((n / fails) * 100).toFixed(1) : '0.0');
+    console.log(`合計：負け ${fails}、振り返りのいちばん上が紹介前の決まり ${top}（${pct(top)}%）、止めると救えた ${blamed}（${pct(blamed)}%）`);
+    return;
+  }
   const strategies = STRATEGIES[stage as StageId] ?? [];
   if (stage === 'endless') {
     // 無限の世界：ボットごとに、文明が何年続いたか

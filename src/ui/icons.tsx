@@ -25,7 +25,11 @@ import {
   Hourglass,
   House,
   Infinity as InfinityIcon,
+  Landmark,
   Leaf,
+  ArrowDownRight,
+  ArrowRight,
+  ArrowUpRight,
   Moon,
   MoonStar,
   Newspaper,
@@ -36,7 +40,6 @@ import {
   Plane,
   PlugZap,
   Radiation,
-  Scale,
   ScrollText,
   ShieldAlert,
   ShieldCheck,
@@ -68,7 +71,7 @@ import {
 import type { IconKey, Tone } from '../data/schema';
 import type { Trend } from '../core';
 
-/** アイコンは世界共通の言葉。画面ではSVG、共有テキストでは絵文字にする */
+/** アイコンは世界共通の言葉。線の太さ1.5・24の升目の SVG で描き、言葉か読み上げ用の名前を必ず添える */
 const ICONS: Record<IconKey, LucideIcon> = {
   humanity: PersonStanding,
   population: Users,
@@ -78,7 +81,7 @@ const ICONS: Record<IconKey, LucideIcon> = {
   eco: Leaf,
   health: HeartPulse,
   climate: ThermometerSun,
-  society: Scale,
+  society: Landmark,
   peace: Handshake,
   science: FlaskConical,
   logistics: Plane,
@@ -137,111 +140,45 @@ const ICONS: Record<IconKey, LucideIcon> = {
   mind: Brain,
 };
 
-/** 共有テキスト用の絵文字 */
-export const EMOJI: Record<IconKey, string> = {
-  humanity: '♥',
-  population: '◉',
-  food: '🍞',
-  water: '💧',
-  energy: '⚡',
-  eco: '🌿',
-  health: '✚',
-  climate: '☀',
-  society: '⚖',
-  peace: '☮',
-  science: '⚗',
-  logistics: '✈',
-  industry: '⚙',
-  capacity: '◆',
-  coherence: '☢',
-  civilization: '★',
-  time: '⌛',
-  warning: '!',
-  unknown: '?',
-  cycle: '∞',
-  war: '⚔',
-  fire: '🔥',
-  plant: '🌱',
-  animal: '🐾',
-  pathogen: '☣',
-  immunity: '🛡',
-  aging: '⌛',
-  death: '☠',
-  birth: '◉',
-  sleep: '🌙',
-  oil: '⛽',
-  electricity: '⚡',
-  agriculture: '🌾',
-  medicine: '✚',
-  education: '📖',
-  nation: '🏳',
-  money: '💰',
-  crime: '!',
-  happiness: '♥',
-  environment: '🌳',
-  sun: '☀',
-  air: '☁',
-  co2: '☁',
-  temperature: '🌡',
-  sea: '🌊',
-  earth: '🌏',
-  edit: '✎',
-  anomaly: '✦',
-  cold: '❄',
-  flood: '🌧',
-  home: '⌂',
-  dna: '🧬',
-  news: '📰',
-  atom: '⚛',
-  wind: '🌬',
-  moon: '🌙',
-  robot: '🤖',
-  weapon: '💣',
-  record: '📜',
-  meteor: '☄',
-  volcano: '🌋',
-  infinity: '∞',
-  rocket: '🚀',
-  trophy: '🏆',
-  mind: '🧠',
-};
-
 export function Icon({ name, size = 18, className }: { name: IconKey; size?: number; className?: string }) {
   const C = ICONS[name] ?? Globe2;
-  return <C size={size} strokeWidth={1.6} className={className} aria-hidden="true" />;
+  return <C size={size} strokeWidth={1.5} className={className} aria-hidden="true" />;
 }
 
 /** 情景（SVG）の中に置くアイコン。色は親の color を使う */
 export function SvgIcon({ name, size }: { name: IconKey; size: number }) {
   const C = ICONS[name] ?? Globe2;
-  return <C width={size} height={size} strokeWidth={2} aria-hidden="true" />;
+  return <C width={size} height={size} strokeWidth={1.5} aria-hidden="true" />;
 }
 
 export function ToneIcon({ name, tone, size = 18 }: { name: IconKey; tone: Tone; size?: number }) {
   return <Icon name={name} size={size} className={`tone-${tone}`} />;
 }
 
-const TREND_TEXT: Record<Trend, string> = { up2: '⇈', up: '↗', flat: '→', down: '↘', down2: '⇊' };
-const TREND_LABEL: Record<Trend, string> = { up2: '急速に改善', up: '改善', flat: '横ばい', down: '悪化', down2: '急速に悪化' };
+/** 変化の向きは3つだけ：良くなっている・変わらない・悪くなっている（急な変化も、同じ向きの矢印） */
+export type Direction = 'better' | 'same' | 'worse';
+export function directionOf(trend: Trend): Direction {
+  return trend === 'up' || trend === 'up2' ? 'better' : trend === 'down' || trend === 'down2' ? 'worse' : 'same';
+}
+const DIRECTION_LABEL: Record<Direction, string> = { better: '良くなっている', same: '変わらない', worse: '悪くなっている' };
+const DIRECTION_ICON: Record<Direction, LucideIcon> = { better: ArrowUpRight, same: ArrowRight, worse: ArrowDownRight };
 
-/** 変化の向き（⇈ ↗ → ↘ ⇊）。改善は緑、悪化は赤 */
-export function TrendArrow({ trend }: { trend: Trend | 'unknown' }) {
+/** 変化の向き（線のアイコン）。良くなっているは翡翠、悪くなっているは珊瑚 */
+export function TrendArrow({ trend, size = 16 }: { trend: Trend | 'unknown'; size?: number }) {
   if (trend === 'unknown') {
     return (
-      <span className="trend trend-unknown" aria-label="不明">
-        ?
+      <span className="trend trend-unknown" role="img" aria-label="わからない">
+        <CircleHelp size={size} strokeWidth={1.5} aria-hidden="true" />
       </span>
     );
   }
+  const d = directionOf(trend);
+  const C = DIRECTION_ICON[d];
   return (
-    <span className={`trend trend-${trend}`} aria-label={TREND_LABEL[trend]}>
-      {TREND_TEXT[trend]}
+    <span className={`trend trend-${d}`} role="img" aria-label={DIRECTION_LABEL[d]}>
+      <C size={size} strokeWidth={1.5} aria-hidden="true" />
     </span>
   );
-}
-
-export function trendText(trend: Trend): string {
-  return TREND_TEXT[trend];
 }
 
 export { Heart, InfinityIcon };

@@ -1,5 +1,7 @@
 import { FAIL_TEXT, originalText, phraseName, type FailReason, type GameData } from '../core';
-import type { IconKey, StageId } from '../data/schema';
+import { ACHIEVEMENT_KINDS, type IconKey, type StageId } from '../data/schema';
+
+const KIND_TITLE: Record<(typeof ACHIEVEMENT_KINDS)[number], string> = { discovery: '発見', skill: '腕前', story: '物語', play: '遊び方' };
 
 /**
  * 観測記録（これまでの世界で見つけたもの）の写し。
@@ -16,9 +18,11 @@ export interface RecordEntry {
   why: string | null;
   /** まだ得ていないが、名前を見せてよいもの（実績の目標） */
   hint?: string;
+  /** 数に入れない（隠しのおまけの実績。得たときだけ並べる） */
+  uncounted?: boolean;
 }
 
-/** 行ごとにまとめた読み取り（「定義」の見出しの下に、その行の読み取りを並べる） */
+/** 行ごとにまとめた読み取り（行の見出しの下に、その行の読み取りを並べる） */
 export interface RecordGroup {
   id: string;
   icon: IconKey;
@@ -54,7 +58,7 @@ const ENDING_LABEL: Record<string, string> = {
 };
 
 function section(id: RecordSectionId, title: string, icon: IconKey, lead: string, groups: RecordGroup[]): RecordSection {
-  const all = groups.flatMap((g) => g.entries);
+  const all = groups.flatMap((g) => g.entries).filter((e) => !e.uncounted);
   return { id, title, icon, lead, groups, found: all.filter((e) => e.found).length, total: all.length };
 }
 
@@ -169,7 +173,7 @@ export function buildRecords(data: GameData, discovered: readonly string[], achi
     title: '特別な結末',
     entries: data.endings.map((e) => {
       const id = `x:${e.id}`;
-      return { id, found: has.has(id), icon: e.icon, title: `${e.kind === 'clear' ? '★ ' : ''}${e.title}`, text: e.text, why: e.why };
+      return { id, found: has.has(id), icon: e.icon, title: e.kind === 'clear' ? `${e.title}（救った結末）` : e.title, text: e.text, why: e.why };
     }),
   };
   const endings: RecordGroup[] = stages.map((st) => ({
@@ -191,30 +195,34 @@ export function buildRecords(data: GameData, discovered: readonly string[], achi
   }));
 
   const sections = [
-    section('readings', '世界の読み取り', 'edit', '書き換えた文章を、世界がどう読み取ったか。行ごとに、まだ見ぬ読み取りが眠っている。', readings),
-    section('phrases', '書き足した概念', 'anomaly', '書き足した一文から、世界に生まれたもの。', phrases),
-    section('twists', '想定外の変化', 'warning', '書き換えのあとで、遅れてやって来たもの。', twists),
-    section('events', '出来事', 'news', '世界で起きたこと。', events),
+    section('readings', '世界の読み取り', 'edit', '書き換えた文章を世界がどう読み取ったか。行ごとにまだ見ぬ読み取りが眠っている。', readings),
+    section('phrases', '書き足した概念', 'anomaly', '書き足した一文から世界に生まれたもの', phrases),
+    section('twists', '想定外の変化', 'warning', '書き換えのあとで遅れてやって来たもの', twists),
+    section('events', '出来事', 'news', '世界で起きたこと', events),
     section('crises', '危機', 'meteor', '無限の世界にやってくる危機。受けたか、弱めたか、防いだか。', crises),
-    section('combos', '組み合わせ', 'cycle', '定義どうしが結びついて生まれた、新しい世界の姿。', combos),
-    section('anomalies', '世界異常', 'coherence', '世界が揺らいだときに起きたこと。', anomalies),
-    section('tags', '世界の姿', 'civilization', 'これまでに生まれた世界の特徴。', tags),
-    section('endings', '結末', 'time', 'それぞれの世界の終わり方。特別な結末は、どの世界でも起こりうる。', [special, ...endings]),
-    section('achievements', '実績', 'trophy', 'これまでの世界で成し遂げたこと。', [
-      {
-        id: 'achievements',
-        icon: 'trophy',
-        title: '',
-        entries: data.achievements.map((a) => ({
-          id: `ach:${a.id}`,
-          found: got.has(a.id),
-          icon: a.icon,
-          title: a.name,
-          text: a.text,
-          why: null,
-          hint: a.hidden ? undefined : `${a.name}：${a.text}`,
-        })),
-      },
+    section('combos', '組み合わせ', 'cycle', '法則どうしが結びついて生まれた新しい世界の姿', combos),
+    section('anomalies', '世界異常', 'coherence', '世界が揺らいだときに起きたこと', anomalies),
+    section('tags', '世界の姿', 'civilization', 'これまでに生まれた世界の特徴', tags),
+    section('endings', '結末', 'time', 'それぞれの世界の終わり方。特別な結末はどの世界でも起こりうる。', [special, ...endings]),
+    section('achievements', '実績', 'trophy', 'これまでの世界で成し遂げたこと。発見・腕前・物語・遊び方の4つに分けて並べる。', [
+      ...ACHIEVEMENT_KINDS.map((kind) => ({
+        id: `ach-${kind}`,
+        icon: 'trophy' as IconKey,
+        title: KIND_TITLE[kind],
+        // 隠しのおまけ（負けや放棄で取れるもの）は数に入れず、得たときだけ並べる
+        entries: data.achievements
+          .filter((a) => a.kind === kind && (!a.bonus || got.has(a.id)))
+          .map((a) => ({
+            id: `ach:${a.id}`,
+            found: got.has(a.id),
+            icon: a.icon,
+            title: a.name,
+            text: a.text,
+            why: null,
+            hint: a.hidden ? undefined : `${a.name}：${a.text}`,
+            uncounted: a.bonus === true,
+          })),
+      })),
     ]),
   ];
   return {

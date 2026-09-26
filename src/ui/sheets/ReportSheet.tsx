@@ -1,4 +1,4 @@
-import { Play } from 'lucide-react';
+import { Play, Star } from 'lucide-react';
 import { useEffect, type CSSProperties } from 'react';
 import { gameData } from '../../data';
 import type { IconKey, IndicatorId } from '../../data/schema';
@@ -9,8 +9,14 @@ import { Icon, TrendArrow } from '../icons';
 import { CauseLine, NewsLine, Sheet } from '../parts';
 import { seChime, seInk, seTurn, seWarn } from '../se';
 import { WorldScene } from '../WorldScene';
+import { ChainView } from '../Chain';
+import { CoachAfter } from '../Coach';
+import { chainOf } from '../../store/chain';
 
-const META_LABEL = { capacity: '世界容量', coherence: '世界整合性' } as const;
+const META_LABEL = {
+  capacity: '使える文字数',
+  coherence: '世界整合性',
+} as const;
 
 /** 上から順に、少しずつ遅れて現れる（n 番目） */
 function rise(n: number): CSSProperties {
@@ -57,6 +63,7 @@ export function ReportSheet() {
   const popTo = rep.pop ? populationText(rep.pop.to) : null;
   const popMoved = popFrom !== popTo;
   const nothing = rep.changes.length === 0 && moves.length === 0 && onset.length === 0 && !popMoved;
+  const chain = chainOf(rep);
   let n = 0;
 
   const footer = ended ? (
@@ -87,7 +94,8 @@ export function ReportSheet() {
     <Sheet
       title={
         <>
-          ▶ {years}年経過　
+          <Play size={14} strokeWidth={1.5} aria-hidden="true" /> {years}
+          年経過　
           <span className="dim small">
             YEAR {rep.from} → {rep.to}
           </span>
@@ -105,7 +113,7 @@ export function ReportSheet() {
 
         {rep.interrupted && (
           <p className="interrupt rise" style={rise(n++)} data-testid="interrupted">
-            <Icon name="warning" size={15} /> 重大な出来事が起きたため、時間を止めた
+            <Icon name="warning" size={15} /> 重大な出来事が起きたため時間を止めた
           </p>
         )}
         {ended && (
@@ -129,6 +137,19 @@ export function ReportSheet() {
               </div>
             ))}
           </section>
+        )}
+        {/* 序章の手引き：去年の操作が世界の姿になったことを結ぶ */}
+        {view.tutorial?.after && (
+          <div className="rise" style={rise(n++)}>
+            <CoachAfter view={view} />
+          </div>
+        )}
+
+        {/* 因果の連鎖：書いた一文から、つながった変化・想定外の変化へ線を伸ばす（直接の変化だけなら、上の「世界が書き換わった」で足りる） */}
+        {chain && chain.steps.some((s) => s.kind !== 'direct') && (
+          <div className="rise" style={rise(n++)}>
+            <ChainView chain={chain} />
+          </div>
         )}
 
         {rep.changes.length > 0 && (
@@ -167,7 +188,7 @@ export function ReportSheet() {
         )}
         {nothing && (
           <p className="dim small rise" style={rise(n++)}>
-            目に見える変化はなかった。
+            目に見える変化はなかった
           </p>
         )}
 
@@ -207,12 +228,12 @@ export function ReportSheet() {
         {found.length > 0 && (
           <section className="found rise" style={rise(n++)} data-testid="fresh">
             <div className="section-title">
-              <Icon name="record" size={14} /> 観測記録に加わったもの
+              <Icon name="record" size={14} /> ノートに加わったもの
             </div>
             <ul className="found-list">
               {found.map((f) => (
                 <li key={f.id}>
-                  <span className="found-star">★</span>
+                  <Star size={13} strokeWidth={1.5} className="found-star" aria-label="新発見" />
                   <Icon name={f.icon} size={14} /> {f.text}
                 </li>
               ))}

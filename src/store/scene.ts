@@ -1,6 +1,6 @@
-import { eachLine, kindOf, phraseName, type GameData, type GameState } from '../core';
+import { eachLine, indicatorLevel, kindOf, phraseName, type GameData, type GameState } from '../core';
 import { clamp } from '../core/math';
-import type { IconKey, IndicatorId, SceneMotif, SceneSpec, SpecimenMode, SpecimenShape } from '../data/schema';
+import type { IconKey, IndicatorId, SceneMotif, SceneSpec, SpecimenMode, SpecimenShape, Tone } from '../data/schema';
 
 /**
  * 世界の情景を描くための写し。
@@ -38,12 +38,18 @@ export interface SceneView {
   renew: number;
   /** 化石燃料で動いている度合い */
   fossil: number;
+  /** 作物の病気の広がり（0〜1） */
+  blight: number;
+  /** 空白の行（消した行）ごとの、世界が埋めるまでの進み（0 消した年 〜 1 埋まる年） */
+  voids: number[];
   // ---- 書き換え・副作用・危機・結末・出来事から
   motifs: Partial<Record<SceneMotif, number>>;
   /** インクの色で描く要素（プレイヤーの書き換えから来たもの） */
   inked: SceneMotif[];
   /** この年に新しく描かれた要素（インクがにじむように現れる） */
   fresh: SceneMotif[];
+  /** 現れ方・消え方の動きを見せ終えた（画面が付ける。絵の形は変えず、動きだけを止める） */
+  entered?: boolean;
   /** 言葉そのものを小さな絵と名前で描く（「猫がいなくなる」など） */
   specimens: {
     key: string;
@@ -57,6 +63,8 @@ export interface SceneView {
   /** 最後に書いた一文（インクで出す） */
   ink: string | null;
   ended: 'cleared' | 'failed' | null;
+  /** 情景の名前：施設の名前と、気がかりな状態の言葉（良い・ふつうなら言葉は出さない） */
+  labels: { id: string; name: string; word: string | null; tone: Tone; x: number; y: number }[];
 }
 
 type Motifs = Partial<Record<SceneMotif, number>>;
@@ -233,6 +241,10 @@ export function sceneView(g: GameState, data: GameData): SceneView {
     coherence: clamp(g.sim.coherence / 100, 0, 1),
     renew: clamp(g.sim.renewShare, 0, 1),
     fossil: clamp((1 - g.sim.renewShare) * oilF, 0, 1),
+    blight: clamp(g.sim.blight, 0, 1),
+    voids: Object.keys(g.voids)
+      .sort()
+      .map((id) => clamp((g.year - g.voids[id]!) / Math.max(1, b.voids.years), 0, 1)),
     motifs,
     inked: [...inked].filter((k) => motifs[k] !== undefined),
     fresh: [...fresh].filter((k) => motifs[k] !== undefined),
@@ -240,5 +252,19 @@ export function sceneView(g: GameState, data: GameData): SceneView {
     steles,
     ink: lastWritten(g),
     ended: g.status === 'playing' ? null : g.status,
+    labels: data.scene.labels.flatMap((l) => {
+      // 出すとき：空白の行があるとき／項目の点数が線より低いとき
+      if (l.when === 'voids' && Object.keys(g.voids).length === 0) return [];
+      if (l.when && l.when !== 'voids' && (g.scores[l.when.item] ?? 50) >= l.when.below) return [];
+      const lv = l.item ? indicatorLevel(data.indicators, l.item, g.scores[l.item] ?? 50, g.sim, g.derived) : null;
+      let word = lv && lv.tone !== 'good' && lv.tone !== 'ok' ? lv.word : null;
+      let tone: Tone = lv?.tone ?? 'ok';
+      // 悪い向きの知らせ（作物の病気が広がると「病気」）
+      if (l.alert && g.sim[l.alert.sim] > l.alert.above) {
+        word = l.alert.word;
+        tone = 'bad';
+      }
+      return [{ id: l.id, name: l.name, word, tone, x: l.x, y: l.y }];
+    }),
   };
 }

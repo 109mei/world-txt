@@ -32,13 +32,18 @@ export const SCENARIOS: Scenario[] = [
   { name: 'no_oxygen', stage: 'food', edits: [{ text: '酸素は存在しない。' }], expect: ['breathless'] },
   { name: 'sunless', stage: 'climate', edits: [{ law: 'sun_shine', text: '' }], expect: ['sunless'] },
   { name: 'aliens_war', stage: 'war', edits: [{ text: '宇宙人が地球に来る。' }], expect: ['conquered'] },
-  { name: 'aliens_peace', stage: 'climate', edits: [...PEACE, { text: '宇宙人が地球に来る。' }], expect: ['star_friends'] },
+  { name: 'aliens_peace', stage: 'climate', edits: [...PEACE, { text: '世界政府ができる。' }, { text: '宇宙人が地球に来る。' }], expect: ['star_friends'] },
   { name: 'aliens_endless', stage: 'endless', edits: [...PEACE, { text: '宇宙人が地球に来る。' }] },
-  // 星々への旅立ちには、文明・科学・エネルギーを8年保つ下地が要る：病を人から断ち、増える人口の食べ物は食事を減らして賄う
+  // 星々への旅立ちには、文明・科学・エネルギーを8年保つ下地が要る：病を人から断ち、増える人口の食べ物は食事を減らして賄い、科学を伸ばす
   {
     name: 'colonize',
     stage: 'plague',
-    edits: [{ law: 'pathogen_infect', text: '病原体は生き物に感染する。ただし人間には感染しない。' }, { law: 'human_food', text: '人間は数日に一度食事を必要とする。' }, { text: '人類は他の星に住める。' }],
+    edits: [
+      { law: 'pathogen_infect', text: '病原体は生き物に感染する。ただし人間には感染しない。' },
+      { law: 'human_food', text: '人間は数日に一度食事を必要とする。' },
+      { text: '人は誰もが天才として生まれる。' },
+      { text: '人類は他の星に住める。' },
+    ],
     expect: ['star_voyage'],
   },
   // 食事を減らし、蔵をつくり、植物を少しの水で育てる（よく作り込んだ食料危機の世界は、楽園にたどり着くことがある）
@@ -54,17 +59,16 @@ export const SCENARIOS: Scenario[] = [
   { name: 'colonize_weak', stage: 'food', edits: [{ text: '人類は他の星に住める。' }] },
   { name: 'two_suns', stage: 'climate', edits: [{ text: '太陽が二つある。' }] },
   { name: 'eternal_night', stage: 'food', edits: [{ text: '世界はずっと夜のままだ。' }] },
-  { name: 'no_greenhouse', stage: 'climate', edits: [{ law: 'co2_heat', text: '' }], expect: ['frozen'] },
+  { name: 'no_greenhouse', stage: 'climate', edits: [{ law: 'co2_heat', text: '二酸化炭素は熱を閉じ込めない。' }], expect: ['frozen'] },
   { name: 'zombies', stage: 'plague', edits: [{ text: 'ゾンビが街にあふれる。' }] },
   { name: 'nukes', stage: 'war', edits: [{ law: 'weapons', text: '兵器の破壊力はとても大きい。' }] },
   { name: 'immortal', stage: 'food', edits: [{ law: 'death', text: '' }] },
   // 死なないが老いる：老いた人が増え続け、支えきれなくなる
   { name: 'undying', stage: 'food', edits: [{ text: '人類は不死身になる。' }], expect: ['withered_eternity'] },
-  // 不老不死：死なず老いず、人が増え続ける
-  { name: 'eternal', stage: 'climate', edits: [{ text: '人は不老不死である。' }], expect: ['undying'] },
-  // 誰も死なず、誰も生まれない
-  // 誰も死なず、誰も生まれない（極小世界は水が乏しいので、雨を増やして10年を保つ）
-  { name: 'closed', stage: 'tiny', edits: [{ text: '人は死なない。' }, { text: '人は子を産まない。' }, { law: 'water_rain', text: '雨は多く降る。' }], expect: ['closed_eternity'] },
+  // 不老不死：死なず老いず、人が増え続ける（長く続く世界で、人が増えきったところで崩れる）
+  { name: 'eternal', stage: 'endless', edits: [{ text: '人は不老不死である。' }], expect: ['undying'] },
+  // 誰も死なず、誰も生まれない（気候危機の世界で、雨を増やして10年を保つ）
+  { name: 'closed', stage: 'climate', edits: [{ text: '人は死なない。' }, { text: '人は子を産まない。' }, { law: 'water_rain', text: '雨は多く降る。' }], expect: ['closed_eternity'] },
   { name: 'eternal_plague', stage: 'plague', edits: [{ text: '人は不老不死である。' }] },
   // 時間の文は、書いたら特別な結末（くり返したり戻ったりして、世界が終わらなくなることはない）
   { name: 'time_stop', stage: 'food', edits: [{ text: '時間が止まる。' }], expect: ['eternal_instant'] },

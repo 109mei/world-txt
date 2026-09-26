@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addLine, advance, checkAll, createGame, GENERIC_ENDINGS, stepYear } from '../src/core';
 import { gameData } from '../src/data';
-import { play } from '../scripts/sim';
-import { STRATEGIES } from '../scripts/strategies';
+import { playReader } from '../scripts/bots';
 import { SCENARIOS, playScenario } from '../scripts/worlds';
 
 /**
@@ -71,7 +70,7 @@ describe('いろいろな世界への変化と、その結末', () => {
     expect(['star_friends', 'utopia', 'clear']).toContain(g.ending);
   });
 
-  it('ふつうの滅び方にも、そのときの世界に合った名前がつく（温室効果を消すと凍りついた星）', () => {
+  it('ふつうの滅び方にも、そのときの世界に合った名前がつく（温室効果を打ち消すと凍りついた星）', () => {
     const g = playScenario(gameData, scenario('no_greenhouse'), 21);
     expect(g.status).toBe('failed');
     expect(g.failReason).not.toBeNull();
@@ -79,9 +78,8 @@ describe('いろいろな世界への変化と、その結末', () => {
     expect(g.found).toContain('x:frozen');
   });
 
-  it('よく作り込んだ世界は「楽園」にたどり着くことがある', () => {
-    const st = STRATEGIES.food.find((s) => s.name === 'few_store_water_harvest')!;
-    const endings = [1000, 1001, 1002, 1003, 1004].map((seed) => play(gameData, 'food', st, seed).ending);
+  it('よく作り込んだ世界は「楽園」にたどり着くことがある（見立てて書いた極小世界）', () => {
+    const endings = Array.from({ length: 30 }, (_, i) => playReader(gameData, 'tiny', 1000 + i).g.ending);
     expect(endings).toContain('utopia');
   });
 

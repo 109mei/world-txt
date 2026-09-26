@@ -18,7 +18,7 @@ export function MetaSheet({ which }: { which: 'capacity' | 'coherence' | 'civ' }
       <Sheet
         title={
           <>
-            <Icon name="capacity" size={16} /> 世界容量
+            <Icon name="capacity" size={16} /> 使える文字数
           </>
         }
         onClose={closeSheet}
@@ -30,10 +30,10 @@ export function MetaSheet({ which }: { which: 'capacity' | 'coherence' | 'civ' }
         </p>
         {row}
         <p className="body-text">
-          世界は、物質・生命・時間・社会を「定義」として覚えている。何らかの異常で、覚えていられる文字数に限りがある。
-          文章は長いほど多くの字を使い、新しい概念を書き足すと、その重さの分も使う。短く書き換えたり削除したりすると、空きが増える。
+          世界は物質・生命・時間・社会を「法則」として覚えている。何らかの異常で覚えていられる文字数に限りがある。
+          文章は長いほど多くの字を使い、新しい概念を書き足すとその重さの分も使う。短く書き換えたり削除したりすると空きが増える。
         </p>
-        <p className="body-text">上限を超えた状態が続くと、世界は維持できなくなる。</p>
+        <p className="body-text">上限を超えた状態が続くと世界は維持できなくなる。</p>
       </Sheet>
     );
   }
@@ -50,8 +50,8 @@ export function MetaSheet({ which }: { which: 'capacity' | 'coherence' | 'civ' }
       >
         <p className={`headline tone-${view.headline.tone}`}>「{view.headline.sentence}」</p>
         {row}
-        <p className="body-text">文明は、産業・物流・科学・社会・人類のようすを合わせたもの。どれかが大きく崩れると、文明も傾く。</p>
-        <p className="body-text">文明が終わりの線を割ったまま何年も続くと、人類文明は崩壊する。線の上へ戻せば、数えなおしになる。</p>
+        <p className="body-text">文明は産業・物流・科学・社会・人類のようすを合わせたもの。どれかが大きく崩れると文明も傾く。</p>
+        <p className="body-text">文明が終わりの線を割ったまま何年も続くと人類文明は崩壊する。線の上へ戻せば数えなおしになる。</p>
       </Sheet>
     );
   }
@@ -68,8 +68,8 @@ export function MetaSheet({ which }: { which: 'capacity' | 'coherence' | 'civ' }
     >
       <Meter ends={c.ends} pos={c.pos} word={c.word} tone={c.tone} trend={c.trend} />
       {row}
-      <p className="body-text">無理のある書き換えほど、ほかの法則と食い違い、世界が揺らぐ。揺らぎが大きくなると、因果逆転・重複人物・存在消失などの世界異常が起きる。</p>
-      <p className="body-text">元の文に戻せば、揺らぎはゆっくり収まっていく。崩壊すると世界は意味を失う。</p>
+      <p className="body-text">無理のある書き換えほど、ほかの法則と食い違って世界が揺らぐ。揺らぎが大きくなると因果逆転・重複人物・存在消失などの世界異常が起きる。</p>
+      <p className="body-text">元の文に戻せば揺らぎはゆっくり収まっていく。崩壊すると世界は意味を失う。</p>
     </Sheet>
   );
 }

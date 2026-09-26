@@ -28,6 +28,12 @@ export interface Lexicon {
    * 辞書の種類の言葉（2文字以上）も、そのまま語尾として使う
    */
   suffixes?: Record<string, string>;
+  /** すぐ後ろの「が」が送りがなになる1文字の漢字（泳がない・防がない・逃がす）。助詞のゆれをそろえるときに変えない */
+  gaVerbs?: string[];
+  /** 言い切りの強さの言葉 */
+  strength?: { strong: string[]; mild: string[] };
+  /** 書き方の読み分けの語尾（制度・条件つき） */
+  modes?: { rule: string[]; conditional: string[] };
 }
 
 let LEX: Lexicon = { groups: {}, synonyms: {}, english: {} };
@@ -50,6 +56,8 @@ let NOUNSET = new Set<string>();
 let SUFFIX: [string, string][] = [];
 /** 種類 → 辞書の言葉（ひらがなの言葉を探すため） */
 let KIND_WORDS = new Map<string, string[]>();
+/** すぐ後ろの「が」が送りがなになる漢字 */
+let GA_VERBS = new Set<string>();
 
 function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -58,6 +66,7 @@ function escapeRe(s: string): string {
 /** 語彙を設定する（内容を読み込むときに一度だけ呼ぶ） */
 export function setLexicon(lex: Lexicon, vocabulary: Iterable<string>, nouns: Iterable<string> = []): void {
   LEX = lex;
+  GA_VERBS = new Set(lex.gaVerbs ?? []);
   SYN = Object.entries(lex.synonyms)
     .flatMap(([to, froms]) => froms.map((from) => [from.normalize('NFKC').toLowerCase(), to] as [string, string]))
     .sort((a, b) => b[0].length - a[0].length);
@@ -129,7 +138,18 @@ function canonicalize(raw: string): string {
   for (const [re, ja] of ENG) t = t.replace(re, ja);
   t = normalize(t);
   for (const [from, to] of SYN) if (t.includes(from)) t = t.split(from).join(to);
-  return t;
+  // 「水が少なくても育つ」は、水なしではなく少しの水（「〜なくても」の打ち消しと読まない）
+  t = t.replace(/少なくても/gu, '少しでも');
+  return evenParticles(t);
+}
+
+/**
+ * 助詞のゆれをそろえる：名詞のすぐ後ろの「が」を「は」にする（「病気が消える」と「病気は消える」を同じに読む）。
+ * 言葉の中の「が」（上がる・広がる・逃がす）と、1文字の漢字の送りがなの「が」（泳がない・防がない）は変えない。
+ * 言葉の途中で切れた規則の言葉（「広が」「干上が」）の終わりの「が」も変えない。読み取りの規則の言葉も、読み込むときに同じようにそろえる
+ */
+export function evenParticles(t: string): string {
+  return t.replace(/([\p{sc=Han}々]+|[\p{sc=Katakana}ー]+|[a-z0-9]+)が(?=[^るりっられろさしすせそ])/gu, (m, run: string) => (GA_VERBS.has(run) ? m : `${run}は`));
 }
 
 /** 漢字の並び・2文字以上のカタカナ・英字の並び（言葉らしいもの） */
@@ -413,7 +433,7 @@ const WEAK_NEG = /(ほとんど|あまり|さほど|それほど|めったに|�
 const NEG = /(ない|無い|なし|無し|不要|いらない|要らない|せず|ずに|ず、|ず$|なくなる|失う|消え|存在しない|ません|なかった|消滅|滅亡|絶滅|滅び|滅ぶ)/u;
 
 const LESS_WORDS = [
-  '少し', '少量', '少な', 'わずか', '僅か', '半分', '弱く', '弱い', '弱め', '弱ま', 'ゆっくり', '遅く', '遅い', 'まれ', '稀', 'たまに', '時々', 'ときどき',
+  '少し', '少量', '少な', 'わずか', '僅か', '半分', '弱く', '弱い', '弱め', '弱ま', 'ゆっくり', '遅く', '遅い', 'まれに', 'まれな', 'まれだ', '稀', 'たまに', '時々', 'ときどき',
   '小さく', '薄く', '控えめ', 'ほとんど', 'あまり', 'ちょっと', '軽く', '減', '短い', '短く', '低く', '下が', '落ち',
 ];
 const MORE_WORDS = [
@@ -428,7 +448,7 @@ const STRONG = ['とても', '非常に', 'すごく', 'かなり', '極めて',
 // なくなることの打ち消し（「戦争は終わらない」「石油は尽きない」「動物は絶滅しない」）
 const PERSIST_G = /(終わら|おわら|滅び|滅ば|なくなら|無くなら|消え|尽き|絶え|途絶え|止まら|止ま|やま|絶滅し|絶滅せ|滅亡し|滅亡せ|消滅し|消滅せ|崩壊し|崩壊せ|枯れ)(?:ない|ず|ぬ|ません|なかった)/gu;
 // 場所や場合を限った否定（「海では育たない」）。「〜ではない」は含めない
-const SCOPED = /[^、。はがをにでものと]{1,8}では(?!な|あり)/u;
+const SCOPED = /[^、。はがをにでものと]{1,8}(?:の中|の内|の外|の上|の下)?では(?!な|あり)/u;
 // 「ほどよく」「心地よく」は多さではない
 const MORE_RE = /(?<!ほど|ちょうど|心地|気持ち|都合|程|行儀|仲)よく/u;
 const HARD_RE = /(にくい|にくく|づらい|づらく)/u;
@@ -441,7 +461,8 @@ const VULN_G = new RegExp(`(?:に|には)${INT}(?:弱い|弱く|もろい|もろ
 // 「ほとんど」「少しも」のような言葉は、助詞と同じ文字（と・も）を含むので先に受け取る
 const X = '((?:ほとんど|ちっとも|少しも|もう)?[^、。はがをにでものと]{1,8})';
 // 「Xなしでは〜ない」「Xがなくては〜ない」は、X が必要という意味（二重否定）
-const NEEDS_G = new RegExp(`${X}(?:が|を)?(?:なしでは|無しでは|なしには|無しには|がなくては|なくては|がなければ|なければ)`, 'gu');
+// 「〜しなければならない」「〜なくてはいけない」は義務（しなければならない）で、「Xなしでは」ではない
+const NEEDS_G = new RegExp(`${X}(?:が|を)?(?:なしでは|無しでは|なしには|無しには|がなくては|なくては|がなければ|なければ)(?!なら|いけ|だめ|ダメ)`, 'gu');
 // 並べた名詞（漢字・カタカナ）
 const NOUN = '[\\p{sc=Han}\\p{sc=Katakana}ー々]{1,8}';
 const WITHOUT_G = [
@@ -455,10 +476,27 @@ const WITHOUT_G = [
   new RegExp(`${X}(?:ずとも|ずに)`, 'gu'),
 ];
 const ONLY_G = new RegExp(`${X}(?:に|で|を|が|は|と|へ)?(?:だけ|のみ|ばかり)`, 'gu');
+/** 多さの言葉（「たくさんの水を必要としない」の「たくさん」） */
+const MUCH = /^(?:たくさん|沢山|多く|大量|何度も|いっぱい|大勢)/u;
+const NEED_NOT = '(?:を|は|が)?(?:必要としない|必要とせず|必要ない|いらない|要らない)';
+/** 「たくさんの水を必要としない」「何度も食事を必要としない」：なしではなく、少なくてよい */
+const MUCH_NEED = new RegExp(`(?:たくさんの|沢山の|多くの|大量の|いっぱいの|何度も)([^、。はがをにでものと]{1,8}?)${NEED_NOT}`, 'gu');
+/** 「少しの水も必要としない」「わずかな食事を必要としない」：少しも要らない（なし） */
+const LITTLE_NEED = new RegExp(`(?:少しの|わずかな|僅かな)([^、。はがをにでものと]{1,8}?)(?:も)?${NEED_NOT}`, 'gu');
 const SHIKA_G = new RegExp(`${X}(?:に|で|を|が|は|と|へ|から)?しか`, 'gu');
 
 function clean(x: string): string {
   return x.replace(/^[、はがをにでもの]+|[、はがをにでもの]+$/gu, '');
+}
+
+/**
+ * 主語の前に付いた、動きの言葉で終わる説明（「病気で死ぬ人」「水をめぐる争い」）を外し、中心の名詞にする。
+ * 形容詞の説明（「若い人」）と「の」でつないだ主語（「人間の仕事」）はそのまま
+ */
+function stripRelative(s: string): string {
+  if (KIND.has(s)) return s;
+  const m = /^.*[るたうくすつぬむぶぐ](?=[\p{sc=Han}\p{sc=Katakana}])/u.exec(s);
+  return m ? s.slice(m[0].length) : s;
 }
 
 /**
@@ -590,12 +628,25 @@ export function features(raw: string): TextFeatures {
     return '、';
   });
   const without: string[] = [];
+  // 「たくさんの水を必要としない」「何度も食事を必要としない」は、なしではなく少なくてよい（量の言葉のついた打ち消し）
+  let lessNeed = false;
+  work = work.replace(MUCH_NEED, (_m, x: string) => {
+    lessNeed = true;
+    return `${x}、`;
+  });
+  work = work.replace(LITTLE_NEED, (_m, x: string) => {
+    const w = clean(x);
+    if (w) without.push(w);
+    return '、';
+  });
   for (const re of WITHOUT_G) {
     work = work.replace(re, (_m, x: string, y: unknown) => {
       const adv = adverbOf(x);
       for (const z of [x.slice(adv.length), typeof y === 'string' ? y : '']) {
         const w = clean(z);
-        if (w) without.push(w);
+        if (!w) continue;
+        if (MUCH.test(w)) lessNeed = true;
+        else without.push(w);
       }
       return `${adv}、`;
     });
@@ -632,17 +683,17 @@ export function features(raw: string): TextFeatures {
     text,
     empty: false,
     neg,
-    more: moreWord || (intense && !lessWord && (!resist || strong)),
-    less: lessWord && !moreWord,
+    more: !lessNeed && (moreWord || (intense && !lessWord && (!resist || strong))),
+    less: lessNeed || (lessWord && !moreWord),
     resist,
     vulnerable,
-    freq: frequency(main),
+    freq: lessNeed ? null : frequency(main),
     except,
     cond: COND.test(main.replace(/(ときどき)/gu, '')),
     without,
     only,
     question,
-    subject: subj ? cleanSubject(subj[1]!) || null : null,
+    subject: subj ? stripRelative(cleanSubject(subj[1]!)) || null : null,
     rest: subj ? main.slice(subj[0].length) : '',
     persist,
     scoped: neg && SCOPED.test(work),
@@ -838,7 +889,7 @@ export function aboutLaw(law: Law, text: string): number {
   let topic = 0;
   for (const w of topicWords(law)) if (wordIn(rest, w, own)) topic += w.length;
   // 主語そのものが話題の言葉でもある行（「犯罪はない」「戦争は終わらない」など）。述語に別の言葉があるなら、その言葉の話
-  if (topic === 0 && f.subject && (tokens(bareOf(rest)).length === 0 || CHANGE.test(rest))) for (const w of topicWords(law)) if (wordIn(f.subject, w, own)) topic += w.length;
+  if (topic === 0 && f.subject && (tokens(bareOf(rest)).filter((t) => !COMMON.has(t)).length === 0 || CHANGE.test(rest))) for (const w of topicWords(law)) if (wordIn(f.subject, w, own)) topic += w.length;
   return topic === 0 ? 0 : s + topic;
 }
 
@@ -882,11 +933,20 @@ export function interpretLaw(law: Law, text: string): LawReading {
   const del = law.options.find((o) => o.kind === 'delete');
   if (f.empty) return { optionId: del?.id ?? law.initial, understood: true };
   if (f.text === orig.text) return { optionId: law.initial, understood: true };
+  // 画面に出る読み取りの名前をそのまま書いた文は、その読み取り（「食事の回数が減る」）
+  const byLabel = law.options.find((o) => o.kind !== 'original' && canonical(o.label.replace(/（[^）]*）$/u, '')) === f.text);
+  if (byLabel) return { optionId: byLabel.id, understood: true };
   // 別のものを主語にした文（「生き物はいつか死ぬ」→「人工知能は死なない」）は、この行の意味としては読まない
   if (f.subject && !subjectFits(law, f.subject)) return { optionId: law.initial, understood: false };
   // 「作物は海では育たない」：限った場所の話で、そのほかでは元のまま（限った場所の言葉は、新しいものに数えない）
   if (f.scoped) {
     const scope = SCOPED.exec(f.text)?.[0] ?? '';
+    // 限った場所そのものが読み取りの手がかりの文（「食べ物は蔵の中では腐らない」の「蔵」）は、その読み取り
+    for (const o of law.options) {
+      if (o.kind === 'delete' || !o.match) continue;
+      const rules = o.match.filter((r) => (r.any ?? []).some((w) => scope.includes(w)));
+      if (rules.length > 0 && matches(f, orig, rules, false)) return { optionId: o.id, understood: true };
+    }
     return { optionId: law.initial, understood: paraphrase(law, { ...f, neg: orig.neg }, orig, scope) };
   }
   // その行の知らない動きを打ち消した文（「人は死を望まない」の「望まない」）では、
@@ -1007,6 +1067,70 @@ export function noiseOf(raw: string): { kind: NoiseKind; words: string[] } {
   const words = unknownWords(c).filter((w) => !/^[a-z]+$/.test(w));
   if (words.length > 0) return { kind: 'unknown-words', words: words.slice(0, 2) };
   return { kind: 'unclear', words: [] };
+}
+
+// ---------------------------------------------------------------- 言い切りの強さ
+
+/**
+ * 書いた文の言い切りの強さ。「すべて」「決して」と、打ち消して言い切った文（「〜ない」「〜を必要としない」）は強い（効きも反動も大きい）。
+ * 「やや」「ゆるやかに」「ときどき」でやわらげた文は控えめ（効きも反動も小さい）。手がかりがなければふつう。
+ * 「ただし〜」「〜のとき」「少しの〜」のように範囲や量を絞った書き方は、読み取り（例外・条件つき・少ない）そのものに表れるので、強さには数えない
+ */
+/**
+ * 書き方の読み分けの手がかり（語尾）：制度（〜なければならない・〜させる・〜を配る・法律で）か、条件つき（〜とき・〜なら・余った）か。
+ * どちらもなければ null（言い回しの既定の読まれ方になる）。条件と決まりの両方があれば、条件つき（決まりも、その条件のときだけ）
+ */
+export function modeCue(raw: string): 'rule' | 'conditional' | null {
+  const t = normalize(raw);
+  if (t === '') return null;
+  const m = LEX.modes ?? { rule: [], conditional: [] };
+  // 「〜ねばならない」の「なら」は条件ではない
+  const c = t.replace(/なら(?:ない|ず|ぬ|なかった|なく)/gu, '');
+  if (m.conditional.some((w) => c.includes(w))) return 'conditional';
+  if (m.rule.some((w) => t.includes(w))) return 'rule';
+  return null;
+}
+
+export function strengthOf(text: string): 'strong' | 'plain' | 'mild' {
+  const f = features(text);
+  if (f.empty) return 'plain';
+  const words = LEX.strength ?? { strong: [], mild: [] };
+  const t = f.text;
+  if (words.mild.some((w) => t.includes(w))) return 'mild';
+  const scoped = f.except !== '' || f.cond || f.scoped;
+  if (words.strong.some((w) => t.includes(w)) || (!scoped && (f.neg || f.without.length > 0))) return 'strong';
+  return 'plain';
+}
+
+// ---------------------------------------------------------------- 世界の読み（書いている最中の言葉の印）
+
+/** 書いている文の、ひとかたまりの言葉と、世界がその言葉を知っているか（ひらがな・記号は null） */
+export interface WordMark {
+  text: string;
+  known: boolean | null;
+}
+
+const RUN_G = /[\p{sc=Han}々]+|[\p{sc=Katakana}ー]+|[A-Za-z0-9Ａ-Ｚａ-ｚ０-９]+/gu;
+
+/**
+ * 書いている文を言葉に分け、世界が知っている言葉か、知らない言葉かの印を付ける（結果の予測ではなく、言葉が通じるかだけ）。
+ * 漢字・カタカナ・英数字のかたまりを言葉とみる
+ */
+export function wordMarks(raw: string): WordMark[] {
+  const out: WordMark[] = [];
+  let last = 0;
+  for (const m of raw.matchAll(RUN_G)) {
+    const i = m.index ?? 0;
+    if (i > last) out.push({ text: raw.slice(last, i), known: null });
+    const run = m[0];
+    const c = canonical(run);
+    const latin = /^[a-z0-9]+$/.test(c);
+    const known = latin ? /^\d+$/.test(c) || c !== run.normalize('NFKC').toLowerCase() || KNOWN.has(c) : unknownWords(c).length === 0;
+    out.push({ text: run, known });
+    last = i + run.length;
+  }
+  if (last < raw.length) out.push({ text: raw.slice(last), known: null });
+  return out;
 }
 
 // ---------------------------------------------------------------- 重さ

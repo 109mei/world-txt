@@ -1,11 +1,41 @@
 import type { Balance, ImpulseKey } from '../data/schema';
 import { clamp, curve } from './math';
-import { nextRandom } from './rng';
+import { peopleTerms, recovery, updatePeople } from './people';
 import type { Channels, Derived, GameState, SimState } from './types';
 
 export interface YearOutcome {
   warStarted: boolean;
   warEnded: boolean;
+}
+
+/** 標準正規分布の累積（誤差関数の近似式。Abramowitz と Stegun の 7.1.26。決まった式で、さいころは振らない） */
+export function normalCdf(z: number): number {
+  const x = Math.abs(z) / Math.SQRT2;
+  const t = 1 / (1 + 0.3275911 * x);
+  const erf = 1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+  return 0.5 * (1 + (z < 0 ? -erf : erf));
+}
+
+/** なだれの加わる割合を、決まった回数だけ数え直す（落ち着いた割合） */
+function settle(tension: number, mu: number, sigma: number, amp: number): number {
+  let x = normalCdf((tension - mu) / sigma);
+  for (let i = 0; i < 40; i++) x = normalCdf((tension + amp * x - mu) / sigma);
+  return x;
+}
+
+/**
+ * 戦争の始まり（閾値のなだれ）。人々が戦いに加わる閾値は、平均 mu・ばらつき sigma の分布に散らばっている。
+ * 緊張と「すでに加わった人の割合」が次の人を加わらせ、半分を超えると戦争が始まる（Granovetter の閾値モデル）。
+ * share：落ち着いた割合。near：緊張があと signMargin 上がれば、半分を超える（一触即発の兆し）
+ */
+export function warCascade(s: SimState, ch: Channels, b: Balance): { share: number; near: boolean } {
+  const w = b.war;
+  if (ch.war <= 0) return { share: 0, near: false };
+  // 戦争の起こりやすさが倍になるごとに、閾値の平均が channelShift だけ下がる
+  const mu = w.mu - w.channelShift * Math.log2(clamp(ch.war, 0.05, 4));
+  const share = settle(s.tension, mu, w.sigma, w.amp);
+  const near = share < 0.5 && settle(s.tension + w.signMargin, mu, w.sigma, w.amp) >= 0.5;
+  return { share, near };
 }
 
 /** 心がふだんからどれだけ離れているか（-1.5〜1。0 でふだんどおり、何にも効かない） */
@@ -91,7 +121,9 @@ export function measure(s: SimState, ch: Channels, b: Balance, startPop: number,
     (b.pop.birthFoodBase + (1 - b.pop.birthFoodBase) * Math.min(1, foodRatio)) *
     (0.75 + 0.25 * clamp(s.stability / 60, 0, 1.2)) *
     Math.pow(b.popRef / Math.max(1, s.pop), b.pop.crowdExp) *
-    (1 + b.mind.fertility * mindF);
+    (1 + b.mind.fertility * mindF) /
+    // 人口転換：教育（科学）と医療が進むほど、生まれる子の数は減る
+    (1 + b.people.demography.science * Math.max(0, s.science - 1) + b.people.demography.medicine * Math.max(0, medicine - 1));
 
   // 科学
   const research =
@@ -102,7 +134,9 @@ export function measure(s: SimState, ch: Channels, b: Balance, startPop: number,
     (0.7 + (0.3 * s.happiness) / 55) *
     ch.science *
     (1 - b.science.warPenalty * s.war) *
-    (1 + b.mind.science * mindF);
+    (1 + b.mind.science * mindF) *
+    // 乏しさは考える余裕を奪う（足りない年は、研究と先の備えが鈍る）
+    (1 - b.people.scarcity.science * Math.max(0, 1 - Math.min(foodRatio, waterRatio, energyRatio)));
 
   const d: Derived = {
     foodRatio,
@@ -225,7 +259,8 @@ function stabilityTarget(s: SimState, d: Derived, ch: Channels, b: Balance, mind
     bs.happy * (s.happiness - 55) -
     bs.deaths * d.excessDeaths +
     b.mind.stability * mindF -
-    b.prices.stability * priceF
+    b.prices.stability * priceF +
+    peopleTerms(s, d, b).stability
   );
 }
 
@@ -235,7 +270,8 @@ function happinessTarget(s: SimState, d: Derived, ch: Channels, b: Balance, heat
   return (
     bh.base +
     ch.happiness +
-    bh.food * (clamp(d.foodRatio, 0, 1.2) - 1) -
+    // 暮らしの評価は量の対数で上がる（足りない世界での少しの増加ほど大きく効く）
+    bh.food * Math.log(clamp(d.foodRatio, 0.3, 1.2)) -
     bh.sick * s.pathogen -
     bh.war * s.war -
     bh.unemp * unempStress -
@@ -243,7 +279,8 @@ function happinessTarget(s: SimState, d: Derived, ch: Channels, b: Balance, heat
     (bh.eco * (s.eco - 55)) / 45 -
     bh.heat * heatOver +
     b.mind.happy * mindF -
-    b.prices.happiness * priceF
+    b.prices.happiness * priceF +
+    peopleTerms(s, d, b).happiness
   );
 }
 
@@ -260,7 +297,10 @@ function tensionTarget(s: SimState, d: Derived, ch: Channels, b: Balance, heatOv
     bt.water * waterStress +
     bt.energy * energyStress +
     bt.instability * Math.max(0, 60 - s.stability) +
-    bt.climate * heatOver
+    bt.climate * heatOver +
+    // 物価の上がる速さ（食料価格の高騰は、暴動と紛争の時期と重なる）
+    bt.prices * Math.max(0, ch.inflation) * clamp(ch.money, 0, 1) +
+    peopleTerms(s, d, b).tension
   );
 }
 
@@ -310,7 +350,7 @@ export function targetsOf(s: SimState, d: Derived, ch: Channels, b: Balance): Re
 
 /**
  * 1年進める。g.sim を書き換え、g.derived を今年の値にする。
- * forecast のときは乱数を使わない（戦争は始まらない）。
+ * forecast（出来事なしで先を見るとき）は、戦争を始めない。
  */
 export function simulateYear(g: GameState, ch: Channels, b: Balance, forecast: boolean): YearOutcome {
   const s = g.sim;
@@ -374,7 +414,7 @@ export function simulateYear(g: GameState, ch: Channels, b: Balance, forecast: b
   // ---- 病気：うつりやすさ（R）で流行が広がり、かかった人に免疫がつく
   const density = b.disease.densityBase + (1 - b.disease.densityBase) * popF;
   const R =
-    b.disease.r0 * s.strainR * ch.transmission * (1 - s.immunity) * (1 - b.disease.medR * Math.min(1, d.medicine)) * density;
+    b.disease.r0 * s.strainR * ch.transmission * (1 - s.immunity) * (1 - b.disease.medR * Math.min(1, d.medicine)) * density * (1 - b.people.caution.effect * s.caution);
   s.pathogen = clamp(s.pathogen * Math.pow(R, b.disease.speed) + b.disease.background * ch.transmission, b.disease.min, b.disease.max);
   s.immunity = clamp(
     s.immunity + b.disease.immGain * (s.pathogen / 100) * (1 - s.immunity) - b.disease.immDecay * ch.immunityDecay * s.immunity,
@@ -390,8 +430,11 @@ export function simulateYear(g: GameState, ch: Channels, b: Balance, forecast: b
   s.pop = Math.max(0, s.pop * (1 + d.birthRate - d.deathRate));
 
   // ---- 産業・失業・物流・科学
+  const back = recovery(d.civ, b.people.slowing.line, b);
   const indTarget = industryTarget(s, d, ch, b, popF, mindF, priceF);
-  s.industry += (Math.max(0.05, indTarget) - s.industry) * b.industry.rate;
+  // 戻る向き（良くなる向き）だけ、終わりの線の近くで遅くなる
+  const slow = (from: number, to: number) => (to > from ? back : 1);
+  s.industry += (Math.max(0.05, indTarget) - s.industry) * b.industry.rate * slow(s.industry, indTarget);
 
   const unempTarget = unemploymentTarget(s, ch, b, priceF);
   s.unemployment = clamp(s.unemployment + agriShrink * b.food.laborShare + (unempTarget - s.unemployment) * b.unemployment.rate, 0, 0.6);
@@ -422,10 +465,10 @@ export function simulateYear(g: GameState, ch: Channels, b: Balance, forecast: b
 
   // ---- 社会：安定・幸福・国際緊張
   const stabT = stabilityTarget(s, d, ch, b, mindF, priceF);
-  s.stability += (clamp(stabT, 0, 100) - s.stability) * b.society.rate;
+  s.stability += (clamp(stabT, 0, 100) - s.stability) * b.society.rate * slow(s.stability, stabT);
 
   const happyT = happinessTarget(s, d, ch, b, heatOver, mindF, priceF);
-  s.happiness += (clamp(happyT, 0, 100) - s.happiness) * b.happiness.rate;
+  s.happiness += (clamp(happyT, 0, 100) - s.happiness) * b.happiness.rate * slow(s.happiness, happyT);
 
   const tensionT = tensionTarget(s, d, ch, b, heatOver);
   s.tension += (clamp(tensionT, 0, 100) - s.tension) * b.tension.rate;
@@ -452,12 +495,10 @@ export function simulateYear(g: GameState, ch: Channels, b: Balance, forecast: b
       g.counters.warCooldown = b.war.cooldown;
       g.counters.warYears = 0;
     }
-  } else if (!forecast && ch.war > 0 && g.counters.warCooldown <= 0 && s.tension > b.war.threshold) {
-    const p = clamp(((s.tension - b.war.threshold) / b.war.scale) * ch.war, 0, 0.9);
-    if (nextRandom(g) < p) {
-      s.war = b.war.intensity * clamp(ch.warHarm, 0.05, 2);
-      out.warStarted = true;
-    }
+  } else if (!forecast && ch.war > 0 && g.counters.warCooldown <= 0 && warCascade(s, ch, b).share >= 0.5) {
+    // 加わる人が半分を超えた年に、必ず始まる
+    s.war = b.war.intensity * clamp(ch.warHarm, 0.05, 2);
+    out.warStarted = true;
   }
   if (g.counters.warCooldown > 0) g.counters.warCooldown -= 1;
   g.counters.peaceYears = s.war > 0 ? 0 : g.counters.peaceYears + 1;
@@ -465,6 +506,9 @@ export function simulateYear(g: GameState, ch: Channels, b: Balance, forecast: b
   // ---- 世界整合性：無理な法則が多いほど、世界容量が苦しいほど下がる
   const cohTarget = coherenceTarget(d, ch, b);
   s.coherence += (cohTarget - s.coherence) * b.coherence.rate;
+
+  // ---- 人々の心：慣れ・期待・信頼・先行きの不安・用心・限りを超えた年数
+  updatePeople(s, d, ch, b, g.twists.black_market ?? 0);
 
   return out;
 }

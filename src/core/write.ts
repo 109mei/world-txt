@@ -2,7 +2,9 @@ import type { IconKey, Law, Phrase } from '../data/schema';
 import { openConcepts, rankForDepth, rankOpening } from './access';
 import { covered, lawTotals, type Written } from './channels';
 import { addImpulse, discover, discoverTags, syncPhraseFlags, targetsNow } from './game';
-import { canonical, interpretAsLaw, interpretLaw, lineCost, phraseName, matchPhrases, noiseOf, normalize, originalText, subjectWords, textCost, type AddedAsLaw } from './interpret';
+import { canonical, interpretAsLaw, interpretLaw, lineCost, modeCue, phraseName, matchPhrases, noiseOf, normalize, originalText, strengthOf, subjectWords, textCost, type AddedAsLaw } from './interpret';
+import { clamp } from './math';
+import { noticeCounter, walledNow } from './marks';
 import { NO_MEANING } from './lines';
 import type { Carried, EditBlock, EditResult, ExtraLine, GameData, GameState, NoiseInfo } from './types';
 
@@ -48,6 +50,10 @@ interface Meanings {
  * exceptLaw：その行自身は「既存の行」として探さない
  */
 function readMeanings(data: GameData, text: string, exceptLaw: string | null): Meanings {
+  // 画面に出る名前をそのまま書いた文は、その意味に読む（「食事の回数が減る」「人が離れて暮らす」）
+  const named = data.nameIndex.get(canonical(text));
+  if (named?.kind === 'phrase') return { phrases: [data.phraseById.get(named.id)!], law: null, noise: null };
+  if (named?.kind === 'law' && named.law !== exceptLaw) return { phrases: [], law: { law: data.lawById.get(named.law)!, optionId: named.option }, noise: null };
   const specific = matchPhrases(data.phrases, text, false);
   const law = specific.length > 0 ? null : interpretAsLaw(data.laws, text, exceptLaw);
   const fallback = law ? [] : matchPhrases(data.phrases, text, true);
@@ -94,7 +100,7 @@ function blockPlan(g: GameState, block: EditBlock, extra: Partial<EditResult> = 
   return {
     block,
     result: { ...NONE, ...extra, block },
-    written: { laws: g.laws, texts: g.texts, understood: g.understood, extras: g.extras, carried: g.carried },
+    written: { laws: g.laws, texts: g.texts, understood: g.understood, extras: g.extras, carried: g.carried, scars: g.scars },
     laws: [],
     added: false,
     discoveries: [],
@@ -135,6 +141,11 @@ function planLaw(g: GameState, data: GameData, lawId: string, raw: string): Plan
   const before = g.texts[lawId] ?? '';
   const next = sentence(raw);
   if (normalize(next) === normalize(before)) return blockPlan(g, 'same', { understood: true });
+  // 同じ意味のまま短く言い換えて空けるのは、1行につき1度まで（何度も言い換える作業にしない）
+  if (g.trims[lawId] && next !== '' && before !== '' && textCost(next) < textCost(before)) {
+    const r = interpretLaw(law, next);
+    if (r.understood && r.optionId === g.laws[lawId] && matchPhrases(data.phrases, next, false).length === 0) return blockPlan(g, 'trimmed', { understood: true });
+  }
   let base = g.laws[lawId]!;
   let understood = true;
   let carried: Carried = NO_MEANING;
@@ -165,12 +176,17 @@ function planLaw(g: GameState, data: GameData, lawId: string, raw: string): Plan
       }
     }
   }
+  // 消すと空白になり、消した文の字数の一部が消し跡として残る。空白に書けば、消し跡は消える
+  const scars = { ...g.scars };
+  if (next === '') scars[lawId] = Math.round(textCost(before) * clamp(data.balance.voids.scar, 0, 1));
+  else delete scars[lawId];
   const written: Written = {
     laws: { ...g.laws, [lawId]: base },
     texts: { ...g.texts, [lawId]: next },
     understood: { ...g.understood, [lawId]: understood },
     extras: g.extras,
     carried: { ...g.carried, [lawId]: dedupe(g, carried, lawId) },
+    scars,
   };
   const c = written.carried[lawId]!;
   const history = next === '' ? `「${before}」を削除` : before === '' ? `「${next}」を書き戻した` : `「${before}」→「${next}」`;
@@ -214,7 +230,7 @@ function planLine(g: GameState, data: GameData, lineId: string | null, raw: stri
     return {
       block: null,
       result: { ...NONE, understood: true },
-      written: { laws: g.laws, texts: g.texts, understood: g.understood, extras: g.extras.filter((e) => e.id !== old.id), carried },
+      written: { laws: g.laws, texts: g.texts, understood: g.understood, extras: g.extras.filter((e) => e.id !== old.id), carried, scars: g.scars },
       laws: [],
       added: false,
       discoveries: [],
@@ -241,12 +257,15 @@ function planLine(g: GameState, data: GameData, lineId: string | null, raw: stri
     if (untouched(g, data, b.id) || (g.texts[b.id] ?? '') === '') {
       // まだ誰も書き換えていない行（または消した行）の話なら、その行の書き換えとして読む。書き足した行はその行に溶け込む
       const before = g.texts[b.id] ?? '';
+      const scars = { ...g.scars };
+      delete scars[b.id];
       const written: Written = {
         laws: { ...g.laws, [b.id]: opt },
         texts: { ...g.texts, [b.id]: next },
         understood: { ...g.understood, [b.id]: true },
         extras: extrasWithout,
         carried: withoutOld,
+        scars,
       };
       const history = before === '' ? `「${next}」を書き戻した` : old ? `「${old.text}」→「${next}」` : `「${before}」→「${next}」`;
       return {
@@ -303,7 +322,7 @@ function linePlan(
   return {
     block: null,
     result: { ...NONE, understood, reading: reading.length > 0 ? reading.join('・') : null, ...extra },
-    written: { laws: g.laws, texts: g.texts, understood: g.understood, extras, carried: understood ? { ...withoutOld, [id]: carried } : withoutOld },
+    written: { laws: g.laws, texts: g.texts, understood: g.understood, extras, carried: understood ? { ...withoutOld, [id]: carried } : withoutOld, scars: g.scars },
     laws: [],
     added: !old,
     discoveries: discoveriesOf(null, null, null, carried),
@@ -348,12 +367,20 @@ export function planWrite(g: GameState, data: GameData, target: WriteTarget, tex
   if (target.kind === 'law') {
     if (!data.lawById.has(target.id)) return blockPlan(g, 'unknown');
     const b = blocked(g);
-    return b ? blockPlan(g, b) : guard(g, data, planLaw(g, data, target.id, text), text);
+    return b ? blockPlan(g, b) : withMode(data, guard(g, data, planLaw(g, data, target.id, text), text), text);
   }
   if (target.kind === 'line' && !g.extras.some((e) => e.id === target.id)) return blockPlan(g, 'unknown');
   const b = blocked(g);
   if (b) return blockPlan(g, b);
-  return guard(g, data, planLine(g, data, target.kind === 'line' ? target.id : null, text), text);
+  return withMode(data, guard(g, data, planLine(g, data, target.kind === 'line' ? target.id : null, text), text), text);
+}
+
+/** 人の振る舞いの言い回しを読んだ文なら、その読まれ方（語尾の手がかり、なければ言い回しの既定）を結果に添える */
+function withMode(data: GameData, plan: Plan, text: string): Plan {
+  if (plan.block) return plan;
+  const p = plan.discoveries.map((d) => (d.startsWith('p:') ? data.phraseById.get(d.slice(2)) : undefined)).find((x) => x?.mode);
+  if (!p) return plan;
+  return { ...plan, result: { ...plan.result, mode: modeCue(text) ?? p.mode ?? null } };
 }
 
 /** 書き換えたあとの WORLD.txt が上限を何だけ超えるか。軽くなる書き換えはいつでもできる */
@@ -364,26 +391,79 @@ function shortageAfter(g: GameState, data: GameData, next: Written): number {
   return Math.max(0, after - g.sim.capacityMax);
 }
 
-/** 書き換える。書換の力を1つ使う（書けなかったときは使わない） */
+/**
+ * 書き換える。書換の力を1つ使う（書けなかったときは使わない）。
+ * 意味の伝わらない文は世界に届かない：書換の力も世界容量も使わず、世界は何も変わらない（書こうとした回数だけ数える）
+ */
 export function write(g: GameState, data: GameData, target: WriteTarget, text: string): EditResult {
   const plan = planWrite(g, data, target, text);
   if (plan.block) return plan.result;
+  if (!plan.result.understood) {
+    g.stats.noise += 1;
+    // 初めて、世界が知らない言葉を書いた（開いていく順番で、世界の辞書を開く。書換の力は減らない）
+    if (plan.result.noise?.kind === 'unknown-words') discover(g, 'h:unknown');
+    return { ...plan.result, block: 'noise' };
+  }
   const shortage = shortageAfter(g, data, plan.written);
   if (shortage > 0) return { ...plan.result, block: 'capacity', shortage };
   // 書き換えの勢い：書き換える前と後で、ゆっくり動く量の向かう先がどれだけ動いたか（次の1年に届ける）
   const before = targetsNow(g, data);
+  // 書く前に仕組みで止められていた原因の壁（書いた手で新しく止まったら、原因に効く手を打った年を残す）
+  const walledBefore = walledNow(g, data);
   const w = plan.written;
+  // 同じ意味のまま短く言い換えた行（1行につき1度まで）
+  for (const id of plan.laws) {
+    const before = g.texts[id] ?? '';
+    const next = w.texts[id] ?? '';
+    if (before !== '' && next !== '' && w.laws[id] === g.laws[id] && textCost(next) < textCost(before) && (w.carried[id]?.phrases.length ?? 0) === 0) g.trims[id] = true;
+  }
   g.laws = w.laws;
   g.texts = w.texts;
   g.understood = w.understood;
   g.extras = w.extras;
   g.carried = w.carried;
-  for (const id of plan.laws) g.lawYear[id] = g.year;
+  g.scars = w.scars ?? g.scars;
+  // 書いた行：言い切りの強さを覚え、書き直した回数を数える（2度目からは上書きの傷）
+  const touched = plan.laws.length > 0 ? plan.laws : target.kind === 'line' ? [target.id] : plan.added ? [`x${g.nextExtra}`] : [];
+  const level = text.trim() === '' ? 'plain' : strengthOf(text);
+  const cue = text.trim() === '' ? null : modeCue(text);
+  for (const id of touched) {
+    g.rewrites[id] = (g.rewrites[id] ?? 0) + 1;
+    if (level === 'plain') delete g.strength[id];
+    else g.strength[id] = data.balance.strength[level];
+    if (cue) g.modes[id] = cue;
+    else delete g.modes[id];
+  }
+  for (const id of plan.laws) {
+    g.lawYear[id] = g.year;
+    // 消した行は空白になる（世界が埋めに来るまでの年を数え始める）。書いた行は空白でも、世界が埋めた行でもなくなる
+    if ((g.texts[id] ?? '') === '') g.voids[id] = g.year;
+    else {
+      // 世界が埋めに来る前に、空白の行へ書いた（実績「空白が埋まる前に」）
+      if (g.voids[id] !== undefined) discover(g, 'h:refill');
+      delete g.voids[id];
+    }
+    delete g.filled[id];
+  }
   if (plan.added) g.nextExtra += 1;
   for (const id of plan.discoveries) discover(g, id);
+  // 初めて、人の振る舞いの文が制度か条件つきとして読まれた（開いていく順番で「書き方と人の心」の段を開く）
+  if (plan.result.mode === 'rule' || plan.result.mode === 'conditional') discover(g, 'h:mode');
+  // 使った読まれ方（性質・制度・条件つき。実績「3つの読まれ方」）
+  if (plan.result.mode) discover(g, `m:${plan.result.mode}`);
   commit(g, data, plan.history!);
+  noticeCounter(g, data, walledBefore);
+  // 棋譜：書いた手を残す（同じ世界番号で、同じ年に同じ手を書けば、同じ世界になる）
+  g.moves.push({
+    year: g.year,
+    pass: g.loop?.count ?? 0,
+    target: target.kind === 'new' ? 'new' : `${target.kind}:${target.id}`,
+    kind: text.trim() === '' ? 'delete' : target.kind === 'new' ? 'add' : 'rewrite',
+    text,
+    reading: plan.result.reading,
+  });
   addImpulse(g, before, targetsNow(g, data));
-  return plan.result;
+  return { ...plan.result, strength: level };
 }
 
 /**

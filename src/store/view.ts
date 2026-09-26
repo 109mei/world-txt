@@ -1,5 +1,8 @@
 import {
   capacityLevel,
+  lawLineCost,
+  editRule,
+  signsOf,
   crisisConcepts,
   openConcepts,
   rankOpening,
@@ -11,6 +14,10 @@ import {
   worldSummary,
   activeTags,
   lineCost,
+  delayOf,
+  lineMode,
+  livingLevel,
+  onsetLeft,
   NO_MEANING,
   originalText,
   phraseName,
@@ -27,7 +34,7 @@ import { clamp } from '../core/math';
 import { sceneView, type SceneView } from './scene';
 
 export type { SceneView } from './scene';
-import { CHANNEL_IDS, INDICATOR_IDS, type ChannelId, type IconKey, type IndicatorId, type StageId, type Tone } from '../data/schema';
+import { CHANNEL_IDS, INDICATOR_IDS, type ChannelId, type IconKey, type IndicatorId, type ReadMode, type Stage, type StageId, type Tone } from '../data/schema';
 
 /** 画面に見せる写し。core の状態から作り、React はこれだけを読む */
 
@@ -66,6 +73,46 @@ export interface LimitView {
   eta: number | null;
 }
 
+/** 世界の寿命：いちばん近い終わりの線まで、あと約何年か（棒1本） */
+export interface LifeView {
+  /** このままなら何年で終わりの線に届くか（越えていれば、終わるまでの年。遠ざかっているなら null） */
+  years: number | null;
+  /** いちばん近い線（人口・文明・世界整合性・世界容量） */
+  line: LimitView['id'];
+  label: string;
+  /** 棒の長さ（0 が終わりの線、1 が安全な側の端） */
+  pos: number;
+  word: string;
+  tone: Tone;
+}
+
+/** 4つの柱（命・糧・社会・大地）：いちばん低い項目と、その状態の言葉 */
+export interface PillarView {
+  id: string;
+  name: string;
+  icon: IconKey;
+  /** いちばん低い項目 */
+  lowest: IndicatorView;
+  /** 「人類が不安」 */
+  text: string;
+  tone: Tone;
+  trend: Trend;
+  /** 棒の長さ（4本とも line の位置が終わりの線） */
+  pos: number;
+  line: number;
+  items: IndicatorView[];
+}
+
+/** 起きかけていること（兆し）：3枚まで */
+export interface SignView {
+  id: string;
+  icon: IconKey;
+  text: string;
+  /** 何年で起きそうか（わからなければ null） */
+  years: number | null;
+  tone: Tone;
+}
+
 export interface MeterView {
   word: string;
   tone: Tone;
@@ -94,6 +141,16 @@ export interface LawLine {
   cost: number;
   /** 封じられた行なら、その行が開く筆の位（書き換えられる行なら null） */
   sealed: number | null;
+  /** 空白の行なら、世界が埋めに来るまでの年数（空白でなければ null） */
+  voidLeft: number | null;
+  /** 世界が埋めた行（プレイヤーが書き直すまで、赤いインク） */
+  filled: boolean;
+  /** この行が支えている行の数（消すと、その数だけ世界が揺らぐ） */
+  supports: number;
+  /** 人の振る舞いを書いた行の読まれ方（性質・制度・条件つき。読み分けない行は null） */
+  mode: ReadMode | null;
+  /** 書いた意味が効き始めるまで、あと何年か（効いていれば 0） */
+  onsetLeft: number;
 }
 
 /** この世界の筆の位（書き換えられる範囲） */
@@ -129,7 +186,14 @@ export interface CrisisView {
 }
 
 export interface GameView {
-  stage: { id: StageId; title: string; icon: IconKey; mission: string; goalYears: number; endless: boolean };
+  stage: {
+    id: StageId;
+    title: string;
+    icon: IconKey;
+    mission: string;
+    goalYears: number;
+    endless: boolean;
+  };
   crisis: CrisisView | null;
   /** 危機を防いだ・弱めた・受けた数 */
   crises: { averted: number; softened: number; struck: number };
@@ -137,7 +201,14 @@ export interface GameView {
   /** 特別な結末で終わった（またはふつうの滅び方に名前がついた）ときの結末 */
   ending: EndingView | null;
   /** くり返す世界：何回巻き戻ったか、巻き戻りまであと何年か、抜け出したか */
-  loop: { count: number; left: number; done: boolean; rule: string; wear: number; ink: number } | null;
+  loop: {
+    count: number;
+    left: number;
+    done: boolean;
+    rule: string;
+    wear: number;
+    ink: number;
+  } | null;
   year: number;
   yearsLeft: number;
   status: GameState['status'];
@@ -146,10 +217,17 @@ export interface GameView {
   population: { text: string; trend: Trend };
   indicators: IndicatorView[];
   focus: IndicatorId[];
-  capacity: MeterView & { used: number; max: number };
+  /** 使える文字数（序章のように見せる行を絞った世界では、見えている行の分だけ。hidden は見えない行の重さ） */
+  capacity: MeterView & { used: number; max: number; hidden: number };
   coherence: MeterView;
   /** 世界の終わりまで（人口・文明・世界整合性・世界容量が、終わりの線まであとどれぐらいか） */
   limits: LimitView[];
+  /** 世界の寿命（いちばん近い終わりの線まで） */
+  life: LifeView;
+  /** 4つの柱 */
+  pillars: PillarView[];
+  /** 起きかけていること（3枚まで） */
+  signs: SignView[];
   /** 筆の位（null なら、すべて自由に書き換えられる世界） */
   pen: WorldPen | null;
   edits: { left: number; max: number; nextIn: number; used: number };
@@ -163,6 +241,52 @@ export interface GameView {
   analysis: { label: string; value: string }[];
   /** 世界の情景（世界のタブの絵） */
   scene: SceneView;
+  /** 一行の手引き：その年に試すこと（手引きのない世界・年は null） */
+  guide: string | null;
+  /** 序章の手引き（手引きのない世界は null） */
+  tutorial: TutorialView | null;
+}
+
+/** 序章の手引き：その年に試す操作（押す順の手順）と、去年の操作を結ぶ一文 */
+export interface TutorialView {
+  /** 全部でいくつの手引きか */
+  total: number;
+  /** その年の手引き（遊び終えた年・手引きのない年は null） */
+  lesson: {
+    no: number;
+    title: string;
+    lead: string;
+    move: 'rewrite' | 'add' | 'delete';
+    steps: { text: string; done: string; target: string | null }[];
+  } | null;
+  /** その年の操作をもうしたか（書き換えの残りがなければ、その年はもうできないので済んだものとする） */
+  moved: boolean;
+  /** 去年の手引きの結び（去年その操作をしていれば） */
+  after: string | null;
+}
+
+function tutorialOf(g: GameState, stage: Stage): TutorialView | null {
+  const list = stage.tutorial;
+  if (list.length === 0) return null;
+  const prev = g.year > 0 ? list[g.year - 1] : undefined;
+  const after = prev && g.moves.some((m) => m.year === g.year - 1 && m.kind === prev.move) ? prev.after : null;
+  const now = g.status === 'playing' ? list[g.year] : undefined;
+  const lesson = now
+    ? {
+        no: g.year + 1,
+        title: now.title,
+        lead: now.lead,
+        move: now.move,
+        steps: now.steps.map((s) => ({
+          text: s.text,
+          done: s.done,
+          target: s.target ?? null,
+        })),
+      }
+    : null;
+  const moved = !!now && (g.moves.some((m) => m.year === g.year && m.kind === now.move) || g.edits.left === 0);
+  if (!lesson && !after) return null;
+  return { total: list.length, lesson, moved, after };
 }
 
 export function populationText(pop: number): string {
@@ -176,7 +300,9 @@ function lawLines(g: GameState, data: GameData): LawLine[] {
   const open = openConcepts(g, data);
   // 概念の順に並べ、その中は内容の順
   const order = new Map(data.concepts.map((c, i) => [c.id, i]));
-  const laws = [...data.laws].sort((a, b) => (order.get(a.concept) ?? 0) - (order.get(b.concept) ?? 0));
+  // 序章：見せる行だけ（ほかの行も世界にはあるが、この庭では書き換えられないので出さない）
+  const shown = data.stageById.get(g.stageId)?.lines;
+  const laws = [...data.laws].filter((l) => !shown || shown.includes(l.id)).sort((a, b) => (order.get(a.concept) ?? 0) - (order.get(b.concept) ?? 0));
   let no = 0;
   for (const law of laws) {
     const concept = data.conceptById.get(law.concept)!;
@@ -198,8 +324,14 @@ function lawLines(g: GameState, data: GameData): LawLine[] {
       state,
       understood,
       reading: state !== 'original' && understood ? readingText(data, base !== law.initial ? { law: law.id, option: base } : null, c, text) : null,
-      cost: lineCost(data.phraseById, text, c.phrases),
+      // 空白の行は、消し跡の字数を使う
+      cost: lineCost(data.phraseById, text, c.phrases) + (text === '' ? (g.scars[law.id] ?? 0) : 0),
       sealed: open && !open.has(law.concept) ? rankOpening(data, law.concept) : null,
+      voidLeft: g.voids[law.id] !== undefined ? Math.max(0, data.balance.voids.years - (g.year - g.voids[law.id]!)) : null,
+      filled: g.filled[law.id] !== undefined,
+      supports: law.supports.length,
+      mode: modeOfLine(g, data, law.id, c),
+      onsetLeft: state === 'changed' || state === 'deleted' ? onsetLeft(g, law.id, delayOf(data, law.concept, null)) : 0,
     });
   }
   for (const x of g.extras) {
@@ -212,7 +344,7 @@ function lawLines(g: GameState, data: GameData): LawLine[] {
       kind: 'line',
       no,
       concept: ADDED_CONCEPT,
-      conceptName: '書き足した定義',
+      conceptName: '書き足した行',
       icon: first?.icon ?? lawIcon ?? 'edit',
       text: x.text,
       state: 'added',
@@ -220,9 +352,70 @@ function lawLines(g: GameState, data: GameData): LawLine[] {
       reading: readingText(data, null, c, x.text),
       cost: lineCost(data.phraseById, x.text, c.phrases),
       sealed: null,
+      voidLeft: null,
+      filled: false,
+      supports: 0,
+      mode: modeOfLine(g, data, x.id, c),
+      onsetLeft: Math.max(0, ...c.phrases.map((p) => onsetLeft(g, x.id, delayOf(data, null, p))), c.law ? onsetLeft(g, x.id, delayOf(data, data.lawById.get(c.law.id)?.concept ?? '', null)) : 0),
     });
   }
   return lines;
+}
+
+/** 命の柱の中身：人々の心（信頼・先行きの不安・慣れ・考え方の広がり）。数字ではなく、言葉と棒の位置で見せる */
+export interface PeopleView {
+  trust: { word: string; pos: number; tone: Tone };
+  anxiety: { word: string; pos: number; line: number; tone: Tone };
+  habit: { word: string; tone: Tone };
+  spread: { id: string; name: string; pos: number }[];
+  /** 一気に広がる線の位置 */
+  tipping: number;
+}
+
+export function peopleView(g: GameState, data: GameData): PeopleView {
+  const w = data.indicators.people.view;
+  const b = data.balance.people;
+  const s = g.sim;
+  const three = (x: number, lo: number, hi: number) => (x < lo ? 0 : x < hi ? 1 : 2);
+  const t = three(s.trust, 35, 65);
+  const a = three(s.anxiety, 35, b.anxiety.hoardAt);
+  const gap = livingLevel(s, g.derived, data.balance) - s.ref;
+  const h = gap < -0.03 ? 0 : gap > 0.03 ? 2 : 1;
+  const spread: PeopleView['spread'] = [];
+  for (const [id, pos] of Object.entries(g.spread)) {
+    const c = g.carried[id] ?? NO_MEANING;
+    const p = c.phrases.map((x) => data.phraseById.get(x)).find((x) => x?.mode);
+    if (p) spread.push({ id, name: phraseName(p.name), pos });
+  }
+  return {
+    trust: {
+      word: w.trust.words[t],
+      pos: s.trust / 100,
+      tone: t === 0 ? 'bad' : t === 1 ? 'ok' : 'good',
+    },
+    anxiety: {
+      word: w.anxiety.words[a],
+      pos: s.anxiety / 100,
+      line: b.anxiety.hoardAt / 100,
+      tone: a === 2 ? 'bad' : a === 1 ? 'warn' : 'ok',
+    },
+    habit: {
+      word: w.habit.words[h],
+      tone: h === 0 ? 'warn' : h === 2 ? 'good' : 'ok',
+    },
+    spread,
+    tipping: b.spread.tipping,
+  };
+}
+
+/** 行が運ぶ人の振る舞いの言い回しの読まれ方（最初の1つ） */
+function modeOfLine(g: GameState, data: GameData, lineId: string, c: Carried): ReadMode | null {
+  for (const id of c.phrases) {
+    const p = data.phraseById.get(id);
+    const m = p ? lineMode(g, lineId, p) : null;
+    if (m) return m;
+  }
+  return null;
 }
 
 /** 行の読み取りを短い言葉で（行の法則の読み取り・運ぶ概念・重ね書きを「・」でつなぐ） */
@@ -242,7 +435,14 @@ function meterTrend(delta: number): Trend {
 function endingView(g: GameState, data: GameData): EndingView | null {
   const e = g.ending ? data.endingById.get(g.ending) : undefined;
   if (!e) return null;
-  return { id: e.id, kind: e.kind, title: e.title, text: e.text, why: e.why, icon: e.icon };
+  return {
+    id: e.id,
+    kind: e.kind,
+    title: e.title,
+    text: e.text,
+    why: e.why,
+    icon: e.icon,
+  };
 }
 
 function crisisView(g: GameState, data: GameData): CrisisView | null {
@@ -250,7 +450,13 @@ function crisisView(g: GameState, data: GameData): CrisisView | null {
   const c = data.crisisById.get(g.crisis.id);
   if (!c) return null;
   const left = Math.max(0, g.crisis.at - g.year);
-  return { id: c.id, name: c.name, icon: c.icon, left, text: c.warn.replace('{n}', String(left)) };
+  return {
+    id: c.id,
+    name: c.name,
+    icon: c.icon,
+    left,
+    text: c.warn.replace('{n}', String(left)),
+  };
 }
 
 const SAFE_TONES: readonly Tone[] = ['good', 'ok'];
@@ -266,6 +472,38 @@ function dangerOf(levels: readonly (readonly [number, string, Tone])[]): number 
  * 世界の終わりまでの近さ。終わりの線を 0、安定の所を 1 とした近さ（margin）から、帯の位置と言葉を決める。
  * 帯は、終わりの線を limits.line の位置に置き、その右をじゅうぶん安全な所まで、左を線の先まで描く
  */
+/**
+ * 画面に見せる使える文字数。序章のように見せる行を絞った世界では、見えている行の分だけで数える：
+ * 見えない行の重さを、使った分と上限の両方から引く（残りの字数も、超える年も同じ）
+ */
+export function capacityShown(
+  g: GameState,
+  data: GameData,
+): {
+  used: number;
+  max: number;
+  hidden: number;
+  ratio: (total: number) => number;
+} {
+  const shown = data.stageById.get(g.stageId)?.lines;
+  const max = g.sim.capacityMax;
+  if (!shown)
+    return {
+      used: g.derived.capacityUsed,
+      max: Math.floor(max),
+      hidden: 0,
+      ratio: (r) => r,
+    };
+  const hidden = data.laws.filter((l) => !shown.includes(l.id)).reduce((n, l) => n + lawLineCost(data, g, l.id), 0);
+  const shownMax = Math.max(1, max - hidden);
+  return {
+    used: Math.round(g.derived.capacityUsed - hidden),
+    max: Math.floor(shownMax),
+    hidden,
+    ratio: (r) => (r * max - hidden) / shownMax,
+  };
+}
+
 function limitsView(g: GameState, data: GameData): LimitView[] {
   const ind = data.indicators;
   const cfg = ind.limits;
@@ -289,7 +527,19 @@ function limitsView(g: GameState, data: GameData): LimitView[] {
     // 線まで遠くても、このままなら数年で届くほど速く近づいていれば、言葉はその急ぎに合わせる
     const soon = eta !== null ? cfg.soon.find(([years]) => eta <= years)?.[1] : undefined;
     const w = countdown !== null ? wordOf(-1) : wordOf(soon === undefined ? margin : Math.min(margin, soon));
-    return { id, label, icon, pos: posOf(margin), line: cfg.line, word: w.word, tone: w.tone, trend, note, countdown, eta: countdown !== null ? null : eta };
+    return {
+      id,
+      label,
+      icon,
+      pos: posOf(margin),
+      line: cfg.line,
+      word: w.word,
+      tone: w.tone,
+      trend,
+      note,
+      countdown,
+      eta: countdown !== null ? null : eta,
+    };
   };
   // 人口：終わりの線はステージの人口の下限、安全ははじめの人口
   const popSafe = Math.max(g.startPop, stage.fail.pop + 1);
@@ -303,21 +553,13 @@ function limitsView(g: GameState, data: GameData): LimitView[] {
   const cohMargin = (s.coherence - b.coherence.collapse) / Math.max(1, cohSafe - b.coherence.collapse);
   // 世界容量：終わりの線は上限いっぱい、安全は状態語が「安定」までの使い方
   const capSafe = Math.max(...ind.capacity.filter((l) => SAFE_TONES.includes(l[2])).map((l) => l[0]));
-  const capMargin = (1 - d.capacityRatio) / Math.max(0.01, 1 - capSafe);
+  const cs = capacityShown(g, data);
+  const capMargin = (1 - cs.ratio(d.capacityRatio)) / Math.max(0.01, 1 - capSafe);
   const capCount = g.counters.capOver > 0 || d.capacityRatio > 1 ? Math.max(0, b.capacity.graceYears - g.counters.capOver) : null;
   const civWord = civLevel(ind, d.civ).word;
   const cohWord = coherenceLevel(ind, s.coherence).word;
   return [
-    row(
-      'pop',
-      '人口',
-      'population',
-      popMargin,
-      trendOf((d.birthRate - d.deathRate) * 100, 1, 0.2),
-      `${stage.fail.pop}億人を割ると、人類は終わる`,
-      null,
-      etaOf(s.pop - stage.fail.pop, s.pop - popPrev),
-    ),
+    row('pop', '人口', 'population', popMargin, trendOf((d.birthRate - d.deathRate) * 100, 1, 0.2), `${stage.fail.pop}億人を割ると人類は終わる`, null, etaOf(s.pop - stage.fail.pop, s.pop - popPrev)),
     row(
       'civ',
       '文明',
@@ -334,17 +576,17 @@ function limitsView(g: GameState, data: GameData): LimitView[] {
       'coherence',
       cohMargin,
       meterTrend(s.coherence - g.prevMeta.coherence),
-      `今は「${cohWord}」。崩れると、世界は意味を失う`,
+      `今は「${cohWord}」。崩れると世界は意味を失う`,
       null,
       etaOf(s.coherence - b.coherence.collapse, s.coherence - g.prevMeta.coherence),
     ),
     row(
       'capacity',
-      '世界容量',
+      '使える文字数',
       'capacity',
       capMargin,
-      meterTrend(-(d.capacityRatio - g.prevMeta.capacityRatio) * 100),
-      `${d.capacityUsed} / ${Math.floor(s.capacityMax)}字。超えたまま${b.capacity.graceYears}年で終わる`,
+      meterTrend(-(cs.ratio(d.capacityRatio) - cs.ratio(g.prevMeta.capacityRatio)) * 100),
+      `${cs.used} / ${cs.max}字。超えたまま${b.capacity.graceYears}年で終わる`,
       capCount,
       null,
     ),
@@ -357,7 +599,55 @@ function penView(g: GameState, data: GameData): WorldPen | null {
   if (!a) return null;
   const def = data.access.ranks[a.rank] ?? data.access.ranks[0]!;
   const crisisOpen = !!g.crisis && g.status === 'playing' && crisisConcepts(data, g.crisis.id).some((c) => !a.concepts.includes(c));
-  return { rank: a.rank, name: def.name, reach: def.reach, margin: { used: g.extras.length, max: a.margin }, crisisOpen };
+  return {
+    rank: a.rank,
+    name: def.name,
+    reach: def.reach,
+    margin: { used: g.extras.length, max: a.margin },
+    crisisOpen,
+  };
+}
+
+/** 起きかけていることを見せる数 */
+const SIGN_CARDS = 3;
+
+/** 世界の寿命：いちばん近い線（越えていれば終わるまでの年、近づいていれば届くまでの年のいちばん短いもの） */
+export function lifeOf(limits: LimitView[]): LifeView {
+  const when = (l: LimitView) => l.countdown ?? l.eta ?? Number.POSITIVE_INFINITY;
+  const room = (l: LimitView) => clamp((l.pos - l.line) / Math.max(0.01, 1 - l.line), 0, 1);
+  const near = [...limits].sort((a, b) => when(a) - when(b) || room(a) - room(b))[0]!;
+  const years = Number.isFinite(when(near)) ? when(near) : null;
+  return {
+    years,
+    line: near.id,
+    label: near.label,
+    pos: room(near),
+    word: near.word,
+    tone: near.tone,
+  };
+}
+
+/** 4つの柱：柱の中でいちばん低い項目と、その状態の言葉。棒は、4本とも同じ位置に終わりの線を引く */
+export function pillarsOf(data: GameData, indicators: IndicatorView[]): PillarView[] {
+  const L = data.indicators.pillarLine;
+  // 項目の位置を、終わりの線（悪い状態語になる所）が L に来るようにそろえる
+  const bar = (it: IndicatorView) => (it.pos >= it.danger ? L + ((1 - L) * (it.pos - it.danger)) / Math.max(0.01, 1 - it.danger) : (L * it.pos) / Math.max(0.01, it.danger));
+  return data.indicators.pillars.map((p) => {
+    const items = p.items.map((id) => indicators.find((x) => x.id === id)!).filter(Boolean);
+    const lowest = [...items].sort((a, b) => bar(a) - bar(b))[0]!;
+    return {
+      id: p.id,
+      name: p.name,
+      icon: p.icon,
+      lowest,
+      text: `${lowest.label}が`,
+      tone: lowest.tone,
+      trend: lowest.trend,
+      pos: clamp(bar(lowest), 0, 1),
+      line: L,
+      items,
+    };
+  });
 }
 
 export function buildView(g: GameState, data: GameData): GameView {
@@ -379,8 +669,10 @@ export function buildView(g: GameState, data: GameData): GameView {
       danger: dangerOf(def.levels) / 100,
     };
   });
+  const limits = limitsView(g, data);
   const civ = civLevel(ind, g.derived.civ);
-  const cap = capacityLevel(ind, g.derived.capacityRatio);
+  const shownCap = capacityShown(g, data);
+  const cap = capacityLevel(ind, shownCap.ratio(g.derived.capacityRatio));
   const coh = coherenceLevel(ind, g.sim.coherence);
   const popDelta = g.derived.birthRate - g.derived.deathRate;
   const summary = worldSummary(g, data);
@@ -392,7 +684,14 @@ export function buildView(g: GameState, data: GameData): GameView {
   const sim = g.sim;
   const d = g.derived;
   return {
-    stage: { id: stage.id, title: stage.title, icon: stage.icon, mission: stage.mission, goalYears: stage.goalYears, endless: stage.endless },
+    stage: {
+      id: stage.id,
+      title: stage.title,
+      icon: stage.icon,
+      mission: stage.mission,
+      goalYears: stage.goalYears,
+      endless: stage.endless,
+    },
     crisis: crisisView(g, data),
     crises: { ...g.crises },
     daily: g.daily,
@@ -413,17 +712,21 @@ export function buildView(g: GameState, data: GameData): GameView {
     status: g.status,
     failText: g.failReason ? FAIL_TEXT[g.failReason] : g.status === 'failed' && g.ending ? (data.endingById.get(g.ending)?.text ?? null) : null,
     headline: civ,
-    population: { text: populationText(sim.pop), trend: trendOf(popDelta * 100, 1, 0.2) },
+    population: {
+      text: populationText(sim.pop),
+      trend: trendOf(popDelta * 100, 1, 0.2),
+    },
     indicators,
     focus: stage.focus,
     capacity: {
       word: cap.word,
       tone: cap.tone,
-      trend: meterTrend(-(d.capacityRatio - g.prevMeta.capacityRatio) * 100),
-      pos: clamp(d.capacityRatio / 1.1, 0, 1),
+      trend: meterTrend(-(shownCap.ratio(d.capacityRatio) - shownCap.ratio(g.prevMeta.capacityRatio)) * 100),
+      pos: clamp(shownCap.ratio(d.capacityRatio) / 1.1, 0, 1),
       ends: ['余裕', '限界'],
-      used: d.capacityUsed,
-      max: Math.floor(sim.capacityMax),
+      used: shownCap.used,
+      max: shownCap.max,
+      hidden: shownCap.hidden,
     },
     coherence: {
       word: coh.word,
@@ -432,26 +735,60 @@ export function buildView(g: GameState, data: GameData): GameView {
       pos: clamp(1 - sim.coherence / 100, 0, 1),
       ends: ['正常', '崩壊'],
     },
-    limits: limitsView(g, data),
+    limits,
+    life: lifeOf(limits),
+    pillars: pillarsOf(data, indicators),
+    signs: signsOf(g, data)
+      .slice(0, SIGN_CARDS)
+      .map((x) => ({
+        id: x.id,
+        icon: x.icon,
+        text: x.text,
+        years: x.years,
+        tone: x.tone,
+      })),
     pen: penView(g, data),
-    edits: { left: g.edits.left, max: stage.edits.max, nextIn: Math.max(0, g.edits.nextAt - g.year), used: g.edits.used },
+    edits: {
+      left: g.edits.left,
+      max: editRule(g, stage).max,
+      nextIn: Math.max(0, g.edits.nextAt - g.year),
+      used: g.edits.used,
+    },
     tags,
     alerts,
     laws: lawLines(g, data),
-    concepts: data.concepts.map((c) => ({ id: c.id, name: c.name, icon: c.icon })),
+    guide: g.status === 'playing' ? (stage.guide[g.year] ?? null) : null,
+    tutorial: tutorialOf(g, stage),
+    concepts: data.concepts.map((c) => ({
+      id: c.id,
+      name: c.name,
+      icon: c.icon,
+    })),
     history: [...g.history].reverse(),
     report: g.report,
     summary,
     analysis: [
       { label: '人口', value: `${sim.pop.toFixed(1)}億人` },
-      { label: '出生率 / 死亡率', value: `${(d.birthRate * 1000).toFixed(1)}‰ / ${(d.deathRate * 1000).toFixed(1)}‰` },
+      {
+        label: '出生率 / 死亡率',
+        value: `${(d.birthRate * 1000).toFixed(1)}‰ / ${(d.deathRate * 1000).toFixed(1)}‰`,
+      },
       { label: '食料の充足', value: `${Math.round(d.foodRatio * 100)}%` },
       { label: '食料の蓄え', value: `${Math.round(sim.foodStock * 365)}日分` },
       { label: '水の充足', value: `${Math.round(d.waterRatio * 100)}%` },
-      { label: 'エネルギーの充足', value: `${Math.round(d.energyRatio * 100)}%` },
-      { label: '再生可能エネルギー', value: `${Math.round(sim.renewShare * 100)}%` },
+      {
+        label: 'エネルギーの充足',
+        value: `${Math.round(d.energyRatio * 100)}%`,
+      },
+      {
+        label: '再生可能エネルギー',
+        value: `${Math.round(sim.renewShare * 100)}%`,
+      },
       { label: '石油の残り', value: `約${Math.round(sim.oilReserve)}年分` },
-      { label: '気温（産業革命前との差）', value: `${sim.temp >= 0 ? '+' : ''}${sim.temp.toFixed(2)}℃` },
+      {
+        label: '気温（産業革命前との差）',
+        value: `${sim.temp >= 0 ? '+' : ''}${sim.temp.toFixed(2)}℃`,
+      },
       { label: 'CO₂濃度', value: `${Math.round(sim.co2)} ppm` },
       { label: '感染の広がり', value: `${sim.pathogen.toFixed(1)}%` },
       { label: '免疫を持つ人', value: `${Math.round(sim.immunity * 100)}%` },
@@ -462,10 +799,13 @@ export function buildView(g: GameState, data: GameData): GameView {
       { label: '社会の安定', value: `${Math.round(sim.stability)}` },
       { label: '国際緊張', value: `${Math.round(sim.tension)}` },
       { label: '心', value: `${Math.round(sim.mind)}` },
-      { label: '物価（はじめを1として）', value: d.money > 0 ? `${priceText(sim.prices)}倍` : 'お金なし' },
+      {
+        label: '物価（はじめを1として）',
+        value: d.money > 0 ? `${priceText(sim.prices)}倍` : 'お金なし',
+      },
       { label: '文明', value: `${Math.round(d.civ)}` },
       { label: '世界整合性', value: `${Math.round(sim.coherence)}` },
-      { label: '世界容量', value: `${d.capacityUsed} / ${Math.floor(sim.capacityMax)}字` },
+      { label: '使える文字数', value: `${shownCap.used} / ${shownCap.max}字` },
     ],
     scene: sceneView(g, data),
   };
@@ -573,10 +913,10 @@ export function explainIndicator(g: GameState, data: GameData, id: IndicatorId):
       if (f.heat < 0.97) add(1 - f.heat, s.temp < 0 ? 'cold' : 'temperature', s.temp < 0 ? '寒さで作物が育たない' : '暑さで作物が実りにくい');
       if (f.blight > 0.01 && f.blight < 0.97) add(1 - f.blight, 'pathogen', '作物の病気が広がっている');
       if (f.energy < 0.97) add(1 - f.energy, 'energy', 'エネルギー不足で肥料や燃料が足りない');
-      if (f.eco < 0.95) add(1 - f.eco, 'eco', '生態系が弱り、土や受粉の力が落ちている');
+      if (f.eco < 0.95) add(1 - f.eco, 'eco', '生態系が弱って土や受粉の力が落ちている');
       if (f.logistics < 0.93) add(1 - f.logistics, 'logistics', '食料が必要な所へ届いていない');
       if (f.land > 0.97 * (d.foodRatio < 1 ? 1 : 2)) add(0.1, 'agriculture', '農地が限界まで広がっている');
-      if (s.pop > g.startPop * 1.05) add((s.pop / g.startPop - 1) * 0.6, 'population', '人口が増え、必要な量が増えた');
+      if (s.pop > g.startPop * 1.05) add((s.pop / g.startPop - 1) * 0.6, 'population', '人口が増えて必要な量が増えた');
       if (f.stock > 0.02) add(0.01, 'food', `蓄えがある（約${Math.round(f.stock * 365)}日分）`, true);
       if (d.foodRatio > 1.1) add(0.02, 'food', '必要な量より多く作られている', true);
       break;
@@ -593,7 +933,7 @@ export function explainIndicator(g: GameState, data: GameData, id: IndicatorId):
       break;
     case 'health':
       if (s.pathogen > 5) add(s.pathogen / 50, 'pathogen', `感染が広がっている（約${Math.round(s.pathogen)}%）`);
-      if (s.pathogen > b.medicine.overload) add(0.3, 'medicine', '病院があふれ、医療が追いつかない');
+      if (s.pathogen > b.medicine.overload) add(0.3, 'medicine', '病院があふれて医療が追いつかない');
       if (s.strainV > 0.12) add(s.strainV, 'dna', '今の病原体は重症になりやすい');
       if (s.immunity > 0.6) add(0.05, 'immunity', '多くの人が免疫を持っている', true);
       break;
@@ -626,11 +966,11 @@ export function explainIndicator(g: GameState, data: GameData, id: IndicatorId):
       break;
     case 'science':
       if (s.stability < 50) add((60 - s.stability) / 100, 'society', '社会の混乱で研究が進まない');
-      if (s.industry < 0.85) add(1 - s.industry, 'industry', '産業が弱り、研究にお金が回らない');
+      if (s.industry < 0.85) add(1 - s.industry, 'industry', '産業が弱って研究にお金が回らない');
       if (d.research > 0.025) add(0.02, 'science', '研究が盛んに進んでいる', true);
       break;
     case 'logistics':
-      if (s.infra < 0.8) add(0.9 - s.infra, 'logistics', '道路や港、送電網が傷んでいる');
+      if (s.infra < 0.8) add(0.9 - s.infra, 'logistics', '道路や港や送電網が傷んでいる');
       if (s.war > 0) add(0.3, 'war', '戦争で輸送路が断たれている');
       if (d.distribution < 0.97) add(1 - d.distribution, 'nation', '物の流れが滞っている');
       break;
@@ -651,19 +991,19 @@ export function explainIndicator(g: GameState, data: GameData, id: IndicatorId):
       break;
     case 'mind': {
       const base = b.mind.base;
-      if (s.mind < base - 2) add((base - s.mind) / 40, 'mind', '書き換えた世界のあり方が、人々の心をすり減らしている');
+      if (s.mind < base - 2) add((base - s.mind) / 40, 'mind', '書き換えた世界のあり方が人々の心をすり減らしている');
       if (s.mind > base + 2) add((s.mind - base) / 40, 'mind', '人々の心に張り合いがある', true);
       if (s.happiness < b.mind.viewRef - 5) add((b.mind.viewRef - s.happiness) / 60, 'happiness', '暮らしの苦しさが心に響いている');
-      if (s.prices > 3 && d.money > 0) add(Math.log10(s.prices) / 4, 'money', '物価の暴騰で、明日の暮らしが見えない');
+      if (s.prices > 3 && d.money > 0) add(Math.log10(s.prices) / 4, 'money', '物価の暴騰で明日の暮らしが見えない');
       if (s.war > 0) add(0.15, 'war', '戦争が心に傷を残している');
       break;
     }
     case 'prices':
       if (d.money <= 0) add(0.1, 'money', 'お金のない世界。物は交換で行き来している', true);
       else {
-        if (s.prices > 1.05) add(Math.log10(s.prices) / 2, 'money', `お金が刷られすぎ、物価は約${priceText(s.prices)}倍になった`);
-        if (d.foodRatio < 0.97) add(1 - d.foodRatio, 'food', '食料が足りず、値段が上がっている');
-        if (d.energyRatio < 0.97) add((1 - d.energyRatio) * 0.5, 'energy', 'エネルギーが足りず、値段が上がっている');
+        if (s.prices > 1.05) add(Math.log10(s.prices) / 2, 'money', `お金が刷られすぎて物価は約${priceText(s.prices)}倍になった`);
+        if (d.foodRatio < 0.97) add(1 - d.foodRatio, 'food', '食料が足りず値段が上がっている');
+        if (d.energyRatio < 0.97) add((1 - d.energyRatio) * 0.5, 'energy', 'エネルギーが足りず値段が上がっている');
         if (s.prices <= 1.05 && d.foodRatio >= 1 && d.energyRatio >= 1) add(0.02, 'money', 'お金の価値は保たれている', true);
       }
       break;

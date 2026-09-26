@@ -2,13 +2,21 @@ import { expect, test } from '@playwright/test';
 import { debug, startFood } from './helpers';
 
 test.describe('390×844 のスマホ縦画面', () => {
-  test('タイトルから世界を開くと、14の項目と世界容量（文字数）が見える', async ({ page }) => {
+  test('タイトルから世界を開くと、世界の寿命・4つの柱（中に14の項目）・使える文字数が見える', async ({ page }) => {
     await startFood(page);
     await expect(page.getByTestId('year')).toHaveAttribute('data-value', '0');
-    await expect(page.getByTestId('indicators').locator('.ind')).toHaveCount(14);
+    // 一目で追うのは、世界の寿命と4つの柱（14の項目は柱の中身に入っている）
+    await expect(page.getByTestId('life')).toContainText('世界の寿命');
+    await expect(page.getByTestId('pillars').locator('.pillar')).toHaveCount(4);
+    await page.getByTestId('pillar-food').click();
+    await expect(page.getByTestId('pillar-sheet').locator('.pillar-item')).toHaveCount(3);
+    await page.getByTestId('sheet-close').click();
+    // 世界の寿命を押すと、4つの終わりの線（使える文字数を含む）
+    await page.getByTestId('life').click();
     await expect(page.getByTestId('capacity')).toContainText('字');
     await expect(page.getByTestId('capacity')).toBeVisible();
-    await expect(page.getByTestId('headline')).toContainText('人類文明は現在');
+    await page.getByTestId('sheet-close').click();
+    await expect(page.getByTestId('headline')).toContainText('人類文明はいま');
     // 世界の情景（挿し絵）と、まだ何も書いていないことの添え書き
     await expect(page.getByTestId('scene')).toBeVisible();
     await expect(page.getByTestId('scene-ink')).toContainText('まだ書き換えられていない');
@@ -27,7 +35,8 @@ test.describe('390×844 のスマホ縦画面', () => {
     await expect(page.getByTestId('toast')).toContainText('食事の回数が減る');
     await expect(page.getByTestId('law-human_food')).toHaveAttribute('data-state', 'changed');
     await expect(page.getByTestId('law-human_food')).toContainText('人間は二日に一度だけ食事をとる。');
-    await expect(page.getByTestId('edits')).toHaveAttribute('data-value', '2');
+    // 書換の力ははじめ2回。1回書いたので、残りは1回
+    await expect(page.getByTestId('edits')).toHaveAttribute('data-value', '1');
   });
 
   test('行を消すと、その法則は世界から消える', async ({ page }) => {
@@ -40,7 +49,7 @@ test.describe('390×844 のスマホ縦画面', () => {
     await expect(page.getByTestId('law-war')).toHaveAttribute('data-state', 'deleted');
   });
 
-  test('新しい一文を書き足せる（意味のない文は、世界が何も変わらないと伝える）', async ({ page }) => {
+  test('新しい一文を書き足せる（意味のない文は世界に届かず、書換の力も使わない）', async ({ page }) => {
     await startFood(page, true);
     await page.getByTestId('tab-laws').click();
     await page.getByTestId('add-line').click();
@@ -54,9 +63,13 @@ test.describe('390×844 のスマホ縦画面', () => {
     await page.getByTestId('tab-laws').click();
 
     await page.getByTestId('add-line').click();
+    // 世界の読み：知っている言葉は実線、知らない言葉は点線
+    await page.getByTestId('editor').fill('人は鼎を持つ');
+    await expect(page.getByTestId('world-reading').locator('[data-known="false"]').first()).toBeVisible();
     await page.getByTestId('editor').fill('世界はうつくしい。');
-    await page.getByTestId('write').click();
-    await expect(page.getByTestId('toast')).toContainText('意味のない文なので、世界は何も変わらない');
+    await expect(page.getByTestId('noise-note')).toContainText('世界に届かない言葉');
+    await expect(page.getByTestId('write')).toBeDisabled();
+    await expect(page.getByTestId('world-reading').locator('[data-known="true"]').first()).toContainText('世界');
   });
 
   test('入力の補助：「〜ない」で打ち消し、言葉をカーソルの位置に差し込める', async ({ page }) => {
@@ -93,7 +106,8 @@ test.describe('390×844 のスマホ縦画面', () => {
   });
 
   test('書いた一文は、時間を進めた年に世界の姿になる（情景に描かれ、「世界が書き換わった」と知らせる）', async ({ page }) => {
-    await startFood(page);
+    // 「空を飛ぶ」は重い言葉なので、すべて自由な筆で書く
+    await startFood(page, true);
     await page.getByTestId('tab-laws').click();
     await page.getByTestId('add-line').click();
     await page.getByTestId('editor').fill('人間は空を飛べる');
@@ -143,15 +157,23 @@ test.describe('390×844 のスマホ縦画面', () => {
   });
 
   test('想定外の変化には、原因になった一文が付く', async ({ page }) => {
-    await startFood(page);
+    // 「週に一度」は重い言葉なので、すべて自由な筆で書く
+    await startFood(page, true);
     await page.getByTestId('tab-laws').click();
     await page.getByTestId('law-human_food').click();
     await page.getByTestId('editor').fill('人間は週に一度食事を必要とする。');
     await page.getByTestId('write').click();
+    // 原因の付いた想定外の変化が出るまで進める（世界が先に終わったら、結末の画面から歩みを開く）
     for (let i = 0; i < 15; i++) {
+      const st = await debug<{
+        status: string;
+        history: { kind: string; cause?: unknown }[];
+      }>(page, 'state()');
+      if (st.status !== 'playing' || st.history.some((h) => h.kind !== 'edit' && h.cause)) break;
       await page.getByTestId('advance').click();
       await page.getByTestId('report-ok').click();
     }
+    if (await page.getByTestId('result').isVisible()) await page.getByTestId('read-history').click();
     await page.getByTestId('tab-history').click();
     await expect(page.getByTestId('history-tab').getByTestId('cause').first()).toContainText('人間は週に一度食事を必要とする。');
   });
@@ -177,11 +199,18 @@ test.describe('390×844 のスマホ縦画面', () => {
     await page.evaluate(() => localStorage.clear());
     await page.reload();
     await page.getByTestId('start').click();
+    // はじめは序章だけが開いている。食料危機は序章を遊び終えると、世界大戦は世界を1つ救うと開く
+    await expect(page.getByTestId('stage-prologue')).toHaveAttribute('data-locked', 'false');
+    await expect(page.getByTestId('stage-food')).toHaveAttribute('data-locked', 'true');
     await expect(page.getByTestId('stage-war')).toHaveAttribute('data-locked', 'true');
-    await expect(page.getByTestId('stage-food')).toHaveAttribute('data-locked', 'false');
+    await page.getByTestId('stage-food').click();
+    await expect(page.getByTestId('toast')).toContainText('序章');
     await page.getByTestId('stage-war').click();
     await expect(page.getByTestId('toast')).toContainText('世界を救うと');
     await expect(page.getByTestId('stages')).toBeVisible();
+    // わかった世界の決まりと現実のカードの数、まだ出会っていない決まりの手がかりが見える
+    await expect(page.getByTestId('known-rules')).toContainText('0');
+    await expect(page.getByTestId('journey-next')).toContainText('まだ出会っていない決まり');
   });
 
   test('無限の世界：危機の知らせが届き、文明が滅ぶまで何年続いたかを競う', async ({ page }) => {
@@ -197,12 +226,16 @@ test.describe('390×844 のスマホ縦画面', () => {
     await expect(page.getByTestId('briefing')).toContainText('文明が滅ぶまで');
     await expect(page.getByTestId('open-daily')).toContainText('今日の世界');
     await page.getByTestId('open-world').click();
-    await expect(page.getByTestId('year')).toContainText('∞');
-    await expect(page.getByTestId('endless-left')).toContainText('∞');
+    await expect(page.getByTestId('year').getByLabel('終わりなし')).toBeVisible();
+    await expect(page.getByTestId('endless-left').getByLabel('終わりなし')).toBeVisible();
 
-    // 最初の危機の知らせが届くまで進める（重大な知らせで時間は止まる）
-    await debug(page, 'advance(30)');
-    await page.getByTestId('report-ok').click();
+    // 最初の危機の知らせが届くまで進める（重大な知らせで時間は止まるので、届くまでくり返す）
+    for (let i = 0; i < 10; i++) {
+      await debug(page, 'advance(30)');
+      await page.getByTestId('report-ok').click();
+      const st = await debug<{ crisis: unknown }>(page, 'state()');
+      if (st.crisis) break;
+    }
     await expect(page.getByTestId('crisis')).toBeVisible();
     await expect(page.getByTestId('crisis')).toContainText('あと');
     await expect(page.getByTestId('endless-left')).toContainText('危機まで');
@@ -226,7 +259,10 @@ test.describe('390×844 のスマホ縦画面', () => {
     await startFood(page);
     // 文字の上で長押し（右クリック）しても、メニューは出ない
     const blocked = await page.getByTestId('headline').evaluate((el) => {
-      const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+      const ev = new MouseEvent('contextmenu', {
+        bubbles: true,
+        cancelable: true,
+      });
       el.dispatchEvent(ev);
       return ev.defaultPrevented;
     });
@@ -239,7 +275,10 @@ test.describe('390×844 のスマホ縦画面', () => {
     await page.getByTestId('law-human_food').click();
     const editor = page.getByTestId('editor');
     const allowed = await editor.evaluate((el) => {
-      const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+      const ev = new MouseEvent('contextmenu', {
+        bubbles: true,
+        cancelable: true,
+      });
       el.dispatchEvent(ev);
       return !ev.defaultPrevented;
     });
@@ -250,6 +289,8 @@ test.describe('390×844 のスマホ縦画面', () => {
 
   test('開ける世界は1つだけ：別の世界を開くときは、前の世界を放棄してよいかを確かめる', async ({ page }) => {
     await startFood(page);
+    // 感染症は、食料危機を遊び終えると開く
+    await debug(page, 'played("food")');
     await debug(page, 'goStages()');
     await expect(page.getByTestId('ongoing')).toContainText('食料危機');
     await expect(page.getByTestId('stage-food')).toHaveAttribute('data-ongoing', 'true');
@@ -293,7 +334,7 @@ test.describe('390×844 のスマホ縦画面', () => {
         w.__csp = [...(w.__csp ?? []), `${e.violatedDirective} ${e.blockedURI}`];
       });
     });
-    await startFood(page);
+    await startFood(page, true);
     await expect(page.locator('meta[http-equiv="Content-Security-Policy"]')).toHaveAttribute('content', /script-src 'self'/);
     await page.getByTestId('tab-laws').click();
     await page.getByTestId('add-line').click();
@@ -342,22 +383,27 @@ test.describe('390×844 のスマホ縦画面', () => {
     await expect(page.getByTestId('title')).toBeVisible();
     await expect(page.getByTestId('save-warning')).toHaveCount(0);
     await page.getByTestId('start').click();
-    await page.getByTestId('stage-food').click();
+    // はじめて開ける世界は序章
+    await page.getByTestId('stage-prologue').click();
     await page.getByTestId('open-world').click();
     await expect(page.getByTestId('save-warning')).toContainText('保存できなかった');
   });
 
   test('ホーム画面に追加したときのアイコンと名前がある（iPhone と Android）', async ({ page, request }) => {
     await page.goto('./');
-    await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', 'WORLD.txt');
+    await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', 'ラプラスの庭');
     const here = page.url();
     const apple = await page.locator('link[rel="apple-touch-icon"]').getAttribute('href');
     const icon = await request.get(new URL(apple!, here).href);
     expect(icon.ok()).toBe(true);
     expect(icon.headers()['content-type']).toContain('image/png');
     const manifestUrl = new URL((await page.locator('link[rel="manifest"]').getAttribute('href'))!, here).href;
-    const manifest = (await (await request.get(manifestUrl)).json()) as { short_name: string; display: string; icons: { src: string; purpose?: string }[] };
-    expect(manifest.short_name).toBe('WORLD.txt');
+    const manifest = (await (await request.get(manifestUrl)).json()) as {
+      short_name: string;
+      display: string;
+      icons: { src: string; purpose?: string }[];
+    };
+    expect(manifest.short_name).toBe('ラプラスの庭');
     // ホーム画面から開いてもブラウザで開く（iPhone でセーブが Safari と分かれないように）
     expect(manifest.display).toBe('browser');
     expect(manifest.icons.some((i) => i.purpose === 'maskable')).toBe(true);
@@ -371,7 +417,7 @@ test.describe('390×844 のスマホ縦画面', () => {
     await page.getByTestId('open-tutorial').click();
     const tour = page.getByTestId('tutorial');
     await expect(tour).toContainText('1 / 5');
-    await expect(tour).toContainText('世界は、文章でできている');
+    await expect(tour).toContainText('世界は文章でできている');
     for (const title of ['兆しを読む', '書き換える', '時間を進める', '世界を救う']) {
       await page.getByTestId('tutorial-next').click();
       await expect(tour).toContainText(title);
@@ -393,22 +439,28 @@ test.describe('390×844 のスマホ縦画面', () => {
     // 太陽の行は封じられている：タップすると、どの位で開くかを知らせ、書き換える画面は開かない
     await expect(page.getByTestId('law-sun_shine')).toHaveAttribute('data-sealed', 'yes');
     await page.getByTestId('law-sun_shine').click();
-    await expect(page.getByTestId('toast')).toContainText('封じられて');
+    await expect(page.getByTestId('toast')).toContainText('ロックされて');
     await expect(page.getByTestId('edit-sheet')).toHaveCount(0);
     // 食料危機に関わる行は開いている
     await expect(page.getByTestId('law-human_food')).not.toHaveAttribute('data-sealed', 'yes');
-    // 書き足せる行は1つまで
+    // 重い言葉（空を飛ぶ）は、いまの筆では書けない（書換の力は減らない）
     await page.getByTestId('add-line').click();
     await page.getByTestId('editor').fill('人間は空を飛べる');
     await page.getByTestId('write').click();
-    await expect(page.getByTestId('toast')).toContainText('人間が空を飛ぶ');
+    await expect(page.getByTestId('toast')).toContainText('重すぎて');
+    // 書き足せる行は1つまで
+    await page.getByTestId('editor').fill('ため池を作る');
+    await page.getByTestId('write').click();
+    await expect(page.getByTestId('toast')).toContainText('水をためておく');
     await expect(page.getByTestId('add-line')).toHaveAttribute('data-full', 'yes');
     await page.getByTestId('add-line').click();
     await expect(page.getByTestId('toast')).toContainText('書き足せるのは1行まで');
   });
 
-  test('世界の終わりまで：人口・文明・世界整合性・世界容量が、終わりの線まであとどれぐらいかを見せる', async ({ page }) => {
+  test('世界の寿命：いちばん近い線まで、あと約何年か。押すと、人口・文明・世界整合性・世界容量の終わりの線を見せる', async ({ page }) => {
     await startFood(page);
+    await expect(page.getByTestId('life')).toContainText('いちばん近い線');
+    await page.getByTestId('life').click();
     const limits = page.getByTestId('limits');
     await expect(limits).toContainText('世界の終わりまで');
     await expect(limits.locator('.limit')).toHaveCount(4);
@@ -416,5 +468,40 @@ test.describe('390×844 のスマホ縦画面', () => {
     await page.getByTestId('limit-civ').click();
     await expect(page.getByTestId('meta-sheet')).toContainText('文明');
     await expect(page.getByTestId('meta-limit')).toBeVisible();
+  });
+
+  test('序章の手引き：押す順に示し、押す所を枠で示す。手本どおりに書くと次の年に世界が変わり、結びの一文が出る', async ({ page }) => {
+    await page.goto('./?seed=7&debug=1');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    await page.getByTestId('start').click();
+    await page.getByTestId('stage-prologue').click();
+    await page.getByTestId('open-world').click();
+    const coach = page.getByTestId('coach');
+    // 1年目：書き換える。まず「法則」のタブを示す
+    await expect(coach).toContainText('手引き 1 / 3');
+    await expect(coach).toContainText('書き換える');
+    await expect(page.getByTestId('tab-laws')).toHaveClass(/coach-target/);
+    await page.getByTestId('tab-laws').click();
+    // 次は手本の行を示す
+    await expect(coach.locator('[data-state="done"]')).toHaveCount(1);
+    await expect(page.getByTestId('law-animal_pollen')).toHaveClass(/coach-target/);
+    await page.getByTestId('law-animal_pollen').click();
+    // 書く画面にも、いまの手順を添える
+    await expect(page.getByTestId('coach-note')).toContainText('虫や鳥がたくさんの花粉を運ぶ');
+    await page.getByTestId('editor').fill('虫や鳥がたくさんの花粉を運ぶ');
+    await expect(page.getByTestId('write')).toHaveClass(/coach-target/);
+    await page.getByTestId('write').click();
+    // 書いたら「1年進める」を示す
+    await expect(page.getByTestId('advance')).toHaveClass(/coach-target/);
+    await page.getByTestId('advance').click();
+    const sheet = page.getByTestId('report-sheet');
+    await expect(sheet.getByTestId('onset')).toContainText('花粉を運ぶ');
+    await expect(sheet.getByTestId('coach-after')).toContainText('書き換えた一文');
+    await page.getByTestId('report-ok').click();
+    // 2年目：書き足す。法則のいちばん下の「行を書き足す」を示す
+    await expect(coach).toContainText('手引き 2 / 3');
+    await expect(coach).toContainText('書き足す');
+    await expect(page.getByTestId('add-line')).toHaveClass(/coach-target/);
   });
 });

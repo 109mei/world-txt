@@ -16,11 +16,12 @@ export const ROAD = 207;
 /** 海の始まる岸（ここより右が海） */
 export const SHORE = 284;
 
-export const SILVER = 'rgba(216,219,226,0.62)';
-export const SILVER_DIM = 'rgba(216,219,226,0.32)';
-export const SILVER_FAINT = 'rgba(216,219,226,0.16)';
-export const PAPER = '#eceae4';
-export const DARK = '#101116';
+/** 情景の色は CSS の変数（暗い画面は夜の絵、明るい画面は昼の絵。styles.css の --sc-*） */
+export const SILVER = 'rgb(var(--sc-line-rgb) / 0.62)';
+export const SILVER_DIM = 'rgb(var(--sc-line-rgb) / 0.32)';
+export const SILVER_FAINT = 'rgb(var(--sc-line-rgb) / 0.16)';
+export const PAPER = 'var(--sc-paper)';
+export const DARK = 'var(--sc-fill)';
 export const INK = 'var(--ink)';
 export const BAD = 'var(--bad)';
 export const WARN = 'var(--warn)';
@@ -156,6 +157,7 @@ export const ENTER: Partial<Record<SceneMotif, EnterKind>> = {
   seaBubbles: 'rise',
   seaCity: 'rise',
   springs: 'rise',
+  reservoir: 'tide',
   ice: 'sweep',
   // 町と技術と社会
   megacity: 'sprout',
@@ -225,18 +227,13 @@ export const ENTER: Partial<Record<SceneMotif, EnterKind>> = {
 
 /**
  * この年に新しく描かれた要素は、要素ごとの現れ方で現れる（太陽はふくらみ、船は降り、塔は伸びる）。
- * 現れ方の動きは外側の枠に持たせ、要素そのものの動き（className）は内側に残す
+ * 現れ方の動きは外側の枠に持たせ、要素そのものの動き（className）は内側に残す。
+ * 枠はいつも置く（現れ方を見せ終えて枠の動きを外しても、中の要素を作り直さず、動き続けている絵が跳ばない）
  */
 export function Motif({ v, id, children, style, className }: { v: SceneView; id: SceneMotif; children: ReactNode; style?: CSSProperties; className?: string }) {
-  if (!v.fresh.includes(id) || ENTER[id] === 'none') {
-    return (
-      <g className={className} data-motif={id} style={style}>
-        {children}
-      </g>
-    );
-  }
+  const enter = v.fresh.includes(id) && !v.entered && ENTER[id] !== 'none' ? (ENTER[id] ?? 'ink') : null;
   return (
-    <g className={`sc-fresh sc-in-${ENTER[id] ?? 'ink'}`} data-motif={id} data-enter={ENTER[id] ?? 'ink'}>
+    <g className={enter ? `sc-fresh sc-in-${enter}` : undefined} data-motif={id} data-enter={enter ?? undefined}>
       <g className={className} style={style}>
         {children}
       </g>
@@ -252,7 +249,7 @@ export function Motif({ v, id, children, style, className }: { v: SceneView; id:
 export type ExitKind = 'fade' | 'wane' | 'set' | 'collapse' | 'drain' | 'sink' | 'flickerOut';
 
 export function Ghost({ v, when, kind, children }: { v: SceneView; when: SceneMotif; kind: ExitKind; children: ReactNode }) {
-  if (!v.fresh.includes(when)) return null;
+  if (!v.fresh.includes(when) || v.entered) return null;
   return (
     <g className={`sc-ghost sc-fresh sc-out-${kind}`} data-ghost={when}>
       {children}
