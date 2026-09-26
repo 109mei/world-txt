@@ -86,7 +86,13 @@ export function Passing() {
           <text x={195} y={340} className="pass-year pass-year-out" filter="url(#pass-blur-y)">
             {passing.from}
           </text>
-          <text x={195} y={340} className="pass-year pass-year-in" filter="url(#pass-blur-y)">
+          <g className="pass-blurred">
+            <text x={195} y={340} className="pass-year pass-year-in" filter="url(#pass-blur-y)">
+              {passing.to}
+            </text>
+          </g>
+          {/* 回り終えたら、ぶれのないくっきりした数字に入れ替わる（止まったあとも、ぼやけた数字が残らない） */}
+          <text x={195} y={340} className="pass-year pass-year-sharp">
             {passing.to}
           </text>
         </g>

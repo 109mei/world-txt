@@ -24,6 +24,8 @@ export function App() {
   const saveWarning = useGame((s) => s.saveWarning);
   // 情景を動かさない設定（電池を節約したい・動きが気になる人のため）
   const motion = useGame((s) => s.settings.motion);
+  // 計算の演出の間（覆いの下の絵の動きを止めて、演出を滑らかに動かす）
+  const passing = useGame((s) => s.passing !== null);
   // 画面の明るさ（自動・明るい・暗い）
   const theme = useGame((s) => s.settings.theme);
   useEffect(() => applyTheme(theme), [theme]);
@@ -35,7 +37,7 @@ export function App() {
     window.scrollTo(0, 0);
   }, [screen]);
   return (
-    <div className={`app screen-${screen}${motion ? '' : ' motion-off'}`}>
+    <div className={`app screen-${screen}${motion ? '' : ' motion-off'}${passing ? ' is-passing' : ''}`}>
       {screen === 'title' && <Title />}
       {screen === 'stages' && <Stages />}
       {screen === 'briefing' && <Briefing />}

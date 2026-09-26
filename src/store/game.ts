@@ -433,9 +433,6 @@ export function passDuration(years: number): number {
 
 /** 静かな年（何も起きなかった年）の、計算の演出の長さ（ミリ秒） */
 export const QUIET_PASS = 400;
-/** 計算の演出の覆いが濃くなりきるまで（ミリ秒。styles.css の .passing の fade 0.15s）。それまでは去年の世界を見せておく */
-const PASS_COVER_MS = 160;
-let coverTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** 時間の流れる演出を飛ばして、すぐに結果を開く（演出の画面をタップしたとき） */
 export function skipPassing(): void {
@@ -452,13 +449,9 @@ export function advanceYears(years: number, instant = false): void {
   const signsBefore = rt.state ? new Set(signsOf(rt.state, rt.data).map((x) => x.id)) : new Set<string>();
   const report = rt.advance(years);
   if (!report) return;
-  // 画面の写しを今年にする。計算の演出では覆いが濃くなりきってから（去年の絵が、計算より先に今年の絵へ替わるのを見せない）
-  let shown = false;
+  // 画面の写しを今年にするのは、計算の演出が終わってから（演出の間に重い描き替えをすると、演出の動きが止まって見える。
+  // 覆いの下で描き替えるので、去年の絵が計算より先に今年の絵へ替わることもない）
   const show = () => {
-    if (shown) return;
-    shown = true;
-    if (coverTimer) clearTimeout(coverTimer);
-    coverTimer = null;
     useGame.setState({ sceneFrom: before });
     refreshView();
   };
@@ -485,7 +478,6 @@ export function advanceYears(years: number, instant = false): void {
     passing: { from: report.from, to: report.to },
     sheet: null,
   });
-  coverTimer = setTimeout(show, PASS_COVER_MS);
   if (passTimer) clearTimeout(passTimer);
   passDone = done;
   passTimer = setTimeout(done, quiet ? QUIET_PASS : passDuration(span));

@@ -2834,6 +2834,24 @@ mark.ink {
     opacity: 1;
   }
 }
+/* 回り終えたら、ぶれた数字からくっきりした数字へ入れ替わる（止まったあとも、ぼやけた数字が残らない） */
+.pass-blurred {
+  animation: pass-unblur calc(var(--pass, 1200ms) * 0.18) ease-out calc(var(--pass, 1200ms) * 0.68) forwards;
+}
+.pass-year-sharp {
+  opacity: 0;
+  animation: pass-sharp calc(var(--pass, 1200ms) * 0.18) ease-out calc(var(--pass, 1200ms) * 0.68) forwards;
+}
+@keyframes pass-unblur {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes pass-sharp {
+  to {
+    opacity: 1;
+  }
+}
 .passing-text {
   margin: 8px 0 0;
   font-size: 17px;
@@ -2896,6 +2914,16 @@ mark.ink {
 .passing-still .pass-year-in {
   opacity: 1;
 }
+.passing-still .pass-blurred,
+.passing-still .pass-year-sharp {
+  animation: none;
+}
+.passing-still .pass-blurred {
+  opacity: 0;
+}
+.passing-still .pass-year-sharp {
+  opacity: 1;
+}
 @media (prefers-reduced-motion: reduce) {
   .pw-flow,
   .pass-year-out,
@@ -2906,6 +2934,12 @@ mark.ink {
     opacity: 0;
   }
   .pass-year-in {
+    opacity: 1;
+  }
+  .pass-blurred {
+    opacity: 0;
+  }
+  .pass-year-sharp {
     opacity: 1;
   }
 }
@@ -4698,6 +4732,11 @@ mark.ink {
 /* 見えていない情景（画面の外・シートの下）は動きを止めて、電池を使わない */
 .scene-idle .scene-world *,
 .scene-idle .scene-world {
+  animation-play-state: paused !important;
+}
+/* 計算の演出の間は、覆いの下の絵の動きを止める（絵がほとんど見えないうえ、演出の動きが止まらないように。止めた所から続きを動かす） */
+.is-passing .scene .scene-world *,
+.is-passing .scene .scene-world {
   animation-play-state: paused !important;
 }
 
