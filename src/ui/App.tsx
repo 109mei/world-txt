@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useGame } from '../store/game';
+import { FxLayer } from './fx/FxLayer';
 import { Passing } from './Passing';
 import { applyTheme, watchTheme } from './theme';
 import { Briefing } from './screens/Briefing';
@@ -20,6 +21,7 @@ export function App() {
   const screen = useGame((s) => s.screen);
   const sheet = useGame((s) => s.sheet);
   const toast = useGame((s) => s.toast);
+  const tab = useGame((s) => s.tab);
   const elsewhere = useGame((s) => s.elsewhere);
   const saveWarning = useGame((s) => s.saveWarning);
   // 情景を動かさない設定（電池を節約したい・動きが気になる人のため）
@@ -58,6 +60,7 @@ export function App() {
       {sheet?.kind === 'meta' && <MetaSheet which={sheet.which} />}
 
       <Passing />
+      <FxLayer />
       {elsewhere && (
         <div className="elsewhere" role="alertdialog" aria-modal="true" data-testid="elsewhere">
           <div className="elsewhere-box">
@@ -80,8 +83,8 @@ export function App() {
       )}
 
       {toast && (
-        // 世界を見ているときは、情景と見出しを覆わないよう下に出す（シートの上では、これまでどおり上に）
-        <div className={screen === 'game' && !sheet ? 'toast toast-low' : 'toast'} role="status" data-testid="toast">
+        // 世界のタブでは、情景と見出しを覆わないよう下に出す（法則のタブでは、書いたばかりの下の行を隠さないよう上に）
+        <div className={screen === 'game' && !sheet && tab === 'world' ? 'toast toast-low' : 'toast'} role="status" data-testid="toast">
           {toast}
         </div>
       )}

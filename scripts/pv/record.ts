@@ -22,6 +22,8 @@ const END = bar(61);
 const REGION = { x: 30, y: 540, w: 1020, h: 1340 };
 /** 画面の幅いっぱいに見せる倍率（左右に余白を出さない） */
 const MIN_S = 1080 / 390;
+/** PixiJS の演出の描き場の細かさの倍率（カメラの寄りに合わせる） */
+const FX_SCALE = 3;
 
 const server = createServer((req, res) => {
   const path = decodeURIComponent((req.url ?? '/').split('?')[0]!);
@@ -191,6 +193,21 @@ const shot = async (sels: string[], o: { dur?: number; maxS?: number; k?: number
   return c;
 };
 
+/** 終わった世界の結果の画面を開き、結末の札に寄せたカメラ（c）と、情景まで引いたカメラ（wide）を返す */
+const openEnding = async (): Promise<{ c: Cam; wide: Cam } | null> => {
+  await tap('report-ok');
+  await G.getByTestId('result').waitFor();
+  if (await G.getByTestId('home-close').count()) await tap('home-close');
+  await scrollGame(0);
+  // 救えた世界は結末の札（情景のすぐ下）に、崩れた世界は崩れた知らせと最後の世界の絵に寄せる（結末の札は原因の振り返りの下にある）
+  const bad = (await G.locator('.result-status.bad').count()) > 0;
+  const c = await shot(bad ? ['.result-status', '[data-testid="result-scene"]'] : ['[data-testid="ending"]'], { dur: 0, maxS: 4.2 });
+  if (!c) return null;
+  if (bad) return { c, wide: c };
+  const w = await rectOf(['[data-testid="ending"]', '[data-testid="result-scene"]']);
+  return w ? { c, wide: fit(w, REGION, 3) } : null;
+};
+
 // 効果音・閃光・揺れ・残像を入れる時刻（encode.ts が読む）
 type Cue = { t: number; kind: 'whoosh' | 'impact' | 'flash' | 'shake' | 'riser' | 'braam' | 'type' | 'stinger' | 'whip' | 'tick'; dur?: number; amp?: number; n?: number; step?: number };
 const cues: Cue[] = [];
@@ -207,6 +224,8 @@ const url = `${GAME}?seed=7&debug=1`;
 await setGame(url);
 await G.getByTestId('title').waitFor();
 await hideUi();
+// PixiJS の演出の描き場を細かくする（カメラで約3倍に寄せても、粒と光の筋が粗く見えないように）
+await dbg(`fxScale(${FX_SCALE})`);
 await dbg('clears(7)');
 await dbg("start('food')");
 await G.getByTestId('game').waitFor();
@@ -244,7 +263,7 @@ await camera(est0, 0, est1, bar(4) - bar(0) + 0.15, 'cubic-bezier(0.55, 0, 0.9, 
 await at(bar(1));
 await cap('未来は\n決まっている');
 await at(bar(2.5));
-await cap('未来は\n決まっている', '世界のすべてを知る悪魔には\n明日が見えている');
+await cap('未来は\n決まっている', '世界のすべてを知る悪魔は\n人類が滅びる日を知っている');
 
 // ==== つかみ
 await at(bar(4));
@@ -266,6 +285,7 @@ await at(bar(8) - 0.55);
 await setGame(`${url}&v=title`);
 await G.getByTestId('title').waitFor();
 await hideUi();
+await dbg(`fxScale(${FX_SCALE})`);
 // 題：少し寄った所から引いていき、下へ下りる（引きの画で世界を見せる）
 const sT = MIN_S * 1.28;
 await camera({ x: (1080 - 390 * sT) / 2, y: -40, s: sT }, 0, { x: 0, y: -260, s: MIN_S }, bar(11) - bar(8), 'cubic-bezier(0.25, 0, 0.3, 1)');
@@ -339,8 +359,9 @@ await cap('法則を書き換える', '世界が言葉を読み取る', '遊び�
 await at(bar(18));
 await tap('write');
 cue('stinger', { amp: 0.5 });
-await page.waitForTimeout(200);
-await shot(['[data-testid="toast"]'], { dur: 0.5, maxS: 3.6 });
+await page.waitForTimeout(120);
+// 書いた行の上にインクがにじんで散る（PixiJS）。行の下に、世界の読み取り（読み：人間が空を飛ぶ）が出る
+await shot(['.line-fresh .line-body'], { dur: 0.4, maxS: 4.2, k: 0.06, hold: 1.2 });
 
 // ==== 遊び方 3：時間を進める
 await at(bar(19));
@@ -388,13 +409,13 @@ await (
   const li = [...document.querySelectorAll('.timeline > li')].find((e) => e.textContent?.includes('空の交通事故'));
   li?.setAttribute('data-pv', 'twist');
 });
-await shot(['[data-pv="twist"]'], { dur: 0, maxS: 3.4 });
+await shot(['[data-pv="twist"]'], { dur: 0, maxS: 4.2 });
 await at(bar(27));
 cue('impact', { amp: 0.7 });
 cue('shake', { dur: 0.2, amp: 10 });
 await hideCard();
 await cap('想定外の変化', '空の交通事故が相次ぐ', '見どころ');
-await shot(['[data-pv="twist"]'], { dur: 0.3, maxS: 3.4, k: 0.08, hold: 3 });
+await shot(['[data-pv="twist"]'], { dur: 0.3, maxS: 4.2, k: 0.08, hold: 3 });
 await at(bar(29));
 await cap('変化には\n理由がある', 'なぜ？\n三次元の交通には信号も車線もない', '見どころ');
 
@@ -505,22 +526,59 @@ for (let i = 0; i < 20; i++) {
   if (st.status !== 'playing') break;
   await dbg('advance(5)');
 }
-await tap('report-ok');
-await G.getByTestId('result').waitFor();
-if (await G.getByTestId('home-close').count()) await tap('home-close');
-await scrollGame(0);
-const endC = await shot(['[data-testid="ending"]'], { dur: 0, maxS: 4.2 });
-const wide = await rectOf(['[data-testid="ending"]', '[data-testid="result-scene"]']);
+// 結果の画面は、札が消える直前に開く（結末の光の粒（PixiJS）が昇りはじめるところを見せる）
+await at(bar(48) - 0.35);
+const endA = await openEnding();
 await at(bar(48));
 cue('impact');
 cue('flash');
 await hideCard();
-await cap('結末は\nひとつじゃない', '星々への旅立ち\n凍りついた星　核の冬', '見どころ');
-// 結末の札から引いて、世界を見せる
-if (endC && wide) await camera(endC, 0, fit(wide, REGION, 3), bar(52) - bar(48), 'cubic-bezier(0.3, 0, 0.3, 1)');
+await cap('星々への旅立ち', '「人類は他の星に住める」\nと書いた世界', '結末');
+if (endA) await camera(endA.c, 0, endA.wide, bar(50) - bar(48), 'cubic-bezier(0.3, 0, 0.3, 1)');
+
+// 書いた一文の札 → その結末（崩れた世界には灰が降る）。書き込んだときの知らせは、結末の絵に重なるので隠す
+await (await frame()).addStyleTag({ content: '.toast { visibility: hidden !important; }' });
+const endings: { at: number; show: number; line: string; name: string; sub: string; stage: string; heavy: boolean }[] = [
+  { at: 50, show: 51, line: '「世界はずっと\n夜のままだ」', name: '凍りついた星', sub: '夜が明けないまま\n星が凍りついた', stage: 'food', heavy: false },
+  { at: 52.5, show: 53.5, line: '「核戦争が\n起きる」', name: '核の冬', sub: '空が灰に覆われ\n夏が来なくなった', stage: 'war', heavy: true },
+];
+for (const e of endings) {
+  await at(bar(e.at) - 0.2);
+  cue('whip', { dur: 0.35 });
+  await at(bar(e.at));
+  await cap('');
+  await card([['l1', e.line]]);
+  cue('type', { n: 5, step: 0.12 });
+  await dbg(`start('${e.stage}')`);
+  await dbg('boost()');
+  await dbg(`add('${e.line.replace(/[「」\n]/g, '')}。')`);
+  for (let i = 0; i < 12; i++) {
+    const st = await dbg<{ status: string }>('state()');
+    if (st.status !== 'playing') break;
+    await dbg('advance(1)');
+  }
+  const got = await openEnding();
+  await at(bar(e.show));
+  if (e.heavy) {
+    cue('braam');
+    cue('shake', { dur: 0.5, amp: 18 });
+  } else cue('impact');
+  cue('flash', { amp: 0.6 });
+  await hideCard();
+  await cap(e.name, e.sub, '結末');
+  if (got) await camera(got.c, 0, push(got.c, 0.08), bar(e.show + 1.5) - bar(e.show), 'linear');
+}
+
+// ==== 見る人への問いかけ
+await at(bar(55) - 0.2);
+cue('whoosh');
+await at(bar(55));
+await cap('');
+await card([['l1', 'あなたなら\n何を書き換える？']]);
+cue('riser', { dur: bar(57) - bar(55) });
 
 // ==== 題名（ロゴ）
-await at(bar(52));
+await at(bar(57));
 cue('impact');
 cue('flash');
 cue('stinger');

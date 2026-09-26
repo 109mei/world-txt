@@ -11,12 +11,13 @@
 | ルール本体 | src/core の Pure TypeScript。DOM・React・Zustand・localStorage・Math.random・Date.now を使わない |
 | 数値と内容 | src/data の JSON＋Zod（型は Zod のスキーマから作る） |
 | 画面の部品 | React＋HTML/CSS/SVG（src/ui） |
+| 演出 | PixiJS（src/ui/fx。書いた・1年進めた・効き始めた・想定外の変化・結末のときだけ、画面の上の透明な描き場に粒と光を描く。後から読み込む。WebGL が使えない端末・動きを減らす設定では出さず、SVG と CSS の演出だけにする） |
 | 橋渡し | Zustand（src/store）。画面に見せる写しだけを持つ |
 | セーブ | src/save の SaveStore（localStorage。版番号つき） |
 | テスト | Vitest（tests/）、Playwright（e2e/、390×844） |
 | 公開 | GitHub Actions → GitHub Pages（https://109mei.github.io/world-txt/。Vite の base は '/world-txt/'） |
 
-入れていないもの：PixiJS（演出を PixiJS で描く計画 P19 は、パッケージの取り込みの許可を待っている。今の演出は SVG と CSS と Web Animations API）、vite-plugin-pwa、Dexie、Web Worker。
+入れていないもの：vite-plugin-pwa、Dexie、Web Worker。
 
 ## 設計の決まり（必ず守る）
 
@@ -36,7 +37,7 @@
 ## 安全の決まり
 
 - 読み込めるものを絞る決まり（CSP）は vite.config.ts にあり、公開用のビルドだけに入る。外から読み込むもの（書体・画像・通信の先）を増やしたら、CSP も直す。e2e の CSP のテストで、決まりに触れていないことを確かめる
-- eval・new Function・innerHTML を使わない（Zod は jitless で動かす）
+- eval・new Function・innerHTML を使わない（Zod は jitless で動かす。PixiJS は 'pixi.js/unsafe-eval' を読み込み、使う部品だけで動かす（skipExtensionImports）。画像を読み込まず、worker も使わない）
 - テスト用の窓口（?debug=1）は、開発中とテスト用のビルド（--mode e2e）だけ。公開用のビルドに入れない
 - 読み込むセーブ（書き出したテキスト・ファイルも）は疑う：大きさ・長さ・数の上限と Zod の形で確かめ、__proto__ などの鍵は取り除く。セーブの項目を足したら、src/save/schema.ts にも上限つきで足す
 - 保存できなかったときは黙らずに知らせる（runtime の saveWarning）
@@ -49,7 +50,7 @@
 - 状態は状態の言葉と、向きの線のアイコン3つ（良くなっている・変わらない・悪くなっている）で伝え、ゲーム的な数値（74/100 など）は出さない。数字で出すのは、年・回数・人数・字数・進み具合だけ
 - 画面の文字に記号（✓ ○ ∞ ✎ ⇈ ↗ ↘ ⇊ ■ ◆ ★ など）と絵文字を使わない。アイコンは lucide（線の太さ1.5）で、言葉か読み上げ用の名前を必ず添える。→ は「前 → 後」の変化にだけ使ってよい
 - 絵（世界の情景とタイトルの絵）は途中で止まらず、ゆっくり動き続ける（雲・人・船・煙・星など。周期は要素ごとにずらす）。画面の外に出た情景と、動きを減らす設定・「動きを減らす」ON では止める。点滅は1秒に3回より少なく
-- 画面の部品（文字・カード・数字）が動くのは何か起きたとき（書いた・1年進めた・兆しが出た・崩れた・結末）だけ。新しく出たものを光らせるのは3回（5秒以内）まで
+- 画面の部品（文字・カード・数字）が動くのは何か起きたとき（書いた・1年進めた・兆しが出た・崩れた・結末）だけ。新しく出たものを光らせるのは3回（5秒以内）まで。PixiJS の演出（src/ui/fx）も何か起きたときだけ出し、終われば ticker を止め、演出を出さない画面へ移ったら片づける。粒の散り方は書いた文・世界番号の文字から決まる式（fx/pattern.ts）で、Math.random を使わない。色は styles.css の変数から読む
 - 句読点は、ないと読みにくい所にだけ使う。1つの文だけの表示（見出し・知らせ・ニュース・ボタン・トースト・柱の理由など）には「。」を付けない。2つ以上の文が続く説明は、文の区切りと終わりに「。」を使う。「、」は、ないと読み違える所・長い文の区切り・並べる所だけ。WORLD.txt の行（世界の文章）と書く文の例は「。」で終える（データは tests/terms.test.ts が確かめる）
 - 押せる物は44px以上
 
@@ -57,10 +58,10 @@
 
 - src/core：ルール本体（状態・進行・命令・読み取り・世界番号の式 hash・人々の心 people・世界の決まりの強さ intro・開いていく順番 unlocks・兆し signs・3つの印と原因の壁 marks・敗因の振り返り review・棋譜 kifu）
 - src/data：JSON と Zod のスキーマ（情景を動かすもの・情景の名前は scene.json、開いていく順番と世界の決まりは unlocks.json、出典は sources.json）
-- src/store：Zustand と写し（view。世界の寿命 life・4つの柱 pillars・起きかけていること signs・世界の終わりまで limits を含む）、世界の情景の写し（scene）、筆の位（pen）、観測記録（records）、図鑑と実績（codex）、開いていく順番の写し（journey）、因果の連鎖（chain）、再生（replay）、共有文（share）、無限の世界の記録簿（ranking）
-- src/ui：React の部品と CSS、タイトルの絵、世界の情景（WorldScene と scene/ の層。開発用の一覧は ?gallery=1）、計算の演出（Passing）、因果の連鎖（Chain）、音楽（audio）と効果音（se）、画面の明るさ（theme）、共有画像（shareImage）、入力の補助（wording）、あそびかた（Tutorial）、序章の手引き（Coach）、筆の位（PenPanel）、画面の言葉（terms）、画面を描けなかったときの受け止め役（ErrorBoundary）、共通の部品（parts・icons・Curve・touch）、シート（書く・結果・柱の中身と世界の寿命・メニュー など）
+- src/store：Zustand と写し（view。世界の寿命 life・4つの柱 pillars・起きかけていること signs・世界の終わりまで limits を含む）、世界の情景の写し（scene）、筆の位（pen）、観測記録（records）、世界の辞書（dictionary）と因果の地図（causal）、図鑑と実績（codex）、開いていく順番の写し（journey）、因果の連鎖（chain）、再生（replay）、共有文（share）、無限の世界の記録簿（ranking）
+- src/ui：React の部品と CSS、タイトルの絵、世界の情景（WorldScene と scene/ の層。開発用の一覧は ?gallery=1）、計算の演出（Passing）、因果の連鎖（Chain）、音楽（audio）と効果音（se）、PixiJS の演出（fx。散り方の式は pattern、描き手は stage）、画面の明るさ（theme）、共有画像（shareImage）、入力の補助（wording）、あそびかた（Tutorial）、序章の手引き（Coach）、筆の位（PenPanel）、画面の言葉（terms）、画面を描けなかったときの受け止め役（ErrorBoundary）、共通の部品（parts・icons・Curve・touch）、シート（書く・結果・柱の中身と世界の寿命・メニュー など）
 - src/save：SaveStore・セーブの形・版の変換
-- tests：Vitest（決定性・棋譜・セーブ・読み取り・無茶な書き換え・総当たり・ルール・無限の世界・くり返す十年・結末・実績・印と試練（marks）・開いていく順番（unlocks）・人々の心・読み分け・情景・序章の手引き（prologue）・世界の終わりまで・筆の位・明るさの比・画面の言葉・手触りの目安・ルール本体の純粋さ（core-purity）・内容のデータ（data）・画面の呼び名（names）・言い切りの強さ（roles）・消した行（voids）・入力の補助（wording））
+- tests：Vitest（決定性・棋譜・セーブ・読み取り・無茶な書き換え・総当たり・ルール・無限の世界・くり返す十年・結末・実績・印と試練（marks）・開いていく順番（unlocks）・人々の心・読み分け・情景・序章の手引き（prologue）・世界の終わりまで・筆の位・明るさの比・画面の言葉・手触りの目安・ルール本体の純粋さ（core-purity）・内容のデータ（data）・画面の呼び名（names）・言い切りの強さ（roles）・消した行（voids）・入力の補助（wording）・ノートの辞書と地図と前回の線（notes）・演出の散り方（fx））
 - e2e：Playwright（app.spec.ts・screens.spec.ts・演出中のコマ数 perf.spec.ts）
 - scripts：シミュレーター（npm run sim）と作戦・ボット（strategies.ts・bots.ts・run.ts。無限の世界のボットは endless.ts）、結末の筋書き（worlds.ts）、読み取りの総当たり（fuzz.ts）、筆の位で遊べるかの確かめ（ranks.ts）、作り手の解（par.ts・designer.ts）、組み合わせの総当たり（combos.ts）、読み取りの穴（corpus.ts）と逆の読み取り（polarity.ts）、紹介用の PV（pv/：撮影 record.ts・舞台 stage.html・書き出し encode.ts と mp4.ts・コマの取り出し frames.ts・BGM の小節 beats.ts）
 - docs：SPEC.md、PLAN.md（企画書）、ANALYSIS.md、IMPROVE.md、PROMPTS.md、BASELINE.md（直す前の数字）、WORKPLAN.md（作業計画）、TERMS.md、SOURCES.md、design/（画面設計の見本）、screens/（スクリーンショット）

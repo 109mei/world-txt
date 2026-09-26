@@ -4,7 +4,7 @@ export { hash01, hashSigned, hashText } from './hash';
 export { signsOf } from './signs';
 export { normalCdf, warCascade } from './model';
 export { accessFor, crisisConcepts, isSealed, openConcepts, rankForDepth, rankOf, rankOpening } from './access';
-export { addLine, costAfter, planWrite, rewriteLaw, rewriteLine, sentence, weightOf, write, type WriteTarget } from './write';
+export { addLine, costAfter, noticeWords, planWrite, rewriteLaw, rewriteLine, sentence, weightOf, write, type WriteTarget } from './write';
 export {
   aboutLaw,
   canonical,
@@ -21,6 +21,7 @@ export {
   originalText,
   phraseName,
   kindOf,
+  dictionaryWords,
   subjectWords,
   textCost,
   unknownWords,

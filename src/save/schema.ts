@@ -143,7 +143,15 @@ export const GameStateSchema = z.looseObject({
   stats: z.looseObject({ edits: num }),
   found: z.array(id).max(20000).default([]),
   /** 人口と文明の曲線（古いセーブにはないので、読み込むときに補う） */
-  trace: z.object({ pop: z.array(num).max(100000), civ: z.array(num).max(100000), living: z.array(num).max(100000).optional(), ref: z.array(num).max(100000).optional() }).optional(),
+  trace: z
+    .object({
+      pop: z.array(num).max(100000),
+      civ: z.array(num).max(100000),
+      living: z.array(num).max(100000).optional(),
+      ref: z.array(num).max(100000).optional(),
+      laps: z.array(z.number().int().nonnegative().max(100000)).max(10000).optional(),
+    })
+    .optional(),
   /** 無限の世界の危機（版4から。古いセーブにはない） */
   crisis: z.object({ id, at: num, strength: num }).nullable().default(null),
   nextCrisis: num.default(-1),
@@ -203,6 +211,12 @@ export const SettingsSchema = z.object({
   seVolume: z.number().min(0).max(1).catch(0.6),
 });
 
+/** 世界の辞書の言葉の長さと数の上限・前回の線の長さの上限 */
+export const WORD_MAX = 24;
+export const WORDS_KNOWN = 400;
+export const WORDS_UNKNOWN = 200;
+export const PREV_RUN_MAX = 1000;
+
 export const ProgressSchema = z.object({
   cleared: z.array(StageIdSchema),
   best: z.partialRecord(
@@ -259,6 +273,19 @@ export const ProgressSchema = z.object({
   exportedAt: num.nullable().default(null),
   /** 1度だけ出す案内：ホーム画面に追加を出したか・書き出しを勧めた筆の位（まだなら -1。版6から） */
   prompted: z.object({ home: z.boolean(), exportRank: z.number().int().min(-1).max(50) }).default({ home: false, exportRank: -1 }),
+  /**
+   * 世界の辞書：書いた文の中の、世界に通じた言葉と、世界がまだ知らない言葉（書いた順。多すぎれば古いものから捨てる）。
+   * 古いセーブにはないので空。読めない形なら空にする
+   */
+  words: z.object({ known: z.array(z.string().max(WORD_MAX)).max(WORDS_KNOWN), unknown: z.array(z.string().max(WORD_MAX)).max(WORDS_UNKNOWN) }).catch(() => ({ known: [], unknown: [] })),
+  /**
+   * ひとつ前の遊びの人口の線（同じ世界でもう一度・分かれ道で、前回の線を重ねて見せる）。key はステージと世界番号。
+   * 古いセーブにはないので null。読めない形なら null にする
+   */
+  prevRun: z
+    .object({ key: z.string().max(40), pop: z.array(num).max(PREV_RUN_MAX) })
+    .nullable()
+    .catch(null),
 });
 
 export const SaveDataSchema = z.object({
@@ -302,4 +329,6 @@ export const EMPTY_PROGRESS: Progress = {
   trials: [],
   exportedAt: null,
   prompted: { home: false, exportRank: -1 },
+  words: { known: [], unknown: [] },
+  prevRun: null,
 };

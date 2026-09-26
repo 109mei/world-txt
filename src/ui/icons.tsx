@@ -66,6 +66,7 @@ import {
   Mountain,
   Rocket,
   Trophy,
+  Waypoints,
   type LucideIcon,
 } from 'lucide-react';
 import type { IconKey, Tone } from '../data/schema';
@@ -138,6 +139,7 @@ const ICONS: Record<IconKey, LucideIcon> = {
   rocket: Rocket,
   trophy: Trophy,
   mind: Brain,
+  map: Waypoints,
 };
 
 export function Icon({ name, size = 18, className }: { name: IconKey; size?: number; className?: string }) {

@@ -114,6 +114,7 @@ export function refreshView(): void {
       best: { ...p.best },
       discovered: [...p.discovered],
       achievements: [...p.achievements],
+      words: { known: [...p.words.known], unknown: [...p.words.unknown] },
     },
     hasGame: !!g && g.status === 'playing',
     loadError: runtime.loadError,
@@ -507,6 +508,13 @@ export function advanceYears(years: number, instant = false): void {
   if (passTimer) clearTimeout(passTimer);
   passDone = done;
   passTimer = setTimeout(done, ms);
+}
+
+/** 書こうとしたが書き込まなかった文を、世界の辞書に集める（書く画面を閉じたとき） */
+export function noticeTried(text: string): void {
+  if (!runtime) return;
+  runtime.tried(text);
+  refreshView();
 }
 
 export function showResult(): void {

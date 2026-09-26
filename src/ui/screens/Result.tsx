@@ -16,6 +16,11 @@ import { TERMS } from '../terms';
 import { WorldScene } from '../WorldScene';
 import { HomePrompt, standalone } from '../sheets/MenuSheet';
 import { openSheet } from '../../store/game';
+import { runKey } from '../../store/runtime';
+import { fxEnding } from '../fx';
+
+/** 結果の画面を開いてから、結末の粒が出はじめるまで（ミリ秒。画面が出そろうころ） */
+const ENDING_FX_MS = 350;
 
 const MARK_NAME: Record<Mark, string> = { saved: '救った', few: '少ない手で', early: '早く見抜いた' };
 
@@ -161,6 +166,8 @@ export function Result() {
   const runs = useGame((s) => s.progress.endless);
   const ranking = useGame((s) => s.progress.ranking);
   const rankUp = useGame((s) => s.rankUp);
+  // 前回の人口の線（同じ世界番号のひとつ前の遊び。同じ世界でもう一度・分かれ道のあとで重ねる）
+  const prevRun = useGame((s) => s.progress.prevRun);
   const [replay, setReplay] = useState(false);
   const rt = getRuntime();
   // 1度だけの案内：最初のクリアのあとのホーム画面の案内と、新しい筆の位になったあとの書き出しのおすすめ（出したことはセーブに残す）
@@ -170,6 +177,13 @@ export function Result() {
     if (home) rt.dismissHome();
     if (suggest && rankUp !== null) rt.dismissExport(rankUp);
     // 出した回だけ残す（はじめの描画で1度）
+  }, []);
+  // PixiJS の演出：結末（救えた世界は光の粒が昇り、崩れた世界は灰が降る）。散り方はステージと世界番号と結末で決まる
+  useEffect(() => {
+    const st = rt.state;
+    if (!st || st.status === 'playing') return;
+    const t = setTimeout(() => fxEnding(`${st.stageId}:${st.seed}:${st.ending ?? ''}`, st.status === 'cleared'), ENDING_FX_MS);
+    return () => clearTimeout(t);
   }, []);
   const g = rt.state;
   if (!view || !g) return null;
@@ -342,7 +356,16 @@ export function Result() {
 
       {g.trace.pop.length > 1 && (
         <section className="curves" data-testid="curves">
-          <Curve label="人口" values={g.trace.pop} marks={editYears} from={populationText(g.trace.pop[0]!)} to={populationText(g.trace.pop[g.trace.pop.length - 1]!)} danger={stage.fail.pop} />
+          <Curve
+            label="人口"
+            values={g.trace.pop}
+            marks={editYears}
+            from={populationText(g.trace.pop[0]!)}
+            to={populationText(g.trace.pop[g.trace.pop.length - 1]!)}
+            danger={stage.fail.pop}
+            prev={prevRun?.key === runKey(g) ? prevRun.pop : null}
+            testId="curve-pop"
+          />
           <Curve
             label="文明"
             values={g.trace.civ}
@@ -354,10 +377,20 @@ export function Result() {
             danger={stage.fail.civ}
           />
           <p className="curve-note">
-            <span className="curve-note-mark" />
-            書き換えた年　
-            <span className="curve-note-danger" />
-            ここを割ると世界が終わる
+            <span className="curve-note-item">
+              <span className="curve-note-mark" />
+              書き換えた年
+            </span>
+            <span className="curve-note-item">
+              <span className="curve-note-danger" />
+              ここを割ると世界が終わる
+            </span>
+            {prevRun?.key === runKey(g) && (
+              <span className="curve-note-item">
+                <span className="curve-note-prev" />
+                前回（同じ世界番号）の人口
+              </span>
+            )}
           </p>
         </section>
       )}

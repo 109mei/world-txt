@@ -10,8 +10,14 @@ import { CauseLine, NewsLine, Sheet } from '../parts';
 import { seChime, seInk, seTurn, seWarn } from '../se';
 import { WorldScene } from '../WorldScene';
 import { ChainView } from '../Chain';
+import { fxBloom, fxShock } from '../fx';
 import { CoachAfter } from '../Coach';
 import { chainOf } from '../../store/chain';
+
+/** 開いてから、効き始めの粒が集まりはじめるまで（ミリ秒。「世界が書き換わった」がせり上がり終えるころ） */
+const BLOOM_MS = 600;
+/** 開いてから、衝撃の輪が広がるまで（ミリ秒。情景がせり上がり終えるころ） */
+const SHOCK_MS = 450;
 
 const META_LABEL = {
   capacity: '使える文字数',
@@ -40,6 +46,24 @@ export function ReportSheet() {
     if (rep.news.some((n) => n.onset)) timers.push(setTimeout(seInk, 180));
     if (rep.news.some((n) => n.severity === 'critical')) seWarn();
     if (fresh.some((id) => !id.startsWith('g:'))) timers.push(setTimeout(seChime, 650));
+    // PixiJS の演出：書いた一文が効き始めたら、粒がその一文へ集まる。想定外の重大な出来事は、情景に衝撃の輪
+    const first = rep.news.find((n) => n.onset);
+    if (first) {
+      timers.push(
+        setTimeout(() => {
+          const el = document.querySelector('[data-testid="onset"] .ink-write');
+          if (el) fxBloom(first.text, el.getBoundingClientRect());
+        }, BLOOM_MS),
+      );
+    }
+    if (rep.news.some((n) => n.severity === 'critical' && n.surprise)) {
+      timers.push(
+        setTimeout(() => {
+          const el = document.querySelector('[data-testid="report-scene"]');
+          if (el) fxShock(`report:${rep.from}:${rep.to}`, el.getBoundingClientRect());
+        }, SHOCK_MS),
+      );
+    }
     return () => timers.forEach(clearTimeout);
   }, []);
   if (!view || !rep) return null;

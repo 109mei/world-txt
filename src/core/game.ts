@@ -71,10 +71,12 @@ export function refresh(g: GameState, data: GameData): Channels {
 /** 古い形の GameState（セーブ）に、あとから足した項目を補う */
 export function upgradeState(g: GameState, data: GameData): GameState {
   if (!Array.isArray(g.found)) g.found = [];
-  if (!g.trace || !Array.isArray(g.trace.pop) || !Array.isArray(g.trace.civ)) g.trace = { pop: [], civ: [], living: [], ref: [] };
+  if (!g.trace || !Array.isArray(g.trace.pop) || !Array.isArray(g.trace.civ)) g.trace = { pop: [], civ: [], living: [], ref: [], laps: [] };
   // 版15から：慣れの折れ線（暮らしの水準と、慣れた水準）
   if (!Array.isArray(g.trace.living)) g.trace.living = [];
   if (!Array.isArray(g.trace.ref)) g.trace.ref = [];
+  // くり返す世界の巻き戻った位置（前の周と今の周の線を重ねる。古い世界にはないので空）
+  if (!Array.isArray(g.trace.laps)) g.trace.laps = [];
   // 版2まで：書き足した行の読み取りは extras[].phrase にあった
   if (!g.carried || typeof g.carried !== 'object') g.carried = {};
   for (const x of g.extras) {
@@ -321,7 +323,7 @@ export function createGame(data: GameData, stageId: StageId, seed: number, acces
     stats: { edits: 0, wars: 0, anomalies: 0, minPop: sim.pop, maxPop: sim.pop, noise: 0 },
     charge: {},
     found: [],
-    trace: { pop: [], civ: [], living: [], ref: [] },
+    trace: { pop: [], civ: [], living: [], ref: [], laps: [] },
     crisis: null,
     // 最初の危機の知らせは、世界番号で少しずれる
     nextCrisis: stage.endless ? k.firstAt + Math.floor(hash01(seed, 'crisis:first') * (k.jitter + 1)) : -1,
@@ -1142,6 +1144,8 @@ function rewindWorld(g: GameState, data: GameData, text: string, news: NewsItem[
   g.endingYears = snap.endingYears;
   g.year = loop.start;
   loop.count += 1;
+  // 次の周の1年目の値が入る位置を覚える（前の周と今の周の線を重ねて見せるため）
+  g.trace.laps.push(g.trace.pop.length);
   // くり返しの中で書いた行は、戻った年に書いたことになる（空白になった年・世界が埋めた年も）
   for (const [id, y] of Object.entries(g.lawYear)) if (y > g.year) g.lawYear[id] = g.year;
   for (const [id, y] of Object.entries(g.voids)) if (y > g.year) g.voids[id] = g.year;

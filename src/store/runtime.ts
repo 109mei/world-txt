@@ -5,6 +5,8 @@ import {
   canReplay,
   causeFor,
   createGame,
+  dictionaryWords,
+  noticeWords,
   replayKifu,
   introFor,
   kifuOf,
@@ -29,6 +31,7 @@ import {
 } from '../core';
 import type { StageId } from '../data/schema';
 import { DEFAULT_SETTINGS, EMPTY_PROGRESS, exportText, importText, SAVE_VERSION, type Progress, type SaveData, type SaveStore, type Settings } from '../save';
+import { PREV_RUN_MAX, WORD_MAX, WORDS_KNOWN, WORDS_UNKNOWN } from '../save/schema';
 import { newAchievements } from './achievements';
 import { insertRun } from './ranking';
 
@@ -37,6 +40,11 @@ const ENDLESS_RUNS = 30;
 
 /** 世界番号の数（#0001〜#9999） */
 export const WORLD_NUMBERS = 9999;
+
+/** 同じ世界かを見分ける鍵（ステージと世界番号。前回の線を重ねるときに使う） */
+export function runKey(g: Pick<GameState, 'stageId' | 'seed'>): string {
+  return `${g.stageId}:${g.seed}`;
+}
 /** 設定を変えてから保存するまでの待ち（ミリ秒） */
 const SETTINGS_SAVE_MS = 300;
 
@@ -225,6 +233,7 @@ export class GameRuntime {
   start(stageId: StageId, daily = false, seed: number | null = null, opts: { numbered?: boolean; trial?: boolean } = {}): GameState {
     // 世界は1つだけ。遊んでいる世界があれば、それを放棄して新しい世界を開く
     if (this.playing) this.progress.abandoned += 1;
+    this.keepPrevRun(this.state);
     const date = daily ? this.today() : null;
     // 同じ世界でもう一度：小さな違いが育つのを見られる（開いていく順番の発見）
     const prev = this.state;
@@ -270,6 +279,7 @@ export class GameRuntime {
     const next = replayKifu(this.data, k, { year: g.branch.year, loops: g.branch.pass });
     next.branched = true;
     this.run += 1;
+    this.keepPrevRun(g);
     next.daily = g.daily;
     this.state = next;
     this.rankUp = null;
@@ -294,12 +304,51 @@ export class GameRuntime {
     if (!g) return { block: 'ended', understood: false, reading: null, shortage: 0, redirect: null, sameAs: null, replaced: false, stacked: null, noise: null };
     const res = write(g, this.data, target, text);
     this.fresh = [];
-    if (!res.block) {
+    // 世界の辞書：書こうとした文の言葉を集める（世界に届かなかった文も。同じ文・空の文・終わった世界は数えない）
+    const tried = res.block !== 'ended' && res.block !== 'same' && res.block !== 'empty';
+    if (tried) this.collectWords(text);
+    // 世界に届かなかった文でも、初めて知らない言葉を書いたことは記録に移す（世界の辞書が開く）
+    if (!res.block || res.block === 'noise') {
       this.absorb(g);
       this.unlock(g);
       void this.save();
-    }
+    } else if (tried) void this.save();
     return res;
+  }
+
+  /**
+   * 書こうとしたが書き込まなかった文（意味の伝わらない文は書き込めない）の言葉を、世界の辞書に集める。
+   * 世界が知らない言葉があれば、はじめてなら世界の辞書を開く（世界は何も変わらない）
+   */
+  tried(text: string): void {
+    const g = this.state;
+    if (!g || text.trim() === '') return;
+    this.collectWords(text);
+    if (noticeWords(g, text)) this.absorb(g);
+    void this.save();
+  }
+
+  /** 世界の辞書に言葉を足す（同じ言葉は後ろへ回し、多すぎれば古いものから捨てる） */
+  private collectWords(text: string): void {
+    const { known, unknown } = dictionaryWords(text);
+    const put = (list: string[], words: string[], max: number) => {
+      for (const w of words) {
+        if (Array.from(w).length > WORD_MAX) continue;
+        const i = list.indexOf(w);
+        if (i >= 0) list.splice(i, 1);
+        list.push(w);
+      }
+      if (list.length > max) list.splice(0, list.length - max);
+    };
+    const words = this.progress.words;
+    put(words.known, known, WORDS_KNOWN);
+    put(words.unknown, unknown, WORDS_UNKNOWN);
+  }
+
+  /** ひとつ前の遊びの人口の線を覚える（同じ世界番号でもう一度・分かれ道で、前回の線を重ねて見せる） */
+  private keepPrevRun(g: GameState | null): void {
+    if (!g || g.trace.pop.length < 2) return;
+    this.progress.prevRun = { key: runKey(g), pop: g.trace.pop.slice(-PREV_RUN_MAX) };
   }
 
   advance(years: number): StepReport | null {

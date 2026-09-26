@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { costAfter, delayOf, noiseOf, originalText, planWrite, textCost, weightOf, wordMarks } from '../../core';
 import { gameData } from '../../data';
 import { READ_MODES } from '../../data/schema';
-import { closeSheet, getRuntime, NOISE_EFFECT, noiseText, useGame, writeWorld } from '../../store/game';
+import { closeSheet, getRuntime, NOISE_EFFECT, noiseText, noticeTried, useGame, writeWorld } from '../../store/game';
 import { modesOpen } from '../../store/journey';
 import type { EditTarget } from '../../store/runtime';
 import { useCoachNote } from '../Coach';
@@ -57,6 +57,16 @@ export function EditSheet({ target }: { target: EditTarget }) {
   const current = line ? (line.state === 'deleted' ? '' : line.text) : '';
   // 文の終わりの「。」は書かなくてよい（書き込むときに世界が付ける）。書き足しやすいよう、外して開く
   const [text, setText] = useState(line ? withoutPeriod(line.text) : '');
+  // 書こうとした文に世界が知らない言葉があれば、書く画面を閉じたときに世界の辞書へ集める（意味の伝わらない文は書き込めないため）
+  const latest = useRef(text);
+  latest.current = text;
+  useEffect(
+    () => () => {
+      const t = latest.current;
+      if (t.trim() !== '' && wordMarks(t).some((m) => m.known === false)) noticeTried(t);
+    },
+    [],
+  );
   const ref = useRef<HTMLTextAreaElement>(null);
   // 補助の言葉を差し込んだあと、カーソルを置く位置
   const [cursor, setCursor] = useState<number | null>(null);

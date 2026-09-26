@@ -208,6 +208,8 @@ export interface GameView {
     rule: string;
     wear: number;
     ink: number;
+    /** 前の周と今の周の人口の線（くり返しの始まりの年から。巻き戻ったあとだけ） */
+    lines: { prev: number[]; now: number[] } | null;
   } | null;
   year: number;
   yearsLeft: number;
@@ -291,6 +293,22 @@ function tutorialOf(g: GameState, stage: Stage): TutorialView | null {
   const moved = !!now && (g.moves.some((m) => m.kind === now.move) || g.edits.left === 0);
   if (!lesson && !after) return null;
   return { total: list.length, lesson, moved, after };
+}
+
+/**
+ * くり返す世界：前の周と今の周の人口の線。どの周も、くり返しの始まりの年の世界から始まるので、その年の値を頭に置く。
+ * 巻き戻った位置（trace.laps）は、その周の1年目の値が入る位置
+ */
+export function lapLines(g: GameState): { prev: number[]; now: number[] } | null {
+  const laps = g.trace.laps;
+  if (!g.loop || laps.length === 0) return null;
+  const pop = g.trace.pop;
+  const s = g.loop.start;
+  const head = pop[s];
+  if (head === undefined) return null;
+  const n = laps.length;
+  const prev = n >= 2 ? [head, ...pop.slice(laps[n - 2], laps[n - 1])] : pop.slice(s, laps[0]);
+  return { prev, now: [head, ...pop.slice(laps[n - 1])] };
 }
 
 export function populationText(pop: number): string {
@@ -709,6 +727,7 @@ export function buildView(g: GameState, data: GameData): GameView {
             rule: stage.loop.rule,
             wear: stage.loop.wear,
             ink: stage.loop.ink,
+            lines: lapLines(g),
           }
         : null,
     year: g.year,

@@ -2831,6 +2831,17 @@ mark.ink {
 
 /* ---------------------------------------------------------------- 計算の演出（時が流れる。P8） */
 
+/* PixiJS の演出の描き場（画面全体に重ねる透明な層。押せない。計算の演出の覆いの上、知らせの下） */
+.fx-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 26;
+  pointer-events: none;
+  overflow: hidden;
+}
+.fx-layer canvas {
+  display: block;
+}
 .passing {
   position: fixed;
   inset: 0;
@@ -3089,6 +3100,99 @@ mark.ink {
   display: inline-block;
   width: 14px;
   border-top: 1px dashed var(--bad);
+}
+/* 凡例は項目ごとにまとめて、入りきらなければ次の行へ */
+.curve-note {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+.curve-note-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 12px;
+  white-space: nowrap;
+}
+/* 前回の線（同じ世界番号のひとつ前の遊び・くり返しの前の周）：今の線と同じ目盛りの細い点線 */
+.curve-prev {
+  fill: none;
+  stroke: var(--dim);
+  stroke-width: 1.2;
+  stroke-dasharray: 2 3;
+  vector-effect: non-scaling-stroke;
+}
+.curve-note-prev {
+  display: inline-block;
+  width: 14px;
+  border-top: 1.5px dotted var(--dim);
+}
+/* くり返しの知らせの中の、前の周と今の周の線 */
+.loop-lines {
+  margin-top: 8px;
+}
+.loop-lines .curve {
+  margin: 0;
+}
+
+/* 世界の辞書：書いた言葉を、世界に通じた言葉（実線）と、まだ知らない言葉（点線）に分けて並べる */
+.dict-words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 6px 0 10px;
+  font-size: 15px;
+  line-height: 1.9;
+}
+.dict-kind-name {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--dim);
+}
+
+/* 因果の地図：書いた一文（青いインク）から、起こしうる想定外の変化と組み合わせへ線を引く。まだ見ていない先は「？」 */
+.map-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.map-node {
+  margin: 0 0 14px;
+}
+.map-cause {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 15px;
+}
+.map-effects {
+  list-style: none;
+  margin: 4px 0 0 7px;
+  padding: 0 0 0 16px;
+  border-left: 1px solid rgb(var(--ink-rgb) / 0.45);
+}
+.map-effect {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 14px;
+  color: var(--warn);
+}
+.map-effect::before {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: 50%;
+  width: 11px;
+  border-top: 1px solid rgb(var(--ink-rgb) / 0.45);
+}
+.map-good {
+  color: var(--good);
+}
+.map-unknown {
+  color: var(--unknown);
 }
 
 /* はじめての世界：どこを触ればよいかの手がかり */

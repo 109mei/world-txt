@@ -367,7 +367,11 @@ export interface GameState {
   found: string[];
   /** 年ごとの人口（億人）と文明の点数（リザルトの曲線に使う。0 年目から） */
   /** 年ごとの曲線：人口・文明と、慣れ（暮らしの水準・慣れた水準） */
-  trace: { pop: number[]; civ: number[]; living: number[]; ref: number[] };
+  /**
+   * 年ごとの人口・文明・暮らしの水準・慣れた水準。laps は、くり返す世界で巻き戻った位置
+   * （その周の1年目の値が入る位置。前の周と今の周の線を重ねるため）
+   */
+  trace: { pop: number[]; civ: number[]; living: number[]; ref: number[]; laps: number[] };
   /** 知らされている危機（無限の世界）。at の年に世界を襲う */
   crisis: ActiveCrisis | null;
   /** 次の危機を知らせる年（-1：危機の来ない世界） */

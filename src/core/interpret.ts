@@ -1133,6 +1133,26 @@ export function wordMarks(raw: string): WordMark[] {
   return out;
 }
 
+/**
+ * 世界の辞書に集める言葉：書いた文の言葉のかたまり（「世界の読み」で実線か点線が付くもの）を、
+ * 世界に通じた言葉と、世界がまだ知らない言葉に分ける（書いた人の書いたままの形で。幅だけそろえる）。
+ * 数字だけの言葉と、種類のわからない1文字の言葉は集めない
+ */
+export function dictionaryWords(raw: string): { known: string[]; unknown: string[] } {
+  const known: string[] = [];
+  const unknown: string[] = [];
+  for (const m of wordMarks(raw)) {
+    if (m.known === null) continue;
+    const w = m.text.normalize('NFKC');
+    if (/^[0-9]+$/.test(w)) continue;
+    if (m.known) {
+      if (Array.from(w).length < 2 && !kindOf(w)) continue;
+      if (!known.includes(w)) known.push(w);
+    } else if (!unknown.includes(w)) unknown.push(w);
+  }
+  return { known, unknown };
+}
+
 // ---------------------------------------------------------------- 重さ
 
 /** 文章の文字数（世界容量で数える量）。句読点・かっこ・空白は数えない。文字は見た目の数で数える（絵文字も1文字） */

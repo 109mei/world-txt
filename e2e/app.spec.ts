@@ -186,6 +186,87 @@ test.describe('390×844 のスマホ縦画面', () => {
     await expect(page.locator('.scene-label')).toHaveCount(1);
   });
 
+  test('PixiJS の演出：書いた瞬間に描き場が動き、終われば止まる。「動きを減らす」ON では描き場を片づけて出さない', async ({ page }) => {
+    await startFood(page, true);
+    const layer = page.getByTestId('fx-layer');
+    await page.getByTestId('tab-laws').click();
+    await page.getByTestId('add-line').click();
+    await page.getByTestId('editor').fill('人間は空を飛べる。');
+    await page.getByTestId('write').click();
+    await expect(layer).toHaveAttribute('data-fx', 'running');
+    await expect(layer.locator('canvas')).toHaveCount(1);
+    // 何か起きたときだけ動く（演出が終われば止まる）
+    await expect(layer).toHaveAttribute('data-fx', 'idle', { timeout: 5000 });
+    await page.getByTestId('menu').click();
+    await page.getByTestId('menu-motion').click();
+    await page.getByTestId('sheet-close').click();
+    await expect(layer.locator('canvas')).toHaveCount(0);
+    await page.getByTestId('advance').click();
+    await expect(page.getByTestId('report-sheet')).toBeVisible();
+    await expect(layer.locator('canvas')).toHaveCount(0);
+    await expect(layer).not.toHaveAttribute('data-fx', /.+/);
+  });
+
+  test('世界の辞書：知らない言葉の文を書こうとして閉じると、ノートに開き、まだ知らない言葉として残る', async ({ page }) => {
+    await startFood(page, true);
+    await page.getByTestId('tab-laws').click();
+    await page.getByTestId('add-line').click();
+    // 意味の伝わらない文は書き込めない（書き換えの残りも減らない）
+    await page.getByTestId('editor').fill('ポポポはピピピを食べる');
+    await expect(page.getByTestId('write')).toBeDisabled();
+    await page.getByTestId('sheet-close').click();
+    await page.getByTestId('menu').click();
+    await page.getByTestId('menu-records').click();
+    await page.getByTestId('records-dictionary').click();
+    await expect(page.getByTestId('dict-unknown')).toContainText('ポポポ');
+    await expect(page.getByTestId('dict-unknown')).toContainText('ピピピ');
+  });
+
+  test('因果の地図：書いた一文から想定外の変化が起きるとノートに開き、線でつなぐ（まだ見ていない先は「？」）', async ({ page }) => {
+    await startFood(page, true);
+    await expect(page.getByTestId('menu')).toBeVisible();
+    await debug(page, "add('人間は空を飛べる。')");
+    for (let i = 0; i < 4; i++) await debug(page, 'advance(1)');
+    if (await page.getByTestId('report-ok').isVisible()) await page.getByTestId('report-ok').click();
+    await page.getByTestId('menu').click();
+    await page.getByTestId('menu-records').click();
+    await page.getByTestId('records-map').click();
+    const node = page.getByTestId('map-node').filter({ hasText: '人間が空を飛ぶ' });
+    await expect(node).toContainText('空の交通事故');
+    await expect(node.locator('[data-found="false"]').first()).toBeVisible();
+  });
+
+  test('前回と今回の線：くり返す十年は前の周の線を、同じ世界でもう一度は結果の画面に前回の線を、点線で重ねる', async ({ page }) => {
+    await startFood(page, true);
+    const closeReport = async () => {
+      if (await page.getByTestId('report-ok').isVisible()) await page.getByTestId('report-ok').click();
+    };
+    const playOut = async () => {
+      for (let i = 0; i < 60; i++) {
+        const s = await debug<{ status: string }>(page, 'state()');
+        if (s.status !== 'playing') break;
+        await debug(page, 'advance(1)');
+      }
+      await closeReport();
+    };
+    // 同じ世界でもう一度 → 結果の画面の人口の線に、前回の線
+    await playOut();
+    await page.getByTestId('retry').click();
+    await expect(page.getByTestId('game')).toBeVisible();
+    await debug(page, "add('人間は空を飛べる。')");
+    await playOut();
+    await expect(page.getByTestId('curve-pop').getByTestId('curve-prev')).toHaveCount(1);
+    // くり返す十年：巻き戻ったあと、前の周の線
+    await debug(page, "start('loop')");
+    await expect(page.getByTestId('game')).toBeVisible();
+    for (let i = 0; i < 14; i++) {
+      await debug(page, 'advance(1)');
+      await closeReport();
+      if (await page.getByTestId('loop-lines').isVisible()) break;
+    }
+    await expect(page.getByTestId('loop-curve').getByTestId('curve-prev')).toHaveCount(1);
+  });
+
   test('再読み込みしても、書き換えた世界の続きから遊べる', async ({ page }) => {
     await startFood(page, true);
     await page.getByTestId('tab-laws').click();

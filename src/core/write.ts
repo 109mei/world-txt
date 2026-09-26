@@ -2,7 +2,7 @@ import type { IconKey, Law, Phrase } from '../data/schema';
 import { openConcepts, rankForDepth, rankOpening } from './access';
 import { covered, lawTotals, type Written } from './channels';
 import { addImpulse, discover, discoverTags, syncPhraseFlags, targetsNow } from './game';
-import { canonical, interpretAsLaw, interpretLaw, lineCost, modeCue, phraseName, matchPhrases, noiseOf, normalize, originalText, strengthOf, subjectWords, textCost, type AddedAsLaw } from './interpret';
+import { canonical, dictionaryWords, interpretAsLaw, interpretLaw, lineCost, modeCue, phraseName, matchPhrases, noiseOf, normalize, originalText, strengthOf, subjectWords, textCost, type AddedAsLaw } from './interpret';
 import { clamp } from './math';
 import { noticeCounter, walledNow } from './marks';
 import { NO_MEANING } from './lines';
@@ -389,6 +389,16 @@ function shortageAfter(g: GameState, data: GameData, next: Written): number {
   const after = lawTotals(data, next).cost;
   if (after <= before) return 0;
   return Math.max(0, after - g.sim.capacityMax);
+}
+
+/**
+ * 書こうとした文に、世界が知らない言葉があった（意味の伝わらない文は書き込めないので、書く画面を閉じたときに知らせる）。
+ * はじめてなら、開いていく順番で世界の辞書を開く。世界は何も変わらず、書換の力も使わない。知らない言葉があれば true
+ */
+export function noticeWords(g: GameState, text: string): boolean {
+  if (dictionaryWords(text).unknown.length === 0) return false;
+  discover(g, 'h:unknown');
+  return true;
 }
 
 /**

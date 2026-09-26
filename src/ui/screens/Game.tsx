@@ -5,12 +5,13 @@ import type { IconKey } from '../../data/schema';
 import { TERMS } from '../terms';
 import { advanceYears, focusScene, marginText, openEdit, openSheet, sealNote, sealedText, setLawFilter, setTab, showResult, showToast, useGame, type Tab } from '../../store/game';
 import { modesOpen } from '../../store/journey';
-import { ADDED_CONCEPT, type GameView } from '../../store/view';
+import { ADDED_CONCEPT, populationText, type GameView } from '../../store/view';
 import { Icon, TrendArrow } from '../icons';
 import { CauseLine, CostPips, LawText } from '../parts';
 import { seTurn } from '../se';
 import { WorldScene } from '../WorldScene';
 import { Coach, useCoachTarget } from '../Coach';
+import { Curve } from '../Curve';
 
 export function Game() {
   const view = useGame((s) => s.view);
@@ -219,6 +220,26 @@ function WorldTab({ view, firstHint }: { view: GameView; firstHint: boolean }) {
               {view.loop.rule}。巻き戻るたびに使える文字数が{view.loop.wear}
               字減り、書き換えの残りが{view.loop.ink}回戻る。
             </p>
+            {/* 前の周と今の周の人口の線を重ねる（小さな違いが育つのを見る） */}
+            {view.loop.lines && (
+              <div className="loop-lines" data-testid="loop-lines">
+                <Curve
+                  label="人口"
+                  values={view.loop.lines.now}
+                  marks={[]}
+                  from={populationText(view.loop.lines.now[0]!)}
+                  to={populationText(view.loop.lines.now[view.loop.lines.now.length - 1]!)}
+                  prev={view.loop.lines.prev}
+                  testId="loop-curve"
+                />
+                <p className="curve-note">
+                  <span className="curve-note-item">
+                    <span className="curve-note-prev" />
+                    前の周の人口
+                  </span>
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

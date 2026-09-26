@@ -156,6 +156,7 @@ export const ICON_KEYS = [
   'rocket',
   'trophy',
   'mind',
+  'map',
 ] as const;
 export type IconKey = (typeof ICON_KEYS)[number];
 export const IconKeySchema = z.enum(ICON_KEYS);

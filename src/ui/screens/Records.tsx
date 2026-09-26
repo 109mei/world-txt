@@ -6,6 +6,8 @@ import { closeRecords, needsText, useGame } from '../../store/game';
 import { buildJourney, journeyOf } from '../../store/journey';
 import { buildCodex, KIND_NAME, type Count } from '../../store/codex';
 import { buildRecords, type RecordSectionId } from '../../store/records';
+import { buildDictionary } from '../../store/dictionary';
+import { buildCausalMap } from '../../store/causal';
 import { Icon } from '../icons';
 
 const FIELD_NAME = { physics: '物の理', psych: '人の心', social: '社会' } as const;
@@ -199,6 +201,99 @@ function RulesList() {
   );
 }
 
+/**
+ * 世界の辞書：書いた文の中の言葉を、世界に通じた言葉（種類ごと）と、世界がまだ知らない言葉に分けて集める。
+ * はじめて世界が知らない言葉を書いたときに開く（書いた言葉だけを見せる。書き方の答えは見せない）
+ */
+function DictionaryList() {
+  const words = useGame((s) => s.progress.words);
+  const dict = useMemo(() => buildDictionary(gameData, words), [words]);
+  return (
+    <div className="dictionary" data-testid="dictionary">
+      <p className="rec-lead">書いた文の中の言葉を、世界が知っているかどうかで集めた。点線の言葉は世界がまだ知らない言葉で、その言葉だけの文は世界に届かない。</p>
+      <section className="rec-group">
+        <div className="rec-group-title">
+          <Icon name="unknown" size={13} />
+          <span className="rec-group-name">まだ知らない言葉</span>
+          <span className="rec-group-count">{dict.unknown.length}</span>
+        </div>
+        {dict.unknown.length === 0 ? (
+          <p className="dim small">まだない</p>
+        ) : (
+          <p className="dict-words" data-testid="dict-unknown">
+            {dict.unknown.map((w) => (
+              <span key={w} className="dict-word mark-unknown">
+                {w}
+              </span>
+            ))}
+          </p>
+        )}
+      </section>
+      <section className="rec-group">
+        <div className="rec-group-title">
+          <Icon name="education" size={13} />
+          <span className="rec-group-name">世界に通じた言葉</span>
+          <span className="rec-group-count">{dict.knownCount}</span>
+        </div>
+        {dict.known.length === 0 && <p className="dim small">まだない</p>}
+        {dict.known.map((g) => (
+          <div key={g.kind} className="dict-kind" data-testid="dict-known">
+            <div className="dict-kind-name">{g.kind}</div>
+            <p className="dict-words">
+              {g.words.map((w) => (
+                <span key={w} className="dict-word mark-known">
+                  {w}
+                </span>
+              ))}
+            </p>
+          </div>
+        ))}
+      </section>
+    </div>
+  );
+}
+
+/**
+ * 因果の地図：見つけた書き方（法則の読み取り・書き足した概念）から、それが起こしうる想定外の変化と組み合わせへ線を引く。
+ * 見つけたものは名前を、まだのものは「？」で見せる。因果の線が想定外の所に届いたときに開く
+ */
+function CausalMap() {
+  const discovered = useGame((s) => s.progress.discovered);
+  const map = useMemo(() => buildCausalMap(gameData, discovered), [discovered]);
+  return (
+    <div className="causal-map" data-testid="causal-map">
+      <p className="rec-lead">
+        書いた一文から届いた想定外の変化と組み合わせを、線でつないだ。まだ見ていない先は「？」のまま。見つけた線 {map.found} / {map.total}
+      </p>
+      {map.nodes.length === 0 && <p className="dim small">まだ線を引ける書き方を見つけていない</p>}
+      <ul className="map-list">
+        {map.nodes.map((n) => (
+          <li key={n.id} className="map-node" data-testid="map-node">
+            <div className="map-cause">
+              <Icon name={n.icon} size={14} /> <span className="ink">{n.name}</span>
+            </div>
+            <ul className="map-effects">
+              {n.effects.map((e) => (
+                <li key={e.id} className={e.name === null ? 'map-effect map-unknown' : e.kind === 'combo' && e.good ? 'map-effect map-good' : 'map-effect'} data-found={e.name !== null}>
+                  {e.name === null ? (
+                    <>
+                      <Icon name="unknown" size={13} /> <span aria-label={e.kind === 'combo' ? 'まだ見ていない組み合わせ' : 'まだ見ていない想定外の変化'}>？</span>
+                    </>
+                  ) : (
+                    <>
+                      <Icon name={e.icon} size={13} /> {e.kind === 'combo' ? `組み合わせ「${e.name}」` : e.name}
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /** 出典：画面に出る現実の数字と、その出典（名前・年・URL・数字の年）。確かめきれないものは「要確認」 */
 function SourcesList() {
   const laws = gameData.laws.filter((l) => l.fact);
@@ -239,11 +334,18 @@ function SourcesList() {
 export function Records() {
   const discovered = useGame((s) => s.progress.discovered);
   const achievements = useGame((s) => s.progress.achievements);
-  const [tab, setTab] = useState<RecordSectionId | 'sources' | 'rules'>('readings');
+  const [tab, setTab] = useState<RecordSectionId | 'sources' | 'rules' | 'dictionary' | 'map'>('readings');
+  // 発見で開く：世界の辞書（はじめて世界が知らない言葉を書いた）・因果の地図（因果の線が想定外の所に届いた）
+  const everything = useGame((s) => s.everything);
+  const dictionaryOpen = everything || discovered.includes('h:unknown');
+  const mapOpen = everything || discovered.includes('h:causal');
+  const showDictionary = tab === 'dictionary' && dictionaryOpen;
+  const showMap = tab === 'map' && mapOpen;
   const records = useMemo(() => buildRecords(gameData, discovered, achievements), [discovered, achievements]);
   const sec = records.sections.find((s) => s.id === tab) ?? records.sections[0]!;
   const showSources = tab === 'sources';
   const showRules = tab === 'rules';
+  const showList = !showSources && !showRules && !showDictionary && !showMap;
   const ratio = records.total > 0 ? records.found / records.total : 0;
 
   return (
@@ -286,6 +388,16 @@ export function Records() {
             </span>
           </button>
         ))}
+        {dictionaryOpen && (
+          <button role="tab" aria-selected={showDictionary} className={showDictionary ? 'chip on' : 'chip'} onClick={() => setTab('dictionary')} data-testid="records-dictionary">
+            <Icon name="education" size={12} /> 世界の辞書
+          </button>
+        )}
+        {mapOpen && (
+          <button role="tab" aria-selected={showMap} className={showMap ? 'chip on' : 'chip'} onClick={() => setTab('map')} data-testid="records-map">
+            <Icon name="map" size={12} /> 因果の地図
+          </button>
+        )}
         <button role="tab" aria-selected={showRules} className={showRules ? 'chip on' : 'chip'} onClick={() => setTab('rules')} data-testid="records-rules">
           <Icon name="science" size={12} /> 世界の決まり
         </button>
@@ -294,9 +406,9 @@ export function Records() {
         </button>
       </div>
 
-      {showRules ? <RulesList /> : showSources ? <SourcesList /> : <p className="rec-lead">{sec.lead}</p>}
+      {showRules ? <RulesList /> : showSources ? <SourcesList /> : showDictionary ? <DictionaryList /> : showMap ? <CausalMap /> : <p className="rec-lead">{sec.lead}</p>}
 
-      {!showSources && !showRules && sec.groups.map((g) => {
+      {showList && sec.groups.map((g) => {
         const found = g.entries.filter((e) => e.found);
         // まだ得ていないが目標として見せるもの（実績）と、名前も伏せるもの
         const hints = g.entries.filter((e) => !e.found && e.hint);

@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useGame, skipPassing } from '../store/game';
+import { fxStreaks } from './fx';
 import { seCompute } from './se';
 
 /** 計算を終えたあと、覆いがうすれて消えるまで（ミリ秒。styles.css の .passing-leave と同じ長さ） */
@@ -39,8 +40,13 @@ export function Passing() {
     setLast(null);
     if (motion && !reduced()) setLeaving(last);
   }
+  const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (current) seCompute();
+    if (!current) return;
+    seCompute();
+    // 早回しの光の筋（PixiJS）：計算しているあいだだけ流し、飛ばしたらうすれて消える
+    const r = box.current?.getBoundingClientRect();
+    if (r) fxStreaks(`pass:${current.from}:${current.to}`, r, current.ms, () => useGame.getState().passing === current);
   }, [current]);
   useEffect(() => {
     if (!leaving) return;
@@ -60,6 +66,7 @@ export function Passing() {
       aria-label={current ? `YEAR ${passing.from} から ${passing.to} へ` : undefined}
       onClick={current ? skipPassing : undefined}
       style={{ ['--pass' as string]: `${total}ms` }}
+      ref={box}
     >
       <svg className="passing-art" viewBox="0 0 390 520" aria-hidden="true">
         <defs>

@@ -6,6 +6,7 @@ import { advanceYears, getRuntime, goStages, markElsewhere, refreshView, setRunt
 import { GameRuntime } from './store/runtime';
 import { App } from './ui/App';
 import { ErrorBoundary } from './ui/ErrorBoundary';
+import { setFxScale } from './ui/fx';
 import { onVisibility } from './ui/audio';
 import { syncSe } from './ui/se';
 import { WORLD_NUMBERS } from './store/runtime';
@@ -152,6 +153,8 @@ async function start(): Promise<void> {
           const s = useGame.getState();
           return { screen: s.screen, tab: s.tab, sheet: s.sheet };
         },
+        // PixiJS の演出の描き場の細かさの倍率（PV でカメラを寄せて撮るとき、粒が粗く見えないように）
+        fxScale: (n: number) => setFxScale(n),
       },
     });
   }
