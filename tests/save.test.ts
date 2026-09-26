@@ -64,6 +64,41 @@ describe('セーブ', () => {
     expect(b.current).toEqual(a.current);
   });
 
+  it('文字の大きさと効果音の音量がない古い設定も読め、既定の値（中・既定の音量）で補う', () => {
+    const data = sample() as unknown as { settings: Record<string, unknown> };
+    delete data.settings.textSize;
+    delete data.settings.seVolume;
+    const back = deserialize(JSON.stringify(data));
+    expect(back.settings.textSize).toBe('medium');
+    expect(back.settings.seVolume).toBe(DEFAULT_SETTINGS.seVolume);
+  });
+
+  it('すべての記録を消すと、進み具合・観測記録・実績・遊んでいる世界と控えが消え、設定は残る', async () => {
+    const storage = new MapStorage();
+    const store = new LocalStorageSaveStore(storage as unknown as KeyValueStorage);
+    const rt = new GameRuntime({ data: gameData, store, now: () => 1, newSeed: () => 1 });
+    await rt.boot();
+    rt.settings = { ...rt.settings, theme: 'dark', textSize: 'large', seVolume: 0.3 };
+    rt.start('food');
+    rt.progress.cleared.push('food');
+    rt.progress.discovered.push('e:famine');
+    rt.progress.achievements.push('first_line');
+    await rt.save();
+    await rt.save();
+    await rt.resetRecords();
+    expect(rt.state).toBeNull();
+    expect(rt.progress).toEqual(EMPTY_PROGRESS);
+    expect(rt.settings.theme).toBe('dark');
+    expect(rt.settings.textSize).toBe('large');
+    // 読み直しても、記録は空で、設定は残っている
+    const again = new GameRuntime({ data: gameData, store, now: () => 2, newSeed: () => 1 });
+    await again.boot();
+    expect(again.state).toBeNull();
+    expect(again.progress.cleared).toEqual([]);
+    expect(again.progress.discovered).toEqual([]);
+    expect(again.settings.seVolume).toBe(0.3);
+  });
+
   it('古い版（版 0：設定と進み具合がない）のセーブも読める', () => {
     const old = { current: null };
     const up = migrate(old);

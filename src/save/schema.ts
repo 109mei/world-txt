@@ -193,6 +193,10 @@ export const SettingsSchema = z.object({
   allOpen: z.boolean().default(false),
   /** 情景に施設の名前を出す（はじめは出す。版6から） */
   names: z.boolean().default(true),
+  /** 文字の大きさ：小・中・大（画面をまとめて縮めたり広げたりする。古いセーブにはないので、既定で中） */
+  textSize: z.enum(['small', 'medium', 'large']).default('medium'),
+  /** 効果音の音量（音楽の音量とは別。古いセーブにはないので、既定の音量） */
+  seVolume: z.number().min(0).max(1).default(0.6),
 });
 
 export const ProgressSchema = z.object({
@@ -265,7 +269,19 @@ export type Settings = z.infer<typeof SettingsSchema>;
 export type Progress = z.infer<typeof ProgressSchema>;
 export type Mark = z.infer<typeof MarkSchema>;
 
-export const DEFAULT_SETTINGS: Settings = { bgm: true, volume: 0.6, analysis: false, se: true, motion: true, theme: 'auto', speed: 'auto', allOpen: false, names: true };
+export const DEFAULT_SETTINGS: Settings = {
+  bgm: true,
+  volume: 0.6,
+  analysis: false,
+  se: true,
+  motion: true,
+  theme: 'auto',
+  speed: 'auto',
+  allOpen: false,
+  names: true,
+  textSize: 'medium',
+  seVolume: 0.6,
+};
 export const EMPTY_PROGRESS: Progress = {
   cleared: [],
   best: {},

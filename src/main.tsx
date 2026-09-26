@@ -63,8 +63,8 @@ async function start(): Promise<void> {
   setRuntime(runtime);
   refreshView();
   // 効果音は設定に合わせて鳴らす・止める
-  syncSe(runtime.settings.se, runtime.settings.volume);
-  useGame.subscribe((s) => syncSe(s.settings.se, s.settings.volume));
+  syncSe(runtime.settings.se, runtime.settings.seVolume);
+  useGame.subscribe((s) => syncSe(s.settings.se, s.settings.seVolume));
 
   document.addEventListener('visibilitychange', () => onVisibility(document.visibilityState === 'hidden'));
   // 長押し・右クリックのメニューと、文字の選択を出さない（入力欄は除く）

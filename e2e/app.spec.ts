@@ -128,6 +128,44 @@ test.describe('390×844 のスマホ縦画面', () => {
     await expect(page.getByTestId('scene')).toHaveAttribute('data-motifs', /flyers/);
   });
 
+  test('時間を逆にしたり止めたりした年も、その年に現れたものは現れたまま残る（現れ方の動きは逆にも止めもしない）', async ({ page }) => {
+    // 情景のその要素の見え方（外側の層までの不透明度を掛け合わせる）。settle なら、現れ方の動きを取り消した絵（落ち着いた絵）の見え方
+    const shown = (id: string, settle = false) =>
+      page
+        .getByTestId('scene')
+        .locator(`[data-motif="${id}"]`)
+        .first()
+        .evaluate((el, s) => {
+          if (s) for (const a of el.getAnimations({ subtree: true })) if ((a as CSSAnimation).animationName.startsWith('sc-in-')) a.cancel();
+          let o = 1;
+          for (let n: Element | null = el.querySelector('rect, path, line, circle, ellipse'); n && n.tagName !== 'svg'; n = n.parentElement) o *= Number(getComputedStyle(n).opacity);
+          return o;
+        }, settle);
+    await startFood(page, true);
+    await debug(page, 'boost()');
+    for (const [line, cls] of [
+      ['時間は逆に流れる。', /scene-reverse/],
+      ['時間が止まる。', /scene-frozen/],
+    ] as const) {
+      await debug(page, `add('${line}')`);
+      await debug(page, "add('恐竜がよみがえる。')");
+      await debug(page, 'advance(1)');
+      await expect(page.getByTestId('scene')).toHaveClass(cls);
+      await expect(page.getByTestId('scene')).toHaveAttribute('data-motifs', /dinosaurs/);
+      // 現れる動き（約2.4秒）が終わっても、時計も恐竜も、落ち着いた絵と同じ見え方で残っている
+      await page.waitForTimeout(3000);
+      for (const id of ['clock', 'dinosaurs']) {
+        const after = await shown(id);
+        const still = await shown(id, true);
+        expect(still).toBeGreaterThan(0.3);
+        expect(after).toBeCloseTo(still, 2);
+      }
+      // 次の世界で、もう一方の書き方を試す
+      await startFood(page, true);
+      await debug(page, 'boost()');
+    }
+  });
+
   test('再読み込みしても、書き換えた世界の続きから遊べる', async ({ page }) => {
     await startFood(page, true);
     await page.getByTestId('tab-laws').click();
@@ -468,6 +506,45 @@ test.describe('390×844 のスマホ縦画面', () => {
     await page.getByTestId('limit-civ').click();
     await expect(page.getByTestId('meta-sheet')).toContainText('文明');
     await expect(page.getByTestId('meta-limit')).toBeVisible();
+  });
+
+  test('設定：文字の大きさ・情景の名前・音楽と効果音の音量・このゲームについて・すべての記録を消す', async ({ page }) => {
+    await startFood(page);
+    await page.getByTestId('menu').click();
+    // 文字の大きさ：大にすると画面がまとめて大きくなり、横にはみ出さない
+    await page.getByTestId('text-large').click();
+    await expect(page.locator('.app')).toHaveClass(/text-large/);
+    expect(await page.locator('.app').evaluate((e) => getComputedStyle(e).zoom)).toBe('1.12');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+    await page.getByTestId('text-medium').click();
+    await expect(page.locator('.app')).toHaveClass(/text-medium/);
+    // 情景の名前
+    await expect(page.getByTestId('menu-names')).toContainText('ON');
+    await page.getByTestId('menu-names').click();
+    await expect(page.getByTestId('menu-names')).toContainText('OFF');
+    // 音楽の音量と効果音の音量は別々
+    await expect(page.getByTestId('menu-volume')).toBeVisible();
+    await page.getByTestId('menu-se-volume').evaluate((el) => {
+      const input = el as HTMLInputElement;
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, '0.2');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expect(page.getByTestId('menu-se-volume')).toHaveValue('0.2');
+    await expect(page.getByTestId('menu-volume')).not.toHaveValue('0.2');
+    // このゲームについて：版・書体とアイコンのライセンス・音楽と絵の作り方
+    await page.getByTestId('menu-about').click();
+    const about = page.getByTestId('about');
+    await expect(about).toContainText('SIL Open Font License');
+    await expect(about).toContainText('ISC License');
+    await expect(about).toContainText('Gemini');
+    await expect(about).toContainText('gpt-image');
+    // すべての記録を消す：2度押しで確かめ、タイトルへ戻る（はじめから）
+    await page.getByTestId('menu-reset').click();
+    await expect(page.getByTestId('reset-note')).toContainText('元に戻せない');
+    await page.getByTestId('menu-reset').click();
+    await expect(page.getByTestId('title')).toBeVisible();
+    await expect(page.getByTestId('continue')).toHaveCount(0);
+    await expect(page.getByTestId('start')).toContainText('はじめる');
   });
 
   test('序章の手引き：押す順に示し、押す所を枠で示す。手本どおりに書くと次の年に世界が変わり、結びの一文が出る', async ({ page }) => {

@@ -338,10 +338,23 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+/* 文字の大きさ（メニューで選ぶ）：画面をまとめて縮めたり広げたりする（タイトルは絵の組み立てがあるので変えない）。
+   画面の高さ・幅の単位（dvh・vh・vw）は、広げた分（--z）で割り戻す */
+.app {
+  --z: 1;
+}
+.app.text-small:not(.screen-title) {
+  zoom: 0.92;
+  --z: 0.92;
+}
+.app.text-large:not(.screen-title) {
+  zoom: 1.12;
+  --z: 1.12;
+}
 .app {
   position: relative;
   max-width: 480px;
-  min-height: 100dvh;
+  min-height: calc(100dvh / var(--z));
   margin: 0 auto;
   overflow-x: hidden;
   background:
@@ -706,7 +719,7 @@ textarea:focus-visible {
 .page {
   position: relative;
   padding: 12px 16px calc(28px + var(--safe-b));
-  min-height: 100dvh;
+  min-height: calc(100dvh / var(--z, 1));
 }
 .page-head {
   display: flex;
@@ -885,7 +898,7 @@ textarea:focus-visible {
 .game {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  height: calc(100dvh / var(--z, 1));
 }
 .game-head {
   display: grid;
@@ -1563,7 +1576,7 @@ mark.ink {
 .sheet {
   width: 100%;
   max-width: 480px;
-  max-height: 90dvh;
+  max-height: calc(90dvh / var(--z, 1));
   display: flex;
   flex-direction: column;
   background:
@@ -1947,6 +1960,30 @@ mark.ink {
   width: 58%;
   accent-color: var(--silver);
 }
+/* このゲームについて：版・作り手・音楽と絵の作り方・書体とアイコンのライセンス・出典・ソースコード */
+.about {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  margin: 0 0 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.about dt {
+  color: var(--dim);
+  white-space: nowrap;
+}
+.about dd {
+  margin: 0;
+  color: var(--text);
+}
+.about a {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
 .io-box {
   display: flex;
   flex-direction: column;
@@ -2110,7 +2147,7 @@ mark.ink {
   padding: 10px 16px;
   /* left: 50% のままだと箱の幅が画面の半分までに縮むので、文の長さまで広げてから 88vw で止める */
   width: max-content;
-  max-width: 88vw;
+  max-width: calc(88vw / var(--z, 1));
   background: rgb(var(--card-rgb) / 0.96);
   border: 1px solid rgb(var(--fg-rgb) / 0.35);
   font-size: 14px;
@@ -2773,7 +2810,7 @@ mark.ink {
 .passing-art {
   width: min(390px, 100%);
   height: auto;
-  margin-top: 4vh;
+  margin-top: calc(4vh / var(--z, 1));
 }
 .pass-formula {
   font-family: var(--latin);
@@ -2871,7 +2908,7 @@ mark.ink {
   right: 0;
   bottom: 0;
   width: 100%;
-  height: 22vh;
+  height: calc(22vh / var(--z, 1));
 }
 .pw-land {
   fill: var(--card);
@@ -3470,12 +3507,20 @@ mark.ink {
 
 /* 最後に書いた一文を、挿し絵の下にインクで添える */
 .scene-ink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
-  padding: 8px 16px 9px;
+  padding: 0 0 0 16px;
+  min-height: 44px;
   border-top: 1px solid var(--line);
   font-size: 13px;
   line-height: 1.6;
   letter-spacing: 0.04em;
+}
+.scene-ink-text {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3492,11 +3537,13 @@ mark.ink {
 .scene-fast {
   --sc-speed: 0.4;
 }
-.scene-frozen .scene-world *,
+/* 止まった時間・逆さの時間は、ずっと続く動き（雲・煙・人・船など）だけを止める・逆に流す。
+   その年に現れる・消える1度だけの動き（sc-fresh）には当てない（止めると現れないまま、逆にすると現れてから消えてしまう） */
+.scene-frozen .scene-world *:not(.sc-fresh),
 .scene-frozen .scene-world {
   animation-play-state: paused !important;
 }
-.scene-reverse .scene-world * {
+.scene-reverse .scene-world *:not(.sc-fresh) {
   animation-direction: reverse !important;
 }
 .scene-quake svg {
@@ -6449,15 +6496,14 @@ mark.ink {
   }
 }
 .scene-names {
-  position: absolute;
-  top: 6px;
-  right: 8px;
+  flex: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   min-height: 44px;
-  padding: 0 8px;
+  padding: 0 14px 0 8px;
   font-size: 12px;
+  letter-spacing: 0;
   color: var(--text);
 }
 .scene-names-knob {

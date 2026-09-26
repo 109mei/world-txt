@@ -133,6 +133,23 @@ export function SkyBack({ v }: { v: SceneView }) {
 /** ふだんの月（三日月） */
 const MOON = 'M54 22 A9 9 0 1 0 54 40 A10 10 0 0 1 54 22 Z';
 
+/** 太陽の光の筋（淡い円だけだと夜の絵では月に見えるので、太陽を書き換えた世界では筋を描いて太陽とわかるようにする。ゆっくり回る） */
+function Rays({ cx, cy, r, color }: { cx: number; cy: number; r: number; color: string }) {
+  const n = 12;
+  return (
+    <g transform={`translate(${cx} ${cy})`}>
+      <g className="sc-spin-slow" style={dur(48)}>
+        {Array.from({ length: n }, (_, i) => {
+          const a = (i / n) * Math.PI * 2;
+          const r1 = r + 3;
+          const r2 = r + (i % 2 === 0 ? 11 : 7);
+          return <line key={i} x1={Math.cos(a) * r1} y1={Math.sin(a) * r1} x2={Math.cos(a) * r2} y2={Math.sin(a) * r2} stroke={color} strokeWidth={1.3} strokeLinecap="round" opacity={0.9} />;
+        })}
+      </g>
+    </g>
+  );
+}
+
 /** 太陽・月・ブラックホール・空の時計・空の目 */
 export function Celestial({ v }: { v: SceneView }) {
   const hole = m(v, 'sunHole');
@@ -149,6 +166,8 @@ export function Celestial({ v }: { v: SceneView }) {
   const clock = m(v, 'clock');
   const eye = m(v, 'eye');
   const sunGone = (['sunHole', 'eternalNight', 'noSun'] as const).find((id) => v.fresh.includes(id) && m(v, id) >= 0.5);
+  // 太陽を書き換えた世界（二つの太陽・近い太陽・明るい太陽・沈まない太陽）では、太陽に光の筋を描く
+  const sunny = m(v, 'twoSuns') > 0 || m(v, 'sunNear') > 0 || m(v, 'sunBright') > 0 || m(v, 'eternalDay') > 0;
   return (
     <g>
       {!hidden && (
@@ -157,6 +176,7 @@ export function Celestial({ v }: { v: SceneView }) {
             <g className={sunCls} style={dur(2.2)}>
               <circle cx={330} cy={44} r={34 * size} fill={glowInk ? 'url(#sc-glow-ink)' : 'url(#sc-glow)'} opacity={m(v, 'sunDim') > 0.3 ? 0.5 : 1} />
               <circle cx={330} cy={44} r={11 * size} fill={sunFill} />
+              {sunny && <Rays cx={330} cy={44} r={11 * size} color={glowInk ? INK : PAPER} />}
             </g>
           </g>
         </Motif>
@@ -171,8 +191,9 @@ export function Celestial({ v }: { v: SceneView }) {
       )}
       {m(v, 'twoSuns') > 0 && !hidden && (
         <Motif v={v} id="twoSuns">
-          <circle cx={364} cy={76} r={22} fill={v.inked.includes('twoSuns') ? 'url(#sc-glow-ink)' : 'url(#sc-glow)'} />
-          <circle cx={364} cy={76} r={7} fill={PAPER} />
+          <circle cx={364} cy={76} r={24} fill={v.inked.includes('twoSuns') ? 'url(#sc-glow-ink)' : 'url(#sc-glow)'} />
+          <circle cx={364} cy={76} r={8} fill={PAPER} />
+          <Rays cx={364} cy={76} r={8} color={v.inked.includes('twoSuns') ? INK : PAPER} />
         </Motif>
       )}
       {m(v, 'noMoon') < 0.5 ? (

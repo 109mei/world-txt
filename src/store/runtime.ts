@@ -450,4 +450,16 @@ export class GameRuntime {
     this.progress = structuredClone(EMPTY_PROGRESS);
     await this.opts.store.clear();
   }
+
+  /** すべての記録（進み具合・観測記録・実績・遊んでいる世界・壊れたときの控え）を消す。設定（明るさ・音・文字の大きさ）は残す */
+  async resetRecords(): Promise<void> {
+    this.state = null;
+    this.progress = structuredClone(EMPTY_PROGRESS);
+    this.fresh = [];
+    this.rankUp = null;
+    this.lastMarks = [];
+    this.loadError = null;
+    await this.opts.store.clear();
+    await this.save();
+  }
 }

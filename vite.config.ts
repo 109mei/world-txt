@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
@@ -36,8 +37,12 @@ function contentSecurityPolicy(): Plugin {
   };
 }
 
+/** 版の番号（「このゲームについて」に出す） */
+const version = (JSON.parse(readFileSync('package.json', 'utf8')) as { version: string }).version;
+
 export default defineConfig({
   base: '/world-txt/',
+  define: { __APP_VERSION__: JSON.stringify(version) },
   plugins: [react(), contentSecurityPolicy()],
   // 内容のデータ（法則・出来事・副作用の文章）を1つにまとめているので、既定の 500kB を少し超える
   build: { chunkSizeWarningLimit: 700 },

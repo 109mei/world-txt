@@ -143,36 +143,24 @@ export function WorldScene({
   return (
     <figure ref={ref} className={cls} data-testid={testId} data-motifs={Object.keys(v.motifs).join(' ')} data-transit={transit ? 'on' : undefined}>
       <div className="scene-frame">
-      {/* 年ごとに描き直す（1年進めたときだけ、飾りが1回動く）。世界のタブの情景は、層に分けた飛び出す絵本 */}
-      {layered ? <LayeredSvg key={key} v={v} pop={pop} /> : <SceneSvg key={key} v={v} viewBox={viewBox} />}
-      {/* 情景の名前（施設の名前と、気がかりな状態の言葉）。切り替えられる */}
-      {!compact && names && !viewBox && (
-        <div className="scene-labels" aria-hidden="true">
-          {v.labels.map((l) => (
-            <span
-              key={l.id}
-              className={['scene-label', `tone-${l.tone}`, focus === l.id ? 'scene-label-focus' : ''].filter(Boolean).join(' ')}
-              style={{ left: `${(l.x / W) * 100}%`, top: `${(l.y / H) * 100}%` }}
-              data-testid={`label-${l.id}`}
-            >
-              {l.name}
-              {l.word && <b>{l.word}</b>}
-            </span>
-          ))}
-        </div>
-      )}
-      {!compact && !viewBox && (
-        <button
-          className="scene-names"
-          role="switch"
-          aria-checked={names}
-          onClick={() => updateSettings({ names: !names })}
-          data-testid="scene-names"
-          aria-label="情景に名前を出す"
-        >
-          <span className="scene-names-knob" /> 名前
-        </button>
-      )}
+        {/* 年ごとに描き直す（1年進めたときだけ、飾りが1回動く）。世界のタブの情景は、層に分けた飛び出す絵本 */}
+        {layered ? <LayeredSvg key={key} v={v} pop={pop} /> : <SceneSvg key={key} v={v} viewBox={viewBox} />}
+        {/* 情景の名前（施設の名前と、気がかりな状態の言葉）。切り替えられる */}
+        {!compact && names && !viewBox && (
+          <div className="scene-labels" aria-hidden="true">
+            {v.labels.map((l) => (
+              <span
+                key={l.id}
+                className={['scene-label', `tone-${l.tone}`, focus === l.id ? 'scene-label-focus' : ''].filter(Boolean).join(' ')}
+                style={{ left: `${(l.x / W) * 100}%`, top: `${(l.y / H) * 100}%` }}
+                data-testid={`label-${l.id}`}
+              >
+                {l.name}
+                {l.word && <b>{l.word}</b>}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
       {transit && from && (
         <>
@@ -185,12 +173,20 @@ export function WorldScene({
       )}
       {!compact && (
         <figcaption className="scene-ink" data-testid="scene-ink">
-          {v.ink ? (
-            <>
-              <Pencil size={13} strokeWidth={1.5} className="scene-ink-mark" aria-label="書いた一文" /> <span className="ink">{v.ink}</span>
-            </>
-          ) : (
-            <span className="dim">世界はまだ書き換えられていない</span>
+          <span className="scene-ink-text">
+            {v.ink ? (
+              <>
+                <Pencil size={13} strokeWidth={1.5} className="scene-ink-mark" aria-label="書いた一文" /> <span className="ink">{v.ink}</span>
+              </>
+            ) : (
+              <span className="dim">世界はまだ書き換えられていない</span>
+            )}
+          </span>
+          {/* 情景の名前の切り替えは、絵の外（下の一文の右）に置く（右上の空の隅には太陽と月を描くので、絵の上に重ねない） */}
+          {!viewBox && (
+            <button className="scene-names" role="switch" aria-checked={names} onClick={() => updateSettings({ names: !names })} data-testid="scene-names" aria-label="情景に名前を出す">
+              <span className="scene-names-knob" /> 名前
+            </button>
           )}
         </figcaption>
       )}

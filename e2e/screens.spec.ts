@@ -225,6 +225,22 @@ test('主な画面', async ({ page }) => {
   await page.getByTestId('menu').click();
   await expect(page.getByTestId('menu-sheet')).toBeVisible();
   await page.screenshot({ path: shot('27_menu') });
+  // 設定の続き（音・このゲームについて・すべての記録を消す）
+  await page.getByTestId('menu-about').click();
+  await page.getByTestId('about').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: shot('27b_menu_about') });
+  // 文字の大きさ：大（画面をまとめて大きくする）
+  await page.getByTestId('text-large').scrollIntoViewIfNeeded();
+  await page.getByTestId('text-large').click();
+  await page.screenshot({ path: shot('27c_menu_large') });
+  await page.getByTestId('sheet-close').click();
+  await quiet(page);
+  await page.screenshot({ path: shot('28_world_large') });
+  await page.getByTestId('tab-laws').click();
+  await page.screenshot({ path: shot('28b_laws_large') });
+  await page.getByTestId('tab-world').click();
+  await page.getByTestId('menu').click();
+  await page.getByTestId('text-medium').click();
   await page.getByTestId('sheet-close').click();
 
   // 無限の世界の記録簿（この端末のランキング）

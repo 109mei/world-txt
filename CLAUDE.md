@@ -62,7 +62,7 @@
 - src/save：SaveStore・セーブの形・版の変換
 - tests：Vitest（決定性・棋譜・セーブ・読み取り・無茶な書き換え・総当たり・ルール・無限の世界・くり返す十年・結末・実績・印と試練（marks）・開いていく順番（unlocks）・人々の心・読み分け・情景・序章の手引き（prologue）・世界の終わりまで・筆の位・明るさの比・画面の言葉・手触りの目安）
 - e2e：Playwright（app.spec.ts・screens.spec.ts・演出中のコマ数 perf.spec.ts）
-- scripts：シミュレーター（npm run sim）と作戦・ボット（strategies.ts・bots.ts・run.ts。無限の世界のボットは endless.ts）、結末の筋書き（worlds.ts）、読み取りの総当たり（fuzz.ts）、筆の位で遊べるかの確かめ（ranks.ts）、作り手の解（par.ts・designer.ts）、組み合わせの総当たり（combos.ts）
+- scripts：シミュレーター（npm run sim）と作戦・ボット（strategies.ts・bots.ts・run.ts。無限の世界のボットは endless.ts）、結末の筋書き（worlds.ts）、読み取りの総当たり（fuzz.ts）、筆の位で遊べるかの確かめ（ranks.ts）、作り手の解（par.ts・designer.ts）、組み合わせの総当たり（combos.ts）、紹介用の PV（pv/：撮影 record.ts・舞台 stage.html・書き出し encode.ts と mp4.ts・コマの取り出し frames.ts・BGM の小節 beats.ts）
 - docs：SPEC.md、PLAN.md（企画書）、ANALYSIS.md、IMPROVE.md、PROMPTS.md、TERMS.md、SOURCES.md、design/（画面設計の見本）、screens/（スクリーンショット）
 
 ## コマンド
@@ -82,6 +82,7 @@
 - npm run fuzz：いろいろな単語をいろいろな位置に入れた約2万文の読み取りの総当たりと、棋譜から作り直した世界の一致（例外・数値の破綻・怪しい読み取り・棋譜のずれを数える。0 を保つ）
 - npm run sim -- food few_days_only 1：年表を見る
 - npm run ranks：どのステージも、はじめて遊べる筆の位で作戦が止まらず、クリアできる作戦があるか（npm run ranks -- 30 で種30個）
+- npx tsx scripts/pv/record.ts → npx tsx scripts/pv/encode.ts：紹介用の PV（暗い画面・縦1080×1920・約97秒）を pv/laplace-garden-pv.mp4 に作る（先に npm run dev を動かす。録るのはページが描いたコマだけで、画面全体は録らない。出力の pv/ は git に入れない）
 
 ## 作業の進め方
 

@@ -1,10 +1,11 @@
 import { Copy, Download, Share2, Smartphone, Upload } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { gameData } from '../../data';
-import { abandonGame, closeSheet, getRuntime, goTitle, openRecords, refreshView, showToast, updateSettings, useGame } from '../../store/game';
+import { abandonGame, closeSheet, getRuntime, goTitle, openRecords, refreshView, resetRecords, showToast, updateSettings, useGame } from '../../store/game';
 import { buildJourney } from '../../store/journey';
 import { syncBgm } from '../audio';
 import { Sheet } from '../parts';
+import { seChime } from '../se';
 import { Tutorial } from '../Tutorial';
 
 /** 書き出すファイルの名前（日付入り） */
@@ -59,6 +60,34 @@ export function HomePrompt({ onClose }: { onClose: () => void }) {
   );
 }
 
+/** このゲームについて：版・作り手・音楽と絵の作り方・書体とアイコンのライセンス・出典・ソースコード */
+function About() {
+  return (
+    <dl className="about" data-testid="about">
+      <dt>版</dt>
+      <dd>{__APP_VERSION__}</dd>
+      <dt>作り手</dt>
+      <dd>109mei</dd>
+      <dt>音楽</dt>
+      <dd>「The Unfolded Manuscript」。Google の Gemini の音楽生成で作った曲。</dd>
+      <dt>絵</dt>
+      <dd>共有の画像とホーム画面のアイコンは、ChatGPT の画像生成（gpt-image）で作った絵。タイトルの絵はその絵を手本にコード（SVG）で描き、世界の情景もコードで描いている。</dd>
+      <dt>書体</dt>
+      <dd>しっぽり明朝・Cormorant Garamond（SIL Open Font License 1.1）</dd>
+      <dt>アイコン</dt>
+      <dd>Lucide（ISC License）</dd>
+      <dt>現実の数字</dt>
+      <dd>法則の「現実では」の数字と出典は、ノートの「出典」で見られる</dd>
+      <dt>ソースコード</dt>
+      <dd>
+        <a href="https://github.com/109mei/world-txt" target="_blank" rel="noopener noreferrer">
+          github.com/109mei/world-txt
+        </a>
+      </dd>
+    </dl>
+  );
+}
+
 export function MenuSheet() {
   const settings = useGame((s) => s.settings);
   const progress = useGame((s) => s.progress);
@@ -66,7 +95,8 @@ export function MenuSheet() {
   const [text, setText] = useState('');
   const [tour, setTour] = useState(false);
   // 取り返しのつかない操作は、2度押して確かめる
-  const [sure, setSure] = useState<'import' | 'abandon' | null>(null);
+  const [sure, setSure] = useState<'import' | 'abandon' | 'reset' | null>(null);
+  const [about, setAbout] = useState(false);
   const [home, setHome] = useState(() => getRuntime().homePrompt && !standalone());
   const ended = useGame((s) => s.view?.status !== 'playing');
   const file = useRef<HTMLInputElement>(null);
@@ -252,6 +282,32 @@ export function MenuSheet() {
             ))}
           </span>
         </div>
+        <div className="menu-row">
+          <span>
+            文字の大きさ
+            <span className="dim small menu-sub">字とボタンをまとめて大きくする</span>
+          </span>
+          <span className="seg" role="radiogroup" aria-label="文字の大きさ">
+            {(
+              [
+                ['small', '小'],
+                ['medium', '中'],
+                ['large', '大'],
+              ] as const
+            ).map(([v, label]) => (
+              <button
+                key={v}
+                role="radio"
+                aria-checked={settings.textSize === v}
+                className={settings.textSize === v ? 'seg-on' : ''}
+                onClick={() => updateSettings({ textSize: v })}
+                data-testid={`text-${v}`}
+              >
+                {label}
+              </button>
+            ))}
+          </span>
+        </div>
         <button className="menu-item" onClick={() => updateSettings({ motion: !settings.motion })} data-testid="menu-motion">
           <span>
             動きを減らす
@@ -261,6 +317,9 @@ export function MenuSheet() {
         </button>
         <button className="menu-item" onClick={() => updateSettings({ speed: nextSpeed[settings.speed] })} data-testid="menu-speed">
           計算の演出 <b>{SPEED[settings.speed]}</b>
+        </button>
+        <button className="menu-item" onClick={() => updateSettings({ names: !settings.names })} data-testid="menu-names">
+          情景の名前 <b>{settings.names ? 'ON' : 'OFF'}</b>
         </button>
         <button className="menu-item" onClick={() => updateSettings({ analysis: !settings.analysis })} data-testid="menu-analysis">
           詳細分析 <b>{settings.analysis ? 'ON' : 'OFF'}</b>
@@ -279,7 +338,7 @@ export function MenuSheet() {
           効果音 <b>{settings.se ? 'ON' : 'OFF'}</b>
         </button>
         <label className="menu-item slider">
-          音量
+          音楽の音量
           <input
             type="range"
             min={0}
@@ -291,6 +350,22 @@ export function MenuSheet() {
               updateSettings({ volume });
               syncBgm(settings.bgm, volume);
             }}
+            data-testid="menu-volume"
+          />
+        </label>
+        <label className="menu-item slider">
+          効果音の音量
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={settings.seVolume}
+            onChange={(e) => updateSettings({ seVolume: Number(e.target.value) })}
+            // 動かし終えたら、その大きさで1度鳴らす
+            onPointerUp={() => seChime()}
+            onKeyUp={() => seChime()}
+            data-testid="menu-se-volume"
           />
         </label>
 
@@ -302,6 +377,10 @@ export function MenuSheet() {
             遊び方をもう一度見る
           </button>
         </div>
+        <button className="menu-item" onClick={() => setAbout((v) => !v)} aria-expanded={about} data-testid="menu-about">
+          このゲームについて <b>{about ? '閉じる' : '開く'}</b>
+        </button>
+        {about && <About />}
         <button className="menu-item" onClick={goTitle}>
           タイトルへ
         </button>
@@ -320,6 +399,25 @@ export function MenuSheet() {
             {sure === 'abandon' ? 'もう一度押すとこの世界を手放す' : 'この世界をあきらめる'}
           </button>
         )}
+        {/* 取り返しのつかない操作は、いちばん下に置く */}
+        {sure === 'reset' && (
+          <p className="block" data-testid="reset-note">
+            記録・実績・遊んでいる世界がすべて消える。元に戻せない（先に「ファイルに保存」しておけば、読み込んで戻せる）。
+          </p>
+        )}
+        <button
+          className={sure === 'reset' ? 'menu-item danger armed' : 'menu-item danger'}
+          onClick={() => {
+            if (sure !== 'reset') {
+              setSure('reset');
+              return;
+            }
+            void resetRecords();
+          }}
+          data-testid="menu-reset"
+        >
+          {sure === 'reset' ? 'もう一度押すとすべての記録を消す' : 'すべての記録を消してはじめから'}
+        </button>
       </div>
       {tour && <Tutorial onClose={() => setTour(false)} />}
     </Sheet>

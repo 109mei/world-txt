@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>ラプラスの庭 PV</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Shippori+Mincho:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      /*
+       * PV の舞台（縦 1080×1920）：ゲームを画面いっぱいに置き、カメラ（rig の位置と倍率、cam の傾き）で見どころへ寄せる。
+       * 字幕は1字ずつ浮かび、上の暗い帯の上に重ねる。解説の線（callout）は画面の要素を指す。全面の札は章の区切り
+       */
+      :root {
+        --bg: #050506;
+        --text: #f4f2ec;
+        --sub: #e4e1da;
+        --ink: #a6cdff;
+        --warn: #ead08f;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Shippori Mincho', serif;
+      }
+      .cam {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        transform-origin: 50% 50%;
+        transition: transform 1.2s cubic-bezier(0.45, 0.05, 0.25, 1);
+      }
+      .rig {
+        position: absolute;
+        left: 0;
+        top: 0;
+        transform-origin: 0 0;
+        will-change: transform;
+      }
+      .rig iframe {
+        display: block;
+        width: 390px;
+        height: 844px;
+        border: 0;
+      }
+      /* 字幕の下地：上から暗い帯（映像の上でも字が読める） */
+      .scrim {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 700px;
+        background: linear-gradient(180deg, rgb(5 5 6 / 0.97) 0%, rgb(5 5 6 / 0.9) 58%, rgb(5 5 6 / 0) 100%);
+        opacity: 0;
+        transition: opacity 0.6s ease;
+        pointer-events: none;
+      }
+      .scrim.on {
+        opacity: 1;
+      }
+      .caption {
+        position: absolute;
+        top: 64px;
+        left: 30px;
+        right: 30px;
+        height: 460px;
+      }
+      .cap {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        text-align: center;
+        opacity: 0;
+        transition: opacity 0.45s ease;
+      }
+      .cap.on {
+        opacity: 1;
+      }
+      .cap .label {
+        margin-bottom: 4px;
+        padding: 6px 26px;
+        border: 2px solid rgb(166 205 255 / 0.75);
+        font-size: 34px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        color: var(--ink);
+        background: rgb(5 5 6 / 0.6);
+        animation: label-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+      @keyframes label-in {
+        from {
+          opacity: 0;
+          letter-spacing: 0.6em;
+        }
+      }
+      .cap .main {
+        font-size: 86px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        line-height: 1.22;
+        text-shadow:
+          0 3px 0 rgb(0 0 0 / 0.7),
+          0 0 34px rgb(166 205 255 / 0.3);
+      }
+      .cap .sub {
+        font-size: 48px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        line-height: 1.45;
+        color: var(--sub);
+        text-shadow: 0 3px 0 rgb(0 0 0 / 0.75);
+      }
+      .cap.instant,
+      .cap.instant .ch,
+      .cap.instant .label {
+        transition: none;
+        animation: none;
+      }
+      /* 1字ずつ浮かぶ（ぼかしから、下から、少し大きく） */
+      .ch {
+        display: inline-block;
+        animation: ch-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+      @keyframes ch-in {
+        from {
+          opacity: 0;
+          filter: blur(10px);
+          transform: translateY(26px) scale(1.12);
+        }
+      }
+      .card {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 42px;
+        background: var(--bg);
+        text-align: center;
+        opacity: 0;
+        transition: opacity 0.35s ease;
+        pointer-events: none;
+      }
+      .card.on {
+        opacity: 1;
+      }
+      .card .l1 {
+        font-size: 98px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        line-height: 1.3;
+        text-shadow: 0 0 44px rgb(166 205 255 / 0.34);
+      }
+      .card .l2 {
+        font-size: 52px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        line-height: 1.5;
+        color: var(--sub);
+      }
+      .card .logo {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 66px;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        color: var(--sub);
+      }
+      .card .note {
+        font-size: 48px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+      }
+      .card .url {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 58px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: var(--ink);
+      }
+      /* 題名のロゴ：字間が詰まりながら現れる */
+      .card .big {
+        white-space: nowrap;
+        font-size: 138px;
+        letter-spacing: 0.14em;
+        animation: logo-in 1.6s cubic-bezier(0.16, 0.9, 0.2, 1) both;
+      }
+      @keyframes logo-in {
+        from {
+          opacity: 0;
+          letter-spacing: 0.7em;
+          filter: blur(16px);
+        }
+      }
+      .card .danger {
+        color: #ff8e84;
+        text-shadow: 0 0 44px rgb(255 110 97 / 0.45);
+      }
+      /* 解説の線：画面の要素を指す */
+      .callouts {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .callouts line {
+        stroke: var(--ink);
+        stroke-width: 4;
+        stroke-dasharray: 600;
+        stroke-dashoffset: 600;
+        animation: draw 0.6s ease-out forwards;
+      }
+      .callouts circle {
+        fill: var(--ink);
+        opacity: 0;
+        animation: pop 0.4s ease-out forwards;
+      }
+      .callouts rect.box {
+        fill: none;
+        stroke: var(--ink);
+        stroke-width: 4;
+        opacity: 0;
+        animation: pop 0.4s ease-out forwards;
+      }
+      .callout-label {
+        position: absolute;
+        padding: 10px 22px;
+        background: rgb(5 5 6 / 0.88);
+        border: 2px solid var(--ink);
+        color: var(--text);
+        font-size: 44px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+        opacity: 0;
+        animation: label-pop 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      }
+      @keyframes draw {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+      @keyframes pop {
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes label-pop {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="cam" id="cam">
+      <div class="rig" id="rig"><iframe id="game" title="ゲームの画面"></iframe></div>
+    </div>
+    <div class="callouts" id="callouts"></div>
+    <div class="scrim" id="scrim"></div>
+    <div class="caption">
+      <div class="cap" id="capA"></div>
+      <div class="cap" id="capB"></div>
+    </div>
+    <div class="card on" id="card"></div>
+    <script>
+      // 字幕・札・カメラ・解説の線の操作（文字は textContent で入れる）。録画はこのページの外（Chrome の開発用の機能でコマを受け取る）
+      const $ = (id) => document.getElementById(id);
+      const SVG = 'http://www.w3.org/2000/svg';
+      let capFront = 'capA';
+      let drift = 0;
+      /** 1字ずつ浮かぶ行（改行 \n で行を分ける） */
+      function kinetic(el, text, step, delay) {
+        let i = 0;
+        text.split('\n').forEach((line, k) => {
+          if (k > 0) el.append(document.createElement('br'));
+          for (const c of line) {
+            const s = document.createElement('span');
+            s.className = 'ch';
+            s.textContent = c;
+            s.style.animationDelay = `${delay + i * step}s`;
+            el.append(s);
+            i++;
+          }
+        });
+      }
+      function fill(el, parts, step) {
+        el.replaceChildren();
+        let delay = 0;
+        for (const [cls, text] of parts) {
+          const d = document.createElement('div');
+          d.className = cls;
+          if (cls === 'label' || cls.includes('big') || cls === 'logo' || cls === 'url') d.textContent = text;
+          else {
+            kinetic(d, text, step, delay);
+            delay += Math.min(0.5, [...text].length * step * 0.6);
+          }
+          el.append(d);
+        }
+      }
+      function place(x, y, s, dur, ease) {
+        const rig = $('rig');
+        rig.style.transition = dur > 0 ? `transform ${dur}s ${ease}` : 'none';
+        rig.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
+        // すぐ移したときは、ここで確定させる（続けてゆっくり動かすとき、前の位置から動き出さないように）
+        if (dur <= 0) void rig.offsetWidth;
+      }
+      window.pv = {
+        caption(main, sub, label, instant) {
+          const parts = [];
+          if (label) parts.push(['label', label]);
+          if (main) parts.push(['main', main]);
+          if (sub) parts.push(['sub', sub]);
+          $('scrim').classList.toggle('on', parts.length > 0);
+          if (instant) {
+            // たたみかける所：いまの字幕をその場で差し替える（重ならない）
+            const front = $(capFront);
+            front.classList.add('instant');
+            fill(front, parts, 0);
+            front.classList.toggle('on', parts.length > 0);
+            return;
+          }
+          const back = capFront === 'capA' ? 'capB' : 'capA';
+          $(capFront).classList.remove('on');
+          $(back).classList.remove('instant');
+          fill($(back), parts, 0.035);
+          if (parts.length) $(back).classList.add('on');
+          capFront = back;
+        },
+        card(parts) {
+          fill($('card'), parts, 0.05);
+          $('card').classList.add('on');
+        },
+        hideCard() {
+          $('card').classList.remove('on');
+        },
+        setGame(url) {
+          $('game').src = url;
+        },
+        // カメラ：c = {x, y, s}。dur 秒で移り、そのあと hold 秒かけて then へゆっくり移る（押し込み・横に流す）
+        camera(c, dur, then, hold, ease) {
+          clearTimeout(drift);
+          place(c.x, c.y, c.s, dur, ease || 'cubic-bezier(0.45, 0.05, 0.25, 1)');
+          if (then) drift = setTimeout(() => place(then.x, then.y, then.s, hold, 'cubic-bezier(0.3, 0, 0.7, 1)'), dur * 1000);
+        },
+        // 傾き（不安・迫力）と、少しの拡大（傾けても角が欠けない）
+        tilt(deg, dur) {
+          const cam = $('cam');
+          cam.style.transition = `transform ${dur}s cubic-bezier(0.45, 0.05, 0.25, 1)`;
+          cam.style.transform = deg ? `rotate(${deg}deg) scale(${1 + Math.abs(deg) * 0.035})` : 'none';
+        },
+        // 解説の線：items = [{x, y, w, h, lx, ly, text}]（x〜h は指す箱、lx・ly は札の位置。舞台の座標）
+        callouts(items, gap) {
+          const root = $('callouts');
+          root.replaceChildren();
+          const svg = document.createElementNS(SVG, 'svg');
+          svg.setAttribute('width', '1080');
+          svg.setAttribute('height', '1920');
+          svg.style.position = 'absolute';
+          root.append(svg);
+          items.forEach((it, i) => {
+            const d = `${i * gap}s`;
+            const box = document.createElementNS(SVG, 'rect');
+            box.setAttribute('class', 'box');
+            for (const [k, v] of [
+              ['x', it.x],
+              ['y', it.y],
+              ['width', it.w],
+              ['height', it.h],
+              ['rx', 10],
+            ])
+              box.setAttribute(k, String(v));
+            box.style.animationDelay = d;
+            const ax = Math.max(it.x, Math.min(it.x + it.w, it.lx));
+            const ay = it.ly < it.y ? it.y : it.y + it.h;
+            const line = document.createElementNS(SVG, 'line');
+            for (const [k, v] of [
+              ['x1', it.lx],
+              ['y1', it.ly],
+              ['x2', ax],
+              ['y2', ay],
+            ])
+              line.setAttribute(k, String(v));
+            line.style.animationDelay = d;
+            const dot = document.createElementNS(SVG, 'circle');
+            for (const [k, v] of [
+              ['cx', ax],
+              ['cy', ay],
+              ['r', 9],
+            ])
+              dot.setAttribute(k, String(v));
+            dot.style.animationDelay = `${i * gap + 0.5}s`;
+            svg.append(box, line, dot);
+            const label = document.createElement('div');
+            label.className = 'callout-label';
+            label.textContent = it.text;
+            label.style.animationDelay = `${i * gap + 0.25}s`;
+            root.append(label);
+            const w = label.offsetWidth;
+            const h = label.offsetHeight;
+            label.style.left = `${Math.max(20, Math.min(1060 - w, it.lx - w / 2))}px`;
+            label.style.top = `${it.ly < it.y ? it.ly - h : it.ly}px`;
+          });
+        },
+        clearCallouts() {
+          $('callouts').replaceChildren();
+        },
+      };
+    </script>
+  </body>
+</html>

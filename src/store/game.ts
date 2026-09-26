@@ -532,3 +532,10 @@ export function abandonGame(): void {
   refreshView();
   goStages();
 }
+
+/** すべての記録を消して、はじめから（設定は残す） */
+export async function resetRecords(): Promise<void> {
+  await getRuntime().resetRecords();
+  goTitle();
+  showToast('すべての記録を消した');
+}
