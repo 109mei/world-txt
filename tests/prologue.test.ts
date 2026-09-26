@@ -70,6 +70,22 @@ describe('序章の手引き', () => {
     expect(v.after).toBeNull();
   });
 
+  it('手引きから外れて、その年の手本の操作をもう前の年にしていたら、その年の手引きは済んだものとして「1年進める」へ進める', () => {
+    // 1年目に書き足した（余白は1行まで）→ 2年目の「書き足す」はもうできないが、止まらない
+    const g = createGame(gameData, 'prologue', 7, accessFor(gameData, 'prologue', 0));
+    expect(addLine(g, gameData, lessons[1]!.example!).block).toBeFalsy();
+    advance(g, gameData, 1);
+    let v = buildView(g, gameData).tutorial!;
+    expect(v.lesson?.title).toBe('書き足す');
+    expect(v.moved).toBe(true);
+    // 2年目に手本の行を消した → 3年目の「消す」も済んだものとする（消した行は、もう消せない）
+    expect(rewriteLaw(g, gameData, 'food_rot', '').block).toBeFalsy();
+    advance(g, gameData, 1);
+    v = buildView(g, gameData).tutorial!;
+    expect(v.lesson?.title).toBe('消す');
+    expect(v.moved).toBe(true);
+  });
+
   it('手引きのない世界には出さない', () => {
     const g = createGame(gameData, 'food', 7);
     expect(buildView(g, gameData).tutorial).toBeNull();

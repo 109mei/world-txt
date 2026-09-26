@@ -192,7 +192,7 @@
 | twists/stagnant_air/news[0].why | 一致 | WHO「Air pollution」（Health topics） | 2026閲覧 | 年あたりの推計（何年の値かの記載なし） | https://www.who.int/health-topics/air-pollution |
 | twists/double_day/news[0].why | 要確認 | （参考）NOAA Climate.gov「Climate change: incoming sunlight」 | 2026閲覧 | — | https://www.climate.gov/news-features/understanding-climate/climate-change-incoming-sunlight |
 | twists/hyperinflation/news[0].why | 一致 | IMF Finance & Development「What Is Monetarism?」（Jahan & Papageorgiou） | 2014 | — | https://www.imf.org/external/pubs/ft/fandd/2014/03/basics.htm |
-| twists/hyperinflation/news[1].why | 要確認 | — | — | 1923年 |  |
+| twists/hyperinflation/news[1].why | 要確認 | 見つからない | — | 1923年 |  |
 | twists/meat_taboo/news[0].why | 一致 | Poore & Nemecek「Reducing food's environmental impacts through producers and consumers」Science（査読） | 2018 | 2018年公表 | https://ora.ox.ac.uk/objects/uuid:b0b53649-5e93-4415-bf07-6b0b1227172f |
 | twists/culture_loss/news[0].why | 一致 | 国連「International Mother Language Day」（UNESCOの推計）／Cámara-Leret & Bascompte「Language extinction triggers the loss of unique medicinal knowledge」PNAS（査読） | 2021 | 現在 | https://www.un.org/en/observances/mother-language-day |
 | twists/plants_stop_absorbing/news[0].why | 一致 | Friedlingstein et al.「Global Carbon Budget 2024」Earth System Science Data（査読） | 2025 | 2014〜2023年の平均 | https://essd.copernicus.org/articles/17/965/2025/ |

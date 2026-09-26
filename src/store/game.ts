@@ -36,8 +36,8 @@ interface UiState {
   fresh: string[];
   /** 観測記録から戻る先 */
   recordsFrom: Screen;
-  /** 時間が流れている演出の最中（YEAR from → to） */
-  passing: { from: number; to: number } | null;
+  /** 計算の演出：年の数字をどこからどこへ回すかと、演出の長さ（ミリ秒。何も起きない年は短い） */
+  passing: { from: number; to: number; ms: number } | null;
   /** セーブを読み込めなかったときの知らせ */
   loadError: string | null;
   /** 別の画面（タブ）で同じ世界が開かれた */
@@ -52,6 +52,8 @@ interface UiState {
   rankUp: number | null;
   /** 起きかけていることのカードを押して、情景の中で光らせている場所（情景の名前の id） */
   sceneFocus: string | null;
+  /** すべて開いた状態で遊んでいるか（設定の「すべて開いた状態で始める」が ON で、しかもすべてを一度開いている） */
+  everything: boolean;
 }
 
 export const useGame = create<UiState>(() => ({
@@ -75,6 +77,7 @@ export const useGame = create<UiState>(() => ({
   sceneFrom: null,
   rankUp: null,
   sceneFocus: null,
+  everything: false,
 }));
 
 let runtime: GameRuntime | null = null;
@@ -94,9 +97,16 @@ export function refreshView(): void {
   if (!runtime) return;
   const g = runtime.state;
   const p = runtime.progress;
+  const view = g ? buildView(g, runtime.data) : null;
+  // 情景に、何回目の遊びとくり返しの何周目かを入れる（同じ年をもう一度見るときに、現れ方をもう一度見せるため）
+  if (view && g) {
+    view.scene.run = runtime.run;
+    view.scene.lap = g.loop?.count ?? 0;
+  }
   useGame.setState({
-    view: g ? buildView(g, runtime.data) : null,
+    view,
     settings: runtime.settings,
+    everything: runtime.everythingOpen,
     // runtime は進み具合をその場で書き換えるので、画面には新しい写しを渡す（開いたままの画面も変わりを知れる）
     progress: {
       ...p,
@@ -253,6 +263,7 @@ export function continueGame(): void {
     screen: g.status === 'playing' ? 'game' : 'result',
     tab: 'world',
     sheet: null,
+    lawFilter: { concept: null, query: '' },
   });
   refreshView();
 }
@@ -289,7 +300,7 @@ const BLOCK_TEXT: Record<EditBlock, string> = {
   redundant: 'すでに同じ意味の行がある',
   sealed: 'その行はまだロックされている',
   margin: '書き足せる余白が残っていない',
-  heavy: 'その言葉はいまの筆には重すぎて書けない',
+  heavy: 'その言葉はいまの筆には願いが大きすぎて書けない',
   noise: '世界に届かない言葉',
   trimmed: 'この行はすでに1度短く言い換えている（同じ意味のまま短くできるのは1度まで）',
 };
@@ -349,7 +360,7 @@ export function editMessage(res: EditResult, text: string, fresh: boolean, onLaw
   if (res.block) {
     if (res.block === 'capacity') return `使える文字数が ${res.shortage} 足りない。先に何かを消す`;
     if (res.block === 'sealed' && res.sealed) return sealedText(res.sealed.law, res.sealed.rank);
-    if (res.block === 'heavy' && res.heavy) return `「${res.heavy.name}」はいまの筆には重すぎて書けない。${rankHint(res.heavy.rank)}書ける`;
+    if (res.block === 'heavy' && res.heavy) return `「${res.heavy.name}」はいまの筆には願いが大きすぎて書けない。${rankHint(res.heavy.rank)}書ける`;
     if (res.block === 'margin') return marginText();
     if (res.block === 'noise') return `${noiseText(res.noise)}。書き換えの残りは減っていない`;
     if (res.block === 'redundant' && res.sameAs) return `${lineNo(res.sameAs.id)}にすでに同じ意味の行がある`;
@@ -441,9 +452,18 @@ export function skipPassing(): void {
   passDone();
 }
 
+/** 直前に時間を進めた時刻（二度押しで、結果を見ないまま次の年へ進まないように） */
+let lastAdvance = -Infinity;
+/** 二度押しとみなす間（ミリ秒） */
+const DOUBLE_TAP_MS = 400;
+
 /** years 年進める。instant なら演出なしで結果を開く（テスト・デバッグ用） */
 export function advanceYears(years: number, instant = false): void {
   if (useGame.getState().passing) return;
+  // 動きを減らす端末では計算の演出がなく結果がすぐ開くので、すばやい2回目が結果の「次の1年」に当たらないようにする
+  const now = performance.now();
+  if (!instant && now - lastAdvance < DOUBLE_TAP_MS) return;
+  if (!instant) lastAdvance = now;
   const rt = getRuntime();
   const before = useGame.getState().view?.scene ?? null;
   const signsBefore = rt.state ? new Set(signsOf(rt.state, rt.data).map((x) => x.id)) : new Set<string>();
@@ -459,28 +479,34 @@ export function advanceYears(years: number, instant = false): void {
   const newSign = rt.state ? signsOf(rt.state, rt.data).some((x) => !signsBefore.has(x.id)) : false;
   const quiet = years === 1 && report.quiet === true && !newSign;
   const done = () => {
-    show();
     passTimer = null;
     passDone = null;
-    useGame.setState({
-      passing: null,
-      sheet: quiet ? null : { kind: 'report' },
-      fresh: [...rt.fresh],
-    });
+    // 写しを作り直す途中で例外が出ても、計算の演出の覆いは必ず片づける（覆いが残ると、何も押せなくなる）
+    try {
+      show();
+    } finally {
+      useGame.setState({
+        passing: null,
+        sheet: quiet ? null : { kind: 'report' },
+        fresh: [...rt.fresh],
+      });
+    }
   };
-  const span = report.to - report.from;
-  if (instant || span <= 0 || reducedMotion()) {
+  // 年の数字が動かないとき（世界がすでに終わっていた）だけ、演出なしで結果を開く。
+  // くり返す世界で巻き戻った年は YEAR 9 → 0 のように数字が戻るが、1年ぶんの計算の演出は見せる
+  if (instant || report.to === report.from || reducedMotion()) {
     done();
     return;
   }
+  const ms = quiet ? QUIET_PASS : passDuration(Math.max(1, report.to - report.from, report.requested));
   // YEAR が数え上がるのを見せてから、結果を開く
   useGame.setState({
-    passing: { from: report.from, to: report.to },
+    passing: { from: report.from, to: report.to, ms },
     sheet: null,
   });
   if (passTimer) clearTimeout(passTimer);
   passDone = done;
-  passTimer = setTimeout(done, quiet ? QUIET_PASS : passDuration(span));
+  passTimer = setTimeout(done, ms);
 }
 
 export function showResult(): void {
@@ -517,7 +543,7 @@ export function branchWorld(): void {
 export function retryStage(): void {
   const rt = getRuntime();
   const g = rt.state;
-  if (g) startStage(g.stageId, g.daily !== null && g.daily === rt.today(), g.seed);
+  if (g) startStage(g.stageId, g.daily !== null && g.daily === rt.today(), g.seed, false, g.trial !== null);
 }
 
 // ---------------------------------------------------------------- 設定・セーブ

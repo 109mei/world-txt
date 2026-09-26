@@ -570,21 +570,24 @@ function Industry({ v, s }: { v: SceneView; s: number }) {
           <line key={x} x1={x} y1={GROUND - 12.8} x2={x} y2={GROUND - 9.6} stroke={idle > 0.5 || v.industry < 0.2 ? 'var(--sc-window-off)' : 'var(--sc-window-on)'} strokeWidth={0.9} opacity={0.85} />
         ))}
         <path d={`M257 ${GROUND} L257 ${GROUND - 4} L260 ${GROUND - 4} L260 ${GROUND}`} fill="none" stroke={SILVER_DIM} strokeWidth={0.5} />
-        {smoke > 0.05 &&
-          [0, 1, 2, 3].map((k) => (
-            <circle
-              key={k}
-              className="sc-smoke"
-              cx={268 + k * 3}
-              cy={chimneyTop - 5 - k * 7}
-              r={3 + k * 2}
-              fill={steam > 0.3 ? smokeFill : smokeFill}
-              stroke={steam > 0.3 && k === 0 ? strokeOf(v, 'steam', 'none') : 'none'}
-              strokeWidth={0.5}
-              opacity={smoke}
-              style={{ ...dur(5), ...delay(k * 1.2) }}
-            />
-          ))}
+        {/* 煙の濃さは産業の強さ（ずっと続く動きは濃さも動かすので、状態で決まる濃さは外の枠に置いて掛け合わせる） */}
+        {smoke > 0.05 && (
+          <g opacity={smoke}>
+            {[0, 1, 2, 3].map((k) => (
+              <circle
+                key={k}
+                className="sc-smoke"
+                cx={268 + k * 3}
+                cy={chimneyTop - 5 - k * 7}
+                r={3 + k * 2}
+                fill={steam > 0.3 ? smokeFill : smokeFill}
+                stroke={steam > 0.3 && k === 0 ? strokeOf(v, 'steam', 'none') : 'none'}
+                strokeWidth={0.5}
+                style={{ ...dur(5), ...delay(k * 1.2) }}
+              />
+            ))}
+          </g>
+        )}
       </Motif>
       {/* 油井 */}
       <Motif v={v} id={gush > 0 ? 'oilGush' : 'oilDry'}>

@@ -162,7 +162,7 @@
     "asOf": 2026
   },
   "events/acid_rain_note/why": {
-    "name": "Grennfelt et al.「Acid rain and air pollution: 50 years of progress in environmental science and policy」Ambio（査読）／米EPA「Th",
+    "name": "Grennfelt et al.「Acid rain and air pollution: 50 years of progress in environmental science and policy」Ambio（査読）／米EPA「The Legacy of EPA's Acid Rain Research」",
     "check": "確認済み",
     "year": 2020,
     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7028813/",
@@ -238,7 +238,7 @@
     "asOf": 2018
   },
   "events/c_lockin/why": {
-    "name": "Cui et al.「Quantifying operational lifetimes for coal power plants under the Paris goals」Nature Communications（査読）／IEA「T",
+    "name": "Cui et al.「Quantifying operational lifetimes for coal power plants under the Paris goals」Nature Communications（査読）／IEA「The role of CCUS in low-carbon power systems」",
     "check": "確認済み",
     "year": 2019,
     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6800419/"
@@ -722,7 +722,7 @@
     "asOf": 1983
   },
   "events/w_scarcity_1/why": {
-    "name": "Lagi, Bertrand, Bar-Yam（NECSI、arXiv）／Bellemare「Rising Food Prices, Food Price Volatility, and Social Unrest」American Jou",
+    "name": "Lagi, Bertrand, Bar-Yam（NECSI、arXiv）／Bellemare「Rising Food Prices, Food Price Volatility, and Social Unrest」American Journal of Agricultural Economics（査読）",
     "check": "確認済み",
     "year": 2011,
     "url": "https://arxiv.org/abs/1108.2455",
@@ -1195,7 +1195,7 @@
     "asOf": 1945
   },
   "twists/bare_cold/news[0].why": {
-    "name": "Henderson ほか「The cardio-respiratory effects of passive heating and the human thermoneutral zone」Physiological Reports（St",
+    "name": "Henderson ほか「The cardio-respiratory effects of passive heating and the human thermoneutral zone」Physiological Reports（Stolwijk & Hardy 1966 を引用）",
     "check": "確認済み",
     "year": 2021,
     "url": "https://doi.org/10.14814/phy2.14973",
@@ -1237,7 +1237,7 @@
     "asOf": 2026
   },
   "twists/culture_loss/news[0].why": {
-    "name": "国連「International Mother Language Day」（UNESCOの推計）／Cámara-Leret & Bascompte「Language extinction triggers the loss of uniqu",
+    "name": "国連「International Mother Language Day」（UNESCOの推計）／Cámara-Leret & Bascompte「Language extinction triggers the loss of unique medicinal knowledge」PNAS（査読）",
     "check": "確認済み",
     "year": 2021,
     "url": "https://www.un.org/en/observances/mother-language-day"
@@ -1364,7 +1364,7 @@
   },
   "twists/pop_trap/news[0].why": {
     "name": "マルサス『An Essay on the Principle of Population』初版（Project Gutenberg）",
-    "check": "確認済み",
+    "check": "確認済み", "year": 1798,
     "url": "https://www.gutenberg.org/ebooks/4239",
     "asOf": 1798
   },
@@ -1420,7 +1420,7 @@
     "url": "https://doi.org/10.1086/226707"
   },
   "unlocks/caution/card": {
-    "name": "Funk・Salathé・Jansen「Modelling the influence of human behaviour on the spread of infectious diseases: a review」J. R. Soc.",
+    "name": "Funk・Salathé・Jansen「Modelling the influence of human behaviour on the spread of infectious diseases: a review」J. R. Soc. Interface 7(50):1247-1256",
     "check": "確認済み",
     "year": 2010,
     "url": "https://doi.org/10.1098/rsif.2010.0142"
@@ -1445,7 +1445,7 @@
     "url": "https://doi.org/10.1086/468061"
   },
   "unlocks/delay/card": {
-    "name": "Sterman「Modeling Managerial Behavior: Misperceptions of Feedback in a Dynamic Decision Making Experiment」Management Scie",
+    "name": "Sterman「Modeling Managerial Behavior: Misperceptions of Feedback in a Dynamic Decision Making Experiment」Management Science 35(3):321-339",
     "check": "確認済み",
     "year": 1989,
     "url": "https://doi.org/10.1287/mnsc.35.3.321"
@@ -1475,7 +1475,7 @@
     "url": "https://doi.org/10.1257/aer.90.4.980"
   },
   "unlocks/habituation/card": {
-    "name": "Frederick & Loewenstein「Hedonic Adaptation」（Kahneman・Diener・Schwarz 編『Well-Being: The Foundations of Hedonic Psychology』",
+    "name": "Frederick & Loewenstein「Hedonic Adaptation」（Kahneman・Diener・Schwarz 編『Well-Being: The Foundations of Hedonic Psychology』Russell Sage Foundation, pp.302-329）",
     "check": "確認済み",
     "year": 1999,
     "url": "https://stafforini.com/works/frederick-1999-hedonic-adaptation/"
@@ -1488,7 +1488,7 @@
     "asOf": 1973
   },
   "unlocks/jcurve/card": {
-    "name": "Lagi・Bertrand・Bar-Yam「The Food Crises and Political Instability in North Africa and the Middle East」（arXiv:1108.2455、NEC",
+    "name": "Lagi・Bertrand・Bar-Yam「The Food Crises and Political Instability in North Africa and the Middle East」（arXiv:1108.2455、NECSI）",
     "check": "確認済み",
     "year": 2011,
     "url": "https://arxiv.org/abs/1108.2455"
@@ -1544,7 +1544,7 @@
     "url": "https://doi.org/10.1038/nature08227"
   },
   "unlocks/spread/card": {
-    "name": "Centola・Becker・Brackbill・Baronchelli「Experimental evidence for tipping points in social convention」Science 360(6393):111",
+    "name": "Centola・Becker・Brackbill・Baronchelli「Experimental evidence for tipping points in social convention」Science 360(6393):1116-1119",
     "check": "確認済み",
     "year": 2018,
     "url": "https://doi.org/10.1126/science.aas8827",

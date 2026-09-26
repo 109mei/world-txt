@@ -139,7 +139,7 @@ function RulesList() {
           return (
             <li key={r.id} className="rec locked rule-card" data-testid={`rule-${r.id}`}>
               <span className="rec-icon">
-                <Lock size={14} strokeWidth={1.5} />
+                <Lock size={14} strokeWidth={1.5} aria-label="まだ出会っていない決まり" />
               </span>
               <div className="rec-body">
                 <div className="rec-title">？？？</div>
@@ -250,7 +250,7 @@ export function Records() {
     <div className="page records" data-testid="records">
       <header className="page-head">
         <button className="icon-btn" onClick={closeRecords} aria-label="戻る" data-testid="records-back">
-          <ChevronLeft size={22} strokeWidth={1.6} />
+          <ChevronLeft size={22} strokeWidth={1.5} />
         </button>
         <h2>
           <Icon name="record" size={19} /> ノート

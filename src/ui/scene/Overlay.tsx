@@ -67,24 +67,26 @@ export function Overlay({ v }: { v: SceneView }) {
           <rect width={W} height={H} fill="var(--sc-shade)" opacity={0.3 * voidK} />
           <rect width={W} height={H} fill="url(#sc-void)" opacity={0.5 + 0.5 * voidK} />
           {/* 世界のかけらが、ほどけて宙へ散っていく */}
+          {/* かけらと星の濃さは、ほどけ具合（ずっと続く動きは濃さも動かすので、状態で決まる濃さは外の枠に置いて掛け合わせる） */}
           {Array.from({ length: 16 }, (_, i) => (
-            <g key={`f${i}`} transform={`translate(${rnd(v.seed, 3500 + i) * W} ${GROUND + rnd(v.seed, 3600 + i) * 30})`}>
-              <rect className="sc-bubble" x={-1.2} y={-1.2} width={2.4} height={2.4} fill={i % 3 === 0 ? INK : PAPER} opacity={0.7 * voidK} style={{ ...dur(5 + (i % 4)), ...delay(i * 0.7) }} />
+            <g key={`f${i}`} transform={`translate(${rnd(v.seed, 3500 + i) * W} ${GROUND + rnd(v.seed, 3600 + i) * 30})`} opacity={0.7 * voidK}>
+              <rect className="sc-bubble" x={-1.2} y={-1.2} width={2.4} height={2.4} fill={i % 3 === 0 ? INK : PAPER} style={{ ...dur(5 + (i % 4)), ...delay(i * 0.7) }} />
             </g>
           ))}
           {/* ほどけた大地の向こうに、星が透けて見える */}
-          {Array.from({ length: 14 }, (_, i) => (
-            <circle
-              key={i}
-              className="sc-twinkle"
-              cx={rnd(v.seed, 3300 + i) * W}
-              cy={GROUND + rnd(v.seed, 3400 + i) * (H - GROUND)}
-              r={0.6}
-              fill={PAPER}
-              opacity={0.8 * voidK}
-              style={{ ...dur(2 + (i % 3)), ...delay(i * 0.4) }}
-            />
-          ))}
+          <g opacity={0.8 * voidK}>
+            {Array.from({ length: 14 }, (_, i) => (
+              <circle
+                key={i}
+                className="sc-twinkle"
+                cx={rnd(v.seed, 3300 + i) * W}
+                cy={GROUND + rnd(v.seed, 3400 + i) * (H - GROUND)}
+                r={0.6}
+                fill={PAPER}
+                style={{ ...dur(2 + (i % 3)), ...delay(i * 0.4) }}
+              />
+            ))}
+          </g>
         </Motif>
       )}
       {m(v, 'frozen') > 0.3 && (

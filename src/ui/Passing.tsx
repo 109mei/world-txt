@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useGame, passDuration, skipPassing } from '../store/game';
+import { useGame, skipPassing } from '../store/game';
 import { seCompute } from './se';
 
 /** 計算を終えたあと、覆いがうすれて消えるまで（ミリ秒。styles.css の .passing-leave と同じ長さ） */
@@ -32,7 +32,7 @@ export function Passing() {
   const current = useGame((s) => s.passing);
   const motion = useGame((s) => s.settings.motion);
   // 計算を終えたら、覆いをぷつりと消さずに、うすれさせて世界（か結果の画面）へつなぐ
-  const [leaving, setLeaving] = useState<{ from: number; to: number } | null>(null);
+  const [leaving, setLeaving] = useState<{ from: number; to: number; ms: number } | null>(null);
   const [last, setLast] = useState(current);
   if (current && current !== last) setLast(current);
   if (!current && last) {
@@ -49,7 +49,8 @@ export function Passing() {
   }, [leaving]);
   const passing = current ?? leaving;
   if (!passing) return null;
-  const total = passDuration(passing.to - passing.from);
+  // 長さは時間を進めた側が決めたもの（何も起きない年は短い。ここで決め直すと、数字が回りきる前に覆いが消える）
+  const total = passing.ms;
   return (
     <div
       className={['passing', motion ? '' : 'passing-still', current ? '' : 'passing-leave'].filter(Boolean).join(' ')}

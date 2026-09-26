@@ -598,8 +598,8 @@ export type Unlocks = z.infer<typeof UnlocksSchema>;
  * check：確認済み（出典と合う）か、要確認（出典が見つからない・確かめきれない）
  */
 export const SourceSchema = z.object({
-  name: z.string().max(120),
-  year: z.number().int().min(1800).max(2100).optional(),
+  name: z.string().max(200),
+  year: z.number().int().min(1600).max(2100).optional(),
   url: z.string().max(400).optional(),
   /** 数字がいつの値か */
   asOf: z.number().int().min(1000).max(2100).optional(),

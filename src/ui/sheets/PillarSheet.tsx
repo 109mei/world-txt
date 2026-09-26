@@ -38,7 +38,7 @@ export function PillarSheet({ id }: { id: string }) {
   const view = useGame((s) => s.view);
   const progress = useGame((s) => s.progress);
   // まだ紹介していない考え（信頼など）は、画面に出さない（すべて開いた状態で遊んでいれば、すべて出す）
-  const allOpen = useGame((s) => s.settings.allOpen);
+  const allOpen = useGame((s) => s.everything);
   const known = useMemo(() => {
     const j = journeyOf(progress);
     return new Set(gameData.unlocks.rules.filter((r) => allOpen || ruleKnown(gameData, j, r)).map((r) => r.id));

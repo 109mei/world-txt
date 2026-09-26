@@ -34,6 +34,8 @@ export function App() {
   useEffect(() => watchTheme(() => useGame.getState().settings.theme), []);
   // 閉じた知らせ（同じ知らせは、この画面ではもう出さない。別の知らせが来たら出す）
   const [hiddenWarning, setHiddenWarning] = useState<string | null>(null);
+  // 保存が直って知らせが消えたら、閉じた記憶も消す（そのあとまた保存できなくなったら、もう一度知らせる）
+  if (saveWarning === null && hiddenWarning !== null) setHiddenWarning(null);
   // 画面を移ったら、新しい画面を先頭から見せる（前の画面のスクロール位置を持ち越さない）
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -72,7 +74,7 @@ export function App() {
         <div className="save-warning" role="alert" data-testid="save-warning">
           <span>{saveWarning}</span>
           <button className="icon-btn" onClick={() => setHiddenWarning(saveWarning)} aria-label="知らせを閉じる">
-            <X size={18} strokeWidth={1.6} />
+            <X size={18} strokeWidth={1.5} />
           </button>
         </div>
       )}

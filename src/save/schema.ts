@@ -177,26 +177,30 @@ export const GameStateSchema = z.looseObject({
   trial: z.object({ kind: z.enum(['double', 'late', 'few']), cause2: id.nullable(), late: z.number().int().min(0).max(100) }).nullable().optional(),
 });
 
+/**
+ * 設定。どの項目も、ない値・読めない値（範囲の外・知らない選び方・null など）は既定の値にする
+ * （設定の1項目が壊れているだけで、記録ごとセーブを読めなくしない。値は DEFAULT_SETTINGS と同じ）
+ */
 export const SettingsSchema = z.object({
-  bgm: z.boolean(),
-  volume: z.number().min(0).max(1),
-  analysis: z.boolean(),
+  bgm: z.boolean().catch(true),
+  volume: z.number().min(0).max(1).catch(0.6),
+  analysis: z.boolean().catch(false),
   /** 効果音（古いセーブにはないので、既定で ON） */
-  se: z.boolean().default(true),
+  se: z.boolean().catch(true),
   /** 世界の情景を動かす（古いセーブにはないので、既定で ON） */
-  motion: z.boolean().default(true),
+  motion: z.boolean().catch(true),
   /** 画面の明るさ：自動（端末の設定に合わせる）・明るい・暗い（版6から） */
-  theme: z.enum(['auto', 'light', 'dark']).default('auto'),
+  theme: z.enum(['auto', 'light', 'dark']).catch('auto'),
   /** 計算の演出の長さ：自動（初めの数回は約1.2秒、慣れたら約0.6秒）・ゆっくり・はやい（版6から） */
-  speed: z.enum(['auto', 'slow', 'fast']).default('auto'),
+  speed: z.enum(['auto', 'slow', 'fast']).catch('auto'),
   /** すべて開いた状態で始める（すべてを一度開いたあとだけ選べる。版6から） */
-  allOpen: z.boolean().default(false),
+  allOpen: z.boolean().catch(false),
   /** 情景に施設の名前を出す（はじめは出す。版6から） */
-  names: z.boolean().default(true),
+  names: z.boolean().catch(true),
   /** 文字の大きさ：小・中・大（画面をまとめて縮めたり広げたりする。古いセーブにはないので、既定で中） */
-  textSize: z.enum(['small', 'medium', 'large']).default('medium'),
+  textSize: z.enum(['small', 'medium', 'large']).catch('medium'),
   /** 効果音の音量（音楽の音量とは別。古いセーブにはないので、既定の音量） */
-  seVolume: z.number().min(0).max(1).default(0.6),
+  seVolume: z.number().min(0).max(1).catch(0.6),
 });
 
 export const ProgressSchema = z.object({
@@ -260,7 +264,8 @@ export const ProgressSchema = z.object({
 export const SaveDataSchema = z.object({
   saveVersion: z.number().int().positive(),
   savedAt: num,
-  settings: SettingsSchema,
+  // 設定そのものが読めない（null・配列など）ときも、既定の設定で読む
+  settings: SettingsSchema.catch(() => SettingsSchema.parse({})),
   progress: ProgressSchema,
   current: GameStateSchema.nullable(),
 });

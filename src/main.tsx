@@ -5,6 +5,7 @@ import { LocalStorageSaveStore, MemorySaveStore, SAVE_KEY, type SaveStore } from
 import { advanceYears, getRuntime, goStages, markElsewhere, refreshView, setRuntime, startStage, useGame, writeWorld } from './store/game';
 import { GameRuntime } from './store/runtime';
 import { App } from './ui/App';
+import { ErrorBoundary } from './ui/ErrorBoundary';
 import { onVisibility } from './ui/audio';
 import { syncSe } from './ui/se';
 import { WORLD_NUMBERS } from './store/runtime';
@@ -25,12 +26,25 @@ function randomSeed(): number {
 const fixedSeed = seedParam !== null && Number.isFinite(Number(seedParam)) ? Math.floor(Number(seedParam)) : null;
 
 function saveStore(): SaveStore {
+  let storage: Storage;
+  try {
+    storage = window.localStorage;
+  } catch {
+    return new MemorySaveStore();
+  }
   try {
     const probe = 'world-txt/probe';
-    window.localStorage.setItem(probe, '1');
-    window.localStorage.removeItem(probe);
-    return new LocalStorageSaveStore(window.localStorage);
+    storage.setItem(probe, '1');
+    storage.removeItem(probe);
+    return new LocalStorageSaveStore(storage);
   } catch {
+    // 書けない。保存領域がいっぱいなだけなら、残っているセーブは読めるようにする（保存するときに「空きがない」と知らせる）。
+    // セーブがなければ、保存できない画面（プライベートブラウズなど）として扱う
+    try {
+      if (storage.getItem(SAVE_KEY) !== null) return new LocalStorageSaveStore(storage);
+    } catch {
+      // 読めない
+    }
     return new MemorySaveStore();
   }
 }
@@ -66,7 +80,13 @@ async function start(): Promise<void> {
   syncSe(runtime.settings.se, runtime.settings.seVolume);
   useGame.subscribe((s) => syncSe(s.settings.se, s.settings.seVolume));
 
-  document.addEventListener('visibilitychange', () => onVisibility(document.visibilityState === 'hidden'));
+  document.addEventListener('visibilitychange', () => {
+    const hidden = document.visibilityState === 'hidden';
+    onVisibility(hidden);
+    // 待っている設定の保存は、画面が隠れる前に済ませる（すぐに閉じても、変えた設定が残るように）
+    if (hidden) runtime.flushSettings();
+  });
+  window.addEventListener('pagehide', () => runtime.flushSettings());
   // 長押し・右クリックのメニューと、文字の選択を出さない（入力欄は除く）
   guardLongPress(document);
   askPersistentStorage();
@@ -81,7 +101,11 @@ async function start(): Promise<void> {
     createRoot(document.getElementById('root')!).render(<SceneGallery />);
     return;
   }
-  createRoot(document.getElementById('root')!).render(<App />);
+  createRoot(document.getElementById('root')!).render(
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>,
+  );
 
   if (debug) {
     // テストとスクリーンショット用の窓口（?debug=1 のときだけ）

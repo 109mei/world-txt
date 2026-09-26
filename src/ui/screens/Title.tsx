@@ -70,7 +70,7 @@ export function Title() {
             {worlds > 0 ? '世界を選ぶ' : 'はじめる'}
           </button>
           <button className={worlds > 0 ? 'records-link' : 'btn tut-open'} onClick={() => setTour(true)} data-testid="open-tutorial">
-            <BookOpen size={15} strokeWidth={1.6} /> あそびかた
+            <BookOpen size={15} strokeWidth={1.5} /> あそびかた
           </button>
           {found > 0 && (
             <button className="records-link" onClick={start(() => openRecords('title'))} data-testid="title-records">
@@ -90,11 +90,11 @@ export function Title() {
               updateSettings({ bgm });
               syncBgm(bgm, settings.volume);
             }}
-            aria-label={settings.bgm ? 'BGMを止める' : 'BGMを流す'}
+            aria-label={settings.bgm ? '音楽を止める' : '音楽を流す'}
             data-testid="bgm-toggle"
           >
-            {settings.bgm ? <Volume2 size={16} strokeWidth={1.6} /> : <VolumeX size={16} strokeWidth={1.6} />}
-            <span>BGM {settings.bgm ? 'ON' : 'OFF'}</span>
+            {settings.bgm ? <Volume2 size={16} strokeWidth={1.5} /> : <VolumeX size={16} strokeWidth={1.5} />}
+            <span>音楽 {settings.bgm ? 'ON' : 'OFF'}</span>
           </button>
         </div>
         <p className="title-foot">{TERMS.subtitle}</p>

@@ -259,7 +259,11 @@ export interface TutorialView {
     move: 'rewrite' | 'add' | 'delete';
     steps: { text: string; done: string; target: string | null }[];
   } | null;
-  /** その年の操作をもうしたか（書き換えの残りがなければ、その年はもうできないので済んだものとする） */
+  /**
+   * その年の操作をもうしたか。書き換えの残りがなければ、その年はもうできないので済んだものとする。
+   * 同じ操作を序章の前の年にもうしていれば、それも済んだものとする（先に書き足して余白がない・手本の行をもう消した、など
+   * 手引きから外れて、その年の手本の操作ができなくなっていても、「1年進める」へ進める）
+   */
   moved: boolean;
   /** 去年の手引きの結び（去年その操作をしていれば） */
   after: string | null;
@@ -284,7 +288,7 @@ function tutorialOf(g: GameState, stage: Stage): TutorialView | null {
         })),
       }
     : null;
-  const moved = !!now && (g.moves.some((m) => m.year === g.year && m.kind === now.move) || g.edits.left === 0);
+  const moved = !!now && (g.moves.some((m) => m.kind === now.move) || g.edits.left === 0);
   if (!lesson && !after) return null;
   return { total: list.length, lesson, moved, after };
 }

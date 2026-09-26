@@ -28,9 +28,12 @@ export function Mountains({ v }: { v: SceneView }) {
         <Motif v={v} id="volcano">
           <path d="M44 114 L48 112 L52 114" stroke={BAD} strokeWidth={1.4} fill="none" />
           <path d="M48 113 q -3 8 -8 18 M48 113 q 2 9 6 16" stroke={BAD} strokeWidth={0.9} fill="none" opacity={0.8} />
-          {[0, 1, 2, 3].map((k) => (
-            <circle key={k} className="sc-plume" cx={48 + k * 4} cy={104 - k * 9} r={5 + k * 3} fill="var(--sc-ash)" opacity={0.5 * erupt} style={{ ...dur(4), ...delay(k * 0.8) }} />
-          ))}
+          {/* 噴煙の濃さは噴火の強さ（ずっと続く動きは濃さも動かすので、状態で決まる濃さは外の枠に置いて掛け合わせる） */}
+          <g opacity={0.5 * erupt}>
+            {[0, 1, 2, 3].map((k) => (
+              <circle key={k} className="sc-plume" cx={48 + k * 4} cy={104 - k * 9} r={5 + k * 3} fill="var(--sc-ash)" style={{ ...dur(4), ...delay(k * 0.8) }} />
+            ))}
+          </g>
         </Motif>
       )}
     </g>
@@ -358,9 +361,12 @@ export function River({ v }: { v: SceneView }) {
           {low > 0.05 && <path d={`${bank} L${SHORE + 10} ${H} L112 ${H} Z`} fill="var(--sc-dry)" stroke={SILVER_FAINT} strokeWidth={0.5} opacity={0.9 * low} />}
           <path d={`${surface} L${SHORE + 10} ${H} L112 ${H} Z`} fill="url(#sc-water)" opacity={(0.4 + 0.6 * v.water) * (1 - dry)} />
           <path d={surface} fill="none" stroke={PAPER} strokeWidth={0.4} opacity={0.35 * (1 - dry)} />
-          {[140, 190, 240].map((x, k) => (
-            <line key={x} className="sc-flow" x1={x} y1={H - 4} x2={x + 12} y2={H - 4} stroke={PAPER} strokeWidth={0.7} opacity={0.4 * v.water} style={{ ...dur(4), ...delay(k) }} />
-          ))}
+          {/* 流れの濃さは水の量（ずっと続く動きは濃さも動かすので、状態で決まる濃さは外の枠に置いて掛け合わせる） */}
+          <g opacity={0.4 * v.water}>
+            {[140, 190, 240].map((x, k) => (
+              <line key={x} className="sc-flow" x1={x} y1={H - 4} x2={x + 12} y2={H - 4} stroke={PAPER} strokeWidth={0.7} style={{ ...dur(4), ...delay(k) }} />
+            ))}
+          </g>
         </g>
       ) : (
         <Motif v={v} id="drought">

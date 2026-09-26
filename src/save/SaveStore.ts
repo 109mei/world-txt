@@ -48,6 +48,11 @@ export class LocalStorageSaveStore implements SaveStore {
     return `${this.key}.broken`;
   }
 
+  /** 2回目からの壊れたセーブ（いちばん新しいもの。はじめに壊れたものは brokenKey に残したまま） */
+  private get brokenLatestKey(): string {
+    return `${this.key}.broken2`;
+  }
+
   async load(): Promise<SaveData | null> {
     const text = this.storage.getItem(this.key);
     if (text === null) return this.fromBackup();
@@ -86,10 +91,15 @@ export class LocalStorageSaveStore implements SaveStore {
     }
   }
 
-  /** 読めなかったセーブを別の鍵に残す（すでに残してあれば、そのまま） */
+  /**
+   * 読めなかったセーブを別の鍵に残す。はじめに壊れたもの（それまでの長い記録）は残したまま、
+   * 2回目からは、いちばん新しく壊れたものをもう1つの鍵に残す（「残してある」と知らせて、残っていないことがないように）
+   */
   private keepBroken(text: string): void {
     try {
-      if (this.storage.getItem(this.brokenKey) === null) this.storage.setItem(this.brokenKey, text);
+      const first = this.storage.getItem(this.brokenKey);
+      if (first === null) this.storage.setItem(this.brokenKey, text);
+      else if (first !== text) this.storage.setItem(this.brokenLatestKey, text);
     } catch {
       // 残せなくても遊びは続ける
     }
@@ -118,7 +128,7 @@ export class LocalStorageSaveStore implements SaveStore {
     } catch {
       // 下で空けてから、もう一度
     }
-    for (const k of [this.backupKey, this.brokenKey]) {
+    for (const k of [this.backupKey, this.brokenLatestKey, this.brokenKey]) {
       this.remove(k);
       try {
         this.storage.setItem(this.key, text);
@@ -138,9 +148,9 @@ export class LocalStorageSaveStore implements SaveStore {
     }
   }
 
+  /** すべて消す（最新・ひとつ前の控え・壊れたときの控え） */
   async clear(): Promise<void> {
-    this.storage.removeItem(this.key);
-    this.remove(this.backupKey);
+    for (const k of [this.key, this.backupKey, this.brokenKey, this.brokenLatestKey]) this.remove(k);
     this.lastGood = null;
   }
 }

@@ -65,7 +65,7 @@
   { "id": "no_delete", "kind": "skill", "name": "消さずに救う", "text": "行を1つも消さずに世界を救った", "icon": "edit", "end": "clear", "world": ["stage:food|plague|climate|war|energy|tiny|loop", "deletes == 0"] },
   { "id": "no_rule", "kind": "skill", "name": "決まりに頼らずに", "text": "制度として読まれる文を使わずに世界を救った", "icon": "society", "end": "clear", "world": ["stage:food|plague|climate|war|energy|tiny|loop", "!found:m:rule"] },
   { "id": "no_hoard", "kind": "skill", "name": "棚の空かない世界", "text": "買いだめを起こさずに食料危機の世界を救った", "icon": "food", "end": "clear", "world": ["stage:food", "!found:h:hoard", "!found:e:f_hoard"] },
-  { "id": "refill", "kind": "skill", "name": "空白に書く", "text": "世界が空白を埋めに来る前に、その行へ新しい文を書いた", "icon": "edit", "world": ["found:h:refill"] },
+  { "id": "refill", "kind": "skill", "name": "消した行に書く", "text": "世界が消した行を埋めに来る前に、その行へ新しい文を書いた", "icon": "edit", "world": ["found:h:refill"] },
   { "id": "numbered", "kind": "play", "name": "番号の世界", "text": "世界番号を入れて同じ世界を開いた", "icon": "earth", "progress": ["numbered >= 1"] },
   { "id": "trial", "kind": "play", "name": "改稿者の試練", "text": "改稿者の試練を1つ救った", "icon": "trophy", "progress": ["trials >= 1"] }
 ]

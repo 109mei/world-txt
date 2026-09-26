@@ -11,10 +11,11 @@ export const TERMS = {
   tagline: ['未来は決まっている', '法則を書き換えなければ'],
   /** タブ */
   tabs: { world: '世界', laws: '法則', notes: 'ノート' },
-  /** 操作 */
+  /** 操作（書く画面のボタン） */
   add: '行を書き足す',
-  rewrite: '書き換える',
-  remove: 'この行を消す',
+  rewrite: '世界を書き換える',
+  clear: '文章を消す',
+  remove: 'この行を世界から消す',
   /** 数の名前 */
   edits: '書き換えの残り',
   capacity: '使える文字数',

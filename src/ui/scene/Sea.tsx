@@ -18,20 +18,22 @@ export function Sea({ v }: { v: SceneView }) {
   const seaKind = fresh > 0.3 ? 'fresh' : 'salt';
   if (gone > 0.5) {
     return (
-      <Motif v={v} id="noSea">
-        <path d={`M${SHORE - 4} ${GROUND} L${W} ${HORIZON + 2} L${W} ${H} L${SHORE + 6} ${H} Z`} fill="var(--sc-dry)" stroke={strokeOf(v, 'noSea', SILVER_DIM)} strokeWidth={0.8} />
-        <path d={`M300 200 l10 -5 l-4 5 l12 1 M330 186 l-6 5 l10 2 M356 204 l8 -5 M320 172 l12 2`} fill="none" stroke={SILVER_DIM} strokeWidth={0.7} />
-        <g transform="translate(338 196) rotate(-12)">
-          <path d="M-12 0 L12 0 L8 5 L-8 5 Z M0 0 L0 -12 M0 -12 L7 -4" fill={DARK} stroke={strokeOf(v, 'noSea')} strokeWidth={0.8} />
-        </g>
-        {/* 海が干上がった年は、水が引いていき、海の底が現れる */}
+      <g>
+        <Motif v={v} id="noSea">
+          <path d={`M${SHORE - 4} ${GROUND} L${W} ${HORIZON + 2} L${W} ${H} L${SHORE + 6} ${H} Z`} fill="var(--sc-dry)" stroke={strokeOf(v, 'noSea', SILVER_DIM)} strokeWidth={0.8} />
+          <path d={`M300 200 l10 -5 l-4 5 l12 1 M330 186 l-6 5 l10 2 M356 204 l8 -5 M320 172 l12 2`} fill="none" stroke={SILVER_DIM} strokeWidth={0.7} />
+          <g transform="translate(338 196) rotate(-12)">
+            <path d="M-12 0 L12 0 L8 5 L-8 5 Z M0 0 L0 -12 M0 -12 L7 -4" fill={DARK} stroke={strokeOf(v, 'noSea')} strokeWidth={0.8} />
+          </g>
+        </Motif>
+        {/* 海が干上がった年は、水が引いていき、海の底が現れる（去年の海は、海の底の現れ方の濃さを受けないよう、外に置く） */}
         <Ghost v={v} when="noSea" kind="drain">
           <path d={`M${SHORE - 6} ${GROUND} L${W} ${HORIZON + 4} L${W} ${H} L${SHORE + 8} ${H} Z`} fill="var(--sc-sea)" stroke={SILVER_DIM} strokeWidth={0.8} />
           {[0, 1, 2].map((k) => (
             <path key={k} d={`M${SHORE + 14 + k * 6} ${HORIZON + 16 + k * 14} q 6 -2.4 12 0 t 12 0 t 12 0 t 12 0 t 12 0`} fill="none" stroke={PAPER} strokeWidth={0.6} opacity={0.28} />
           ))}
         </Ghost>
-      </Motif>
+      </g>
     );
   }
   return (

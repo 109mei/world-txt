@@ -394,11 +394,11 @@ export function Result() {
           </button>
         )}
         <button className="btn btn-primary wide" onClick={share} data-testid="share">
-          <Share2 size={16} strokeWidth={1.6} /> 世界を共有する
+          <Share2 size={16} strokeWidth={1.5} /> 世界を共有する
         </button>
         <div className="row2">
           <button className="btn" onClick={saveImage} data-testid="save-image">
-            <ImageDown size={16} strokeWidth={1.6} /> 画像を保存
+            <ImageDown size={16} strokeWidth={1.5} /> 画像を保存
           </button>
           <button
             className="btn"
@@ -409,12 +409,12 @@ export function Result() {
               );
             }}
           >
-            <Copy size={16} strokeWidth={1.6} /> 文章をコピー
+            <Copy size={16} strokeWidth={1.5} /> 文章をコピー
           </button>
         </div>
         <div className="row2">
           <button className="btn" onClick={readHistory} data-testid="read-history">
-            <History size={16} strokeWidth={1.6} /> 世界史
+            <History size={16} strokeWidth={1.5} /> 世界史
           </button>
           <button className="btn" onClick={() => openRecords('result')} data-testid="result-records">
             <Icon name="record" size={15} /> ノート
@@ -422,7 +422,7 @@ export function Result() {
         </div>
         <div className="row2">
           <button className="btn" onClick={retryStage} data-testid="retry">
-            <RotateCcw size={16} strokeWidth={1.6} /> 同じ世界でもう一度
+            <RotateCcw size={16} strokeWidth={1.5} /> 同じ世界でもう一度
           </button>
           <button className="btn" onClick={goStages} data-testid="to-stages">
             世界を選ぶ

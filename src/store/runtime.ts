@@ -3,6 +3,7 @@ import {
   advance,
   allOpen,
   canReplay,
+  causeFor,
   createGame,
   replayKifu,
   introFor,
@@ -36,6 +37,8 @@ const ENDLESS_RUNS = 30;
 
 /** 世界番号の数（#0001〜#9999） */
 export const WORLD_NUMBERS = 9999;
+/** 設定を変えてから保存するまでの待ち（ミリ秒） */
+const SETTINGS_SAVE_MS = 300;
 
 /** 日付から今日の世界の世界番号を作る（同じ日付なら同じ番号） */
 export function dailySeed(date: string): number {
@@ -80,6 +83,11 @@ export class GameRuntime {
   rankUp: number | null = null;
   /** 直前に終わった世界で付いた印（結果の画面で知らせる） */
   lastMarks: Mark[] = [];
+  /**
+   * 何回目の遊びか（世界を始める・分かれ道からやり直す・読み込む・記録を消すたびに増える。保存しない）。
+   * 情景は同じ世界番号と年を「見せ終えた」と覚えるので、別の遊びでは現れ方をもう一度見せるために使う
+   */
+  run = 0;
   /** 別の画面で同じセーブが書き換えられたので、もう保存しない */
   private frozen = false;
   /** 保存についての知らせ（保存できなかった・保存できない画面） */
@@ -114,13 +122,11 @@ export class GameRuntime {
   }
 
   private apply(save: SaveData): void {
-    this.settings = save.settings;
-    this.progress = save.progress;
-    this.state = save.current;
-    // 計算した量は内容の版が変わっても合うよう、読み込み直後に測り直す
-    if (this.state) {
-      const g = upgradeState(this.state, this.data);
+    // 遊んでいた世界を今の規則に合わせてから入れ替える（合わせる途中で失敗したら、今の記録には手を付けない）
+    const g = save.current ? upgradeState(save.current, this.data) : null;
+    if (g) {
       this.forgetUnknown(g);
+      // 計算した量は内容の版が変わっても合うよう、読み込み直後に測り直す
       if (!g.derived?.factors) {
         refresh(g, this.data);
       } else {
@@ -128,8 +134,11 @@ export class GameRuntime {
         const t = lawTotals(this.data, g);
         g.derived = { ...g.derived, capacityUsed: t.cost, capacityRatio: t.cost / Math.max(1, g.sim.capacityMax), incoherence: t.incoherence };
       }
-      this.absorb(g);
     }
+    this.settings = save.settings;
+    this.progress = save.progress;
+    this.state = g;
+    if (g) this.absorb(g);
     this.fresh = [];
   }
 
@@ -226,7 +235,11 @@ export class GameRuntime {
     const first = firstWorld && seed === null && !date ? (this.data.stageById.get(stageId)?.firstCause ?? undefined) : undefined;
     // 世界の決まりの強さ：わかった決まりは本来の強さ、まだの決まりは弱く動かす（開いていく順番）
     const intro = this.everythingOpen ? {} : introFor(this.data, this.journey);
-    this.state = createGame(this.data, stageId, seed ?? (date ? dailySeed(date) : this.opts.newSeed()), accessFor(this.data, stageId, this.progress.cleared.length), {
+    let worldSeed = seed ?? (date ? dailySeed(date) : this.opts.newSeed());
+    // はじめての世界は、世界番号から決まる原因の型が決まった型になる番号を選ぶ（型を番号と別に決めると、
+    // 同じ世界でもう一度・番号で開くで別の世界になってしまう。番号だけで同じ世界になるようにする）
+    for (let k = 0; first && k < WORLD_NUMBERS && causeFor(this.data, stageId, worldSeed) !== first; k++) worldSeed = (worldSeed % WORLD_NUMBERS) + 1;
+    this.state = createGame(this.data, stageId, worldSeed, accessFor(this.data, stageId, this.progress.cleared.length), {
       ...(first ? { cause: first } : {}),
       intro,
       trial: !!opts.trial && !!this.data.stageById.get(stageId)?.trial,
@@ -234,6 +247,7 @@ export class GameRuntime {
     this.rankUp = null;
     this.lastMarks = [];
     this.state.daily = date;
+    this.run += 1;
     this.progress.worlds += 1;
     this.fresh = [];
     if (retry) this.note('h:retry');
@@ -255,6 +269,7 @@ export class GameRuntime {
     if (!canReplay(k, this.data)) return null;
     const next = replayKifu(this.data, k, { year: g.branch.year, loops: g.branch.pass });
     next.branched = true;
+    this.run += 1;
     next.daily = g.daily;
     this.state = next;
     this.rankUp = null;
@@ -400,8 +415,24 @@ export class GameRuntime {
     this.frozen = true;
   }
 
+  /** 設定を変えたあと、まとめて保存するまでの待ち（音量のつまみは動かすあいだ続けて呼ばれる） */
+  private settingsTimer: ReturnType<typeof setTimeout> | null = null;
+
   setSettings(patch: Partial<Settings>): void {
     this.settings = { ...this.settings, ...patch };
+    // 続けて変えているあいだは保存を待ち、止まってから1度だけ保存する（世界ごと書き直すので、つまみがかくつかないように）
+    if (this.settingsTimer) clearTimeout(this.settingsTimer);
+    this.settingsTimer = setTimeout(() => {
+      this.settingsTimer = null;
+      void this.save();
+    }, SETTINGS_SAVE_MS);
+  }
+
+  /** 待っている設定の保存を、いま済ませる（画面が隠れるとき・閉じるとき） */
+  flushSettings(): void {
+    if (!this.settingsTimer) return;
+    clearTimeout(this.settingsTimer);
+    this.settingsTimer = null;
     void this.save();
   }
 
@@ -437,11 +468,14 @@ export class GameRuntime {
     void this.save();
   }
 
-  async importSave(text: string): Promise<void> {
+  /** 書き出したものを読み込む。遊んでいた世界だけが壊れていて手放したときは、dropped が真 */
+  async importSave(text: string): Promise<{ dropped: boolean }> {
     const save = importText(text);
     this.apply(save);
+    this.run += 1;
     this.loadError = null;
     await this.save();
+    return { dropped: !!save.droppedCurrent };
   }
 
   async reset(): Promise<void> {
@@ -454,6 +488,9 @@ export class GameRuntime {
   /** すべての記録（進み具合・観測記録・実績・遊んでいる世界・壊れたときの控え）を消す。設定（明るさ・音・文字の大きさ）は残す */
   async resetRecords(): Promise<void> {
     this.state = null;
+    this.run += 1;
+    // 「すべて開いた状態で始める」は、すべてを一度開いた記録があってこそ（記録を消したら OFF に戻す）
+    this.settings = { ...this.settings, allOpen: false };
     this.progress = structuredClone(EMPTY_PROGRESS);
     this.fresh = [];
     this.rankUp = null;

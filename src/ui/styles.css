@@ -93,6 +93,7 @@
   --latin: 'Cormorant Garamond', 'Shippori Mincho', serif;
   --symbol: 'Segoe UI Symbol', 'Noto Sans Symbols 2', 'Apple Symbols', sans-serif;
   --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
   color-scheme: dark;
 }
 :root[data-theme='light'] {
@@ -339,13 +340,16 @@ textarea:focus-visible {
 }
 
 /* 文字の大きさ（メニューで選ぶ）：画面をまとめて縮めたり広げたりする（タイトルは絵の組み立てがあるので変えない）。
-   画面の高さ・幅の単位（dvh・vh・vw）は、広げた分（--z）で割り戻す */
+   画面の高さ・幅の単位（dvh・vh・vw）は、広げた分（--z）で割り戻す。
+   押せる物の最小の大きさ（--tap）は、縮めても画面の上で44pxを保つ（44px ÷ 0.92） */
 .app {
   --z: 1;
+  --tap: 44px;
 }
 .app.text-small:not(.screen-title) {
   zoom: 0.92;
   --z: 0.92;
+  --tap: calc(44px / 0.92);
 }
 .app.text-large:not(.screen-title) {
   zoom: 1.12;
@@ -466,8 +470,8 @@ textarea:focus-visible {
   width: 100%;
 }
 .icon-btn {
-  width: 44px;
-  height: 44px;
+  width: var(--tap, 44px);
+  height: var(--tap, 44px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -600,7 +604,8 @@ textarea:focus-visible {
   margin-left: 0.08em;
   background: var(--text);
   box-shadow: 0 0 10px rgb(var(--fg-rgb) / 0.8);
-  animation: blink 1.1s steps(1) infinite;
+  /* 画面の部品は動き続けない：3回だけ点滅して、そのあとは灯ったまま */
+  animation: blink 1.1s steps(1) 3;
 }
 .tagline {
   margin: 12px 0 0;
@@ -913,6 +918,7 @@ textarea:focus-visible {
   font-weight: 600;
   font-size: 17px;
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 .gh-logo span {
   font-weight: 500;
@@ -957,6 +963,12 @@ textarea:focus-visible {
   color: var(--ink);
   text-shadow: 0 0 10px rgb(var(--ink-rgb) / 0.4);
   padding: 0 4px;
+}
+/* 狭い端末（340px 以下）で文字を「大」にしたときは、頭の帯を1行に収める：「残り」「回」を省いて数だけにする（読み上げ用の名前は残す） */
+@media (max-width: 340px) {
+  .app.text-large .edits-label {
+    display: none;
+  }
 }
 .edits.empty {
   color: var(--faint);
@@ -1003,7 +1015,7 @@ textarea:focus-visible {
   margin-top: 6px;
 }
 .tab {
-  height: 44px;
+  height: var(--tap, 44px);
   font-size: 14px;
   letter-spacing: 0.35em;
   color: var(--dim);
@@ -1147,7 +1159,7 @@ textarea:focus-visible {
   column-gap: 8px;
   align-items: center;
   width: 100%;
-  min-height: 46px;
+  min-height: max(46px, var(--tap, 44px));
   padding: 6px 0 5px;
   border-top: 1px solid var(--line);
   text-align: left;
@@ -1389,12 +1401,15 @@ textarea:focus-visible {
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 42px;
+  height: calc(var(--tap, 44px) + 2px);
   padding: 0 12px;
   margin: 10px 0 8px;
   border: 1px solid var(--line);
   background: var(--panel);
   color: var(--dim);
+}
+.search:focus-within {
+  border-color: var(--ink);
 }
 .search input {
   flex: 1;
@@ -1455,7 +1470,7 @@ textarea:focus-visible {
   gap: 8px;
   align-items: baseline;
   width: 100%;
-  min-height: 44px;
+  min-height: var(--tap, 44px);
   padding: 9px 4px;
   text-align: left;
   font-size: 15px;
@@ -1958,6 +1973,7 @@ mark.ink {
 }
 .menu-item.slider input {
   width: 58%;
+  height: var(--tap, 44px);
   accent-color: var(--silver);
 }
 /* このゲームについて：版・作り手・音楽と絵の作り方・書体とアイコンのライセンス・出典・ソースコード */
@@ -1980,7 +1996,12 @@ mark.ink {
   margin: 0;
   color: var(--text);
 }
+/* リンクの押せる所は44px以上（見た目の行の高さは変えず、上下にはみ出させる） */
 .about a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap, 44px);
+  margin: calc((22px - var(--tap, 44px)) / 2) 0;
   color: var(--ink);
   overflow-wrap: anywhere;
 }
@@ -2153,6 +2174,8 @@ mark.ink {
   font-size: 14px;
   letter-spacing: 0.06em;
   animation: fade 0.2s ease-out;
+  /* 知らせは読むだけ。押しても下の物（シートの閉じるボタンなど）に届くようにする */
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2162,6 +2185,16 @@ mark.ink {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* 画面を描けなかったとき（ErrorBoundary）：読み込み直す道だけを出す */
+.crash {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  font-size: 15px;
+  line-height: 1.8;
 }
 
 /* ---------------------------------------------------------------- 自由な書き換え */
@@ -2234,8 +2267,8 @@ mark.ink {
 }
 .chip {
   flex: 0 0 auto;
-  min-width: 44px;
-  min-height: 44px;
+  min-width: var(--tap, 44px);
+  min-height: var(--tap, 44px);
   padding: 0 12px;
   display: inline-flex;
   align-items: center;
@@ -2295,7 +2328,7 @@ mark.ink {
 .hint summary {
   cursor: pointer;
   letter-spacing: 0.1em;
-  min-height: 44px;
+  min-height: var(--tap, 44px);
   display: flex;
   align-items: center;
 }
@@ -2386,6 +2419,8 @@ mark.ink {
   line-height: 1.6;
 }
 .cause-arrow {
+  flex: none;
+  align-self: center;
   color: var(--ink);
   opacity: 0.8;
 }
@@ -2550,7 +2585,7 @@ mark.ink {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 44px;
+  min-height: var(--tap, 44px);
   padding: 0 12px;
   font-size: 13px;
   letter-spacing: 0.12em;
@@ -3095,7 +3130,7 @@ mark.ink {
   backdrop-filter: blur(3px);
 }
 .title-actions .bgm-toggle {
-  min-height: 44px;
+  min-height: var(--tap, 44px);
 }
 
 /* ---------------------------------------------------------------- 無限の世界 */
@@ -3546,15 +3581,15 @@ mark.ink {
 .scene-reverse .scene-world *:not(.sc-fresh) {
   animation-direction: reverse !important;
 }
-.scene-quake svg {
+.scene-quake .scene-frame svg {
   animation: sc-quake 1.2s ease-in-out 1;
   animation-duration: calc(1.2s * var(--sc-speed, 1)) !important;
 }
-.scene-glitch svg {
+.scene-glitch .scene-frame svg {
   animation: sc-glitch 1.2s steps(1) 1;
   animation-duration: calc(1.2s * var(--sc-speed, 1)) !important;
 }
-.scene-gloom svg {
+.scene-gloom .scene-frame svg {
   filter: saturate(0.35) brightness(0.8);
 }
 
@@ -4032,6 +4067,14 @@ mark.ink {
 }
 .motion-off .sc-ghost {
   display: none;
+}
+/*
+ * 旅をする物（隕石・ロケット・夢の泡・車・流れ・光の輪など）は、動きを一時停止すると、始めの姿（見えない所・画面の外）で
+ * 止まって消えてしまうものがある。動きを止めているとき（動きを減らす・止まった時間）は、動きを外して元の位置に描く
+ */
+.motion-off :is(.sc-meteor, .sc-glide, .sc-launch, .sc-bubble, .sc-burst, .sc-flow, .sc-drive, .sc-slide),
+.scene-frozen :is(.sc-meteor, .sc-glide, .sc-launch, .sc-bubble, .sc-burst, .sc-flow, .sc-drive, .sc-slide) {
+  animation: none !important;
 }
 @media (prefers-reduced-motion: reduce) {
   .sc-ghost {
@@ -4778,12 +4821,14 @@ mark.ink {
 }
 /* 見えていない情景（画面の外・シートの下）は動きを止めて、電池を使わない */
 .scene-idle .scene-world *,
-.scene-idle .scene-world {
+.scene-idle .scene-world,
+.scene-idle .scene-over * {
   animation-play-state: paused !important;
 }
 /* 計算の演出の間は、覆いの下の絵の動きを止める（絵がほとんど見えないうえ、演出の動きが止まらないように。止めた所から続きを動かす） */
 .is-passing .scene .scene-world *,
-.is-passing .scene .scene-world {
+.is-passing .scene .scene-world,
+.is-passing .scene .scene-over * {
   animation-play-state: paused !important;
 }
 
@@ -4990,9 +5035,10 @@ mark.ink {
   }
 }
 
-/* 情景を動かさない設定 */
+/* 情景を動かさない設定（重ね絵も止める） */
 .motion-off .scene-world,
-.motion-off .scene-world * {
+.motion-off .scene-world *,
+.motion-off .scene-over * {
   animation-play-state: paused !important;
 }
 /* 世界を見ているときの知らせは、下の時間の帯の上に出す（情景と見出しを覆わない） */
@@ -5206,7 +5252,7 @@ mark.ink {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-height: 46px;
+  min-height: max(46px, var(--tap, 44px));
 }
 .tut-actions .btn:disabled {
   opacity: 0.35;
@@ -5507,7 +5553,7 @@ mark.ink {
 }
 .by-number input,
 .by-number select {
-  min-height: 44px;
+  min-height: var(--tap, 44px);
   padding: 0 10px;
   border: 1px solid var(--line-strong);
   background: var(--bg);
@@ -5641,8 +5687,16 @@ mark.ink {
   outline-offset: 2px;
   animation: coach-glow 1.6s ease-in-out 3;
 }
-.motion-off .coach-target {
-  animation: none;
+/* 「動きを減らす」ON では、光る・脈打つ・点滅する・揺れる動きを出さない（端末の「視差効果を減らす」と同じ） */
+.motion-off .coach-target,
+.motion-off .caret,
+.motion-off .tab.tab-hint,
+.motion-off .crisis-near,
+.motion-off .limit-line,
+.motion-off .scene-label-focus,
+.motion-off .scene-quake .scene-frame svg,
+.motion-off .scene-glitch .scene-frame svg {
+  animation: none !important;
 }
 @keyframes coach-glow {
   50% {
@@ -5895,7 +5949,7 @@ mark.ink {
   margin-top: 10px;
 }
 .replay-controls .btn {
-  min-height: 44px;
+  min-height: var(--tap, 44px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -6055,7 +6109,7 @@ mark.ink {
 }
 .seg button {
   min-width: 56px;
-  min-height: 44px;
+  min-height: var(--tap, 44px);
   padding: 0 10px;
   font-size: 14px;
   color: var(--dim);
@@ -6155,12 +6209,17 @@ mark.ink {
   align-items: baseline;
   gap: 10px;
 }
+/* 見出しは1行のまま（文字を大きくしても「世界の／寿命」と割れない）。狭いときは右の「いちばん近い線」の側を折り返す */
 .life-title {
+  flex: none;
   font-size: 14px;
   letter-spacing: 0.3em;
+  white-space: nowrap;
 }
 .life-near {
+  min-width: 0;
   margin-left: auto;
+  text-align: right;
 }
 .life-years {
   font-size: 13px;
@@ -6266,6 +6325,7 @@ mark.ink {
   grid-template-columns: 24px 1fr auto;
   align-items: center;
   gap: 10px;
+  min-height: var(--tap, 44px);
   margin-bottom: 8px;
   padding: 10px 12px;
   border: 1px solid rgb(var(--warn-rgb) / 0.35);
@@ -6425,7 +6485,7 @@ mark.ink {
 .scene-glitch .scene-world {
   filter: url(#sc-distort);
 }
-.scene-failed svg {
+.scene-failed .scene-frame svg {
   filter: saturate(0.25) brightness(0.85);
 }
 .motion-off .scene-glitch .scene-world {
@@ -6500,7 +6560,7 @@ mark.ink {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 44px;
+  min-height: var(--tap, 44px);
   padding: 0 14px 0 8px;
   font-size: 12px;
   letter-spacing: 0;

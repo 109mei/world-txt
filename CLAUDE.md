@@ -1,6 +1,6 @@
 # ラプラスの庭（WORLD.txt）開発の決まり
 
-世界を定義している文章を自由に消す・書き換える・書き足すことで人類文明を存続させる、スマホ縦画面のブラウザゲーム。遊んでいる間は乱数を使わず、同じ世界番号・同じ書き方なら同じ世界になる（ラプラスの決まり）。仕様は docs/SPEC.md、元の企画は docs/PLAN.md、分析と改善の計画は docs/ANALYSIS.md・docs/IMPROVE.md・docs/PROMPTS.md、画面設計の見本は docs/design/、画面の言葉は docs/TERMS.md、現実の数字の出典は docs/SOURCES.md。
+世界を定義している文章を自由に消す・書き換える・書き足すことで人類文明を存続させる、スマホ縦画面のブラウザゲーム。遊んでいる間は乱数を使わず、同じ世界番号・同じ書き方なら同じ世界になる（ラプラスの決まり）。仕様は docs/SPEC.md、元の企画は docs/PLAN.md、分析と改善の計画は docs/ANALYSIS.md・docs/IMPROVE.md・docs/PROMPTS.md（直す前の数字は docs/BASELINE.md、段階ごとの作業計画は docs/WORKPLAN.md）、画面設計の見本は docs/design/、画面の言葉は docs/TERMS.md、現実の数字の出典は docs/SOURCES.md。
 
 ## 構成
 
@@ -58,25 +58,29 @@
 - src/core：ルール本体（状態・進行・命令・読み取り・世界番号の式 hash・人々の心 people・世界の決まりの強さ intro・開いていく順番 unlocks・兆し signs・3つの印と原因の壁 marks・敗因の振り返り review・棋譜 kifu）
 - src/data：JSON と Zod のスキーマ（情景を動かすもの・情景の名前は scene.json、開いていく順番と世界の決まりは unlocks.json、出典は sources.json）
 - src/store：Zustand と写し（view。世界の寿命 life・4つの柱 pillars・起きかけていること signs・世界の終わりまで limits を含む）、世界の情景の写し（scene）、筆の位（pen）、観測記録（records）、図鑑と実績（codex）、開いていく順番の写し（journey）、因果の連鎖（chain）、再生（replay）、共有文（share）、無限の世界の記録簿（ranking）
-- src/ui：React の部品と CSS、タイトルの絵、世界の情景（WorldScene と scene/ の層。開発用の一覧は ?gallery=1）、計算の演出（Passing）、因果の連鎖（Chain）、BGM と効果音（se）、画面の明るさ（theme）、共有画像（shareImage）、入力の補助（wording）、あそびかた（Tutorial）、序章の手引き（Coach）、筆の位（PenPanel）、画面の言葉（terms）、シート（書く・結果・柱の中身と世界の寿命・メニュー など）
+- src/ui：React の部品と CSS、タイトルの絵、世界の情景（WorldScene と scene/ の層。開発用の一覧は ?gallery=1）、計算の演出（Passing）、因果の連鎖（Chain）、音楽（audio）と効果音（se）、画面の明るさ（theme）、共有画像（shareImage）、入力の補助（wording）、あそびかた（Tutorial）、序章の手引き（Coach）、筆の位（PenPanel）、画面の言葉（terms）、画面を描けなかったときの受け止め役（ErrorBoundary）、共通の部品（parts・icons・Curve・touch）、シート（書く・結果・柱の中身と世界の寿命・メニュー など）
 - src/save：SaveStore・セーブの形・版の変換
-- tests：Vitest（決定性・棋譜・セーブ・読み取り・無茶な書き換え・総当たり・ルール・無限の世界・くり返す十年・結末・実績・印と試練（marks）・開いていく順番（unlocks）・人々の心・読み分け・情景・序章の手引き（prologue）・世界の終わりまで・筆の位・明るさの比・画面の言葉・手触りの目安）
+- tests：Vitest（決定性・棋譜・セーブ・読み取り・無茶な書き換え・総当たり・ルール・無限の世界・くり返す十年・結末・実績・印と試練（marks）・開いていく順番（unlocks）・人々の心・読み分け・情景・序章の手引き（prologue）・世界の終わりまで・筆の位・明るさの比・画面の言葉・手触りの目安・ルール本体の純粋さ（core-purity）・内容のデータ（data）・画面の呼び名（names）・言い切りの強さ（roles）・消した行（voids）・入力の補助（wording））
 - e2e：Playwright（app.spec.ts・screens.spec.ts・演出中のコマ数 perf.spec.ts）
-- scripts：シミュレーター（npm run sim）と作戦・ボット（strategies.ts・bots.ts・run.ts。無限の世界のボットは endless.ts）、結末の筋書き（worlds.ts）、読み取りの総当たり（fuzz.ts）、筆の位で遊べるかの確かめ（ranks.ts）、作り手の解（par.ts・designer.ts）、組み合わせの総当たり（combos.ts）、紹介用の PV（pv/：撮影 record.ts・舞台 stage.html・書き出し encode.ts と mp4.ts・コマの取り出し frames.ts・BGM の小節 beats.ts）
-- docs：SPEC.md、PLAN.md（企画書）、ANALYSIS.md、IMPROVE.md、PROMPTS.md、TERMS.md、SOURCES.md、design/（画面設計の見本）、screens/（スクリーンショット）
+- scripts：シミュレーター（npm run sim）と作戦・ボット（strategies.ts・bots.ts・run.ts。無限の世界のボットは endless.ts）、結末の筋書き（worlds.ts）、読み取りの総当たり（fuzz.ts）、筆の位で遊べるかの確かめ（ranks.ts）、作り手の解（par.ts・designer.ts）、組み合わせの総当たり（combos.ts）、読み取りの穴（corpus.ts）と逆の読み取り（polarity.ts）、紹介用の PV（pv/：撮影 record.ts・舞台 stage.html・書き出し encode.ts と mp4.ts・コマの取り出し frames.ts・BGM の小節 beats.ts）
+- docs：SPEC.md、PLAN.md（企画書）、ANALYSIS.md、IMPROVE.md、PROMPTS.md、BASELINE.md（直す前の数字）、WORKPLAN.md（作業計画）、TERMS.md、SOURCES.md、design/（画面設計の見本）、screens/（スクリーンショット）
+- scripts/out：git に入れない作業の出力と、使い捨ての確かめ（型の確認には入るので、使い終えたら消す）
 
 ## コマンド
 
 - npm run dev：開発用サーバー（http://localhost:5174/world-txt/）
 - npm test：Vitest
+- npm run typecheck：型の確かめ（npm run build の最初にも走る）
 - npm run e2e：Playwright
 - npm run screens：主な画面のスクリーンショットを docs/screens/ に保存（暗い画面と、L で始まる明るい画面）
 - npx playwright test --config playwright.perf.config.ts：演出中の1秒あたりのコマ数（CPU を4倍遅くして）
-- npm run build：公開用のビルド
+- npm run build：公開用のビルド（npm run preview で公開用のビルドを手元で開く）
 - npm run sim -- food all 30：作戦ごとのクリア率（ステージは prologue / food / plague / climate / war / energy / tiny / loop）
 - npm run sim -- endless all 30：無限の世界で、ボットごとに文明が何年続いたか（何もしない・でたらめ・最初だけ備える・危機の知らせを読んで防ぐ）
 - npm run sim -- intro 30：はじめて遊ぶ世界で、紹介前の決まりが負けの主な原因になった割合（敗因の振り返りのいちばん上）
 - npx tsx scripts/bots.ts read all 30：見立てるボットのクリア率と、型と作戦の表
+- npx tsx scripts/bots.ts all 30：操作を絞った作戦（書き換えだけ・書き足しだけ・2種類だけ など）と決まった手順の最善（SPEC 5章）
+- npx tsx scripts/corpus.ts・npx tsx scripts/polarity.ts：初めての人が書きそうな文の通じる割合と、逆の意味に読まれる文
 - npx tsx scripts/par.ts all 30：型ごとの作り手の解が、どの世界番号で通るか（手数）
 - npm run worlds：宇宙・重力・宇宙人・不死などの書き換えの筋書きを遊んで、どの結末になるかを数える（npm run worlds -- gravity 1 で年表）
 - npm run fuzz：いろいろな単語をいろいろな位置に入れた約2万文の読み取りの総当たりと、棋譜から作り直した世界の一致（例外・数値の破綻・怪しい読み取り・棋譜のずれを数える。0 を保つ）

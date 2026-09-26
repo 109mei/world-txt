@@ -52,7 +52,7 @@ export function Game() {
             <Pencil size={15} strokeWidth={1.5} aria-hidden="true" /> <span className="edits-label">残り</span> <b>{view.edits.left}</b> <span className="edits-label">回</span>
           </span>
           <button className="icon-btn" onClick={() => openSheet({ kind: 'menu' })} aria-label="メニュー" data-testid="menu">
-            <Menu size={20} strokeWidth={1.6} />
+            <Menu size={20} strokeWidth={1.5} />
           </button>
         </div>
       </header>
@@ -173,7 +173,8 @@ const flashed = new Set<string>();
  */
 function useYearFlash(view: GameView): Set<string> {
   const sheetOpen = useGame((s) => s.sheet !== null || s.passing !== null);
-  const key = `${view.scene.seed}:${view.year}`;
+  // 何回目の遊びとくり返しの何周目かも鍵に入れる（やり直し・次の周でも、変わった項目を光らせる）
+  const key = `${view.scene.run ?? 0}.${view.scene.lap ?? 0}:${view.scene.seed}:${view.year}`;
   const [on, setOn] = useState<Set<string>>(new Set());
   useEffect(() => {
     const rep = view.report;
@@ -313,7 +314,8 @@ function LawsTab({ view }: { view: GameView }) {
     if (!coachTarget || !(coachTarget.startsWith('law-') || coachTarget === 'add-line')) return;
     const id = requestAnimationFrame(() => {
       const el = document.querySelector(`[data-testid="${coachTarget}"]`);
-      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      // 「動きを減らす」の設定か端末の設定なら、すっと送らずにその場へ
+      const reduce = !useGame.getState().settings.motion || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
       el?.scrollIntoView({
         block: 'center',
         behavior: reduce ? 'auto' : 'smooth',
@@ -322,7 +324,7 @@ function LawsTab({ view }: { view: GameView }) {
     return () => cancelAnimationFrame(id);
   }, [coachTarget]);
   const progress = useGame((s) => s.progress);
-  const allOpen = useGame((s) => s.settings.allOpen);
+  const allOpen = useGame((s) => s.everything);
   const modes = modesOpen(gameData, progress, allOpen);
   const filter = useGame((s) => s.lawFilter);
   const justWrote = useGame((s) => s.justWrote);
@@ -368,7 +370,7 @@ function LawsTab({ view }: { view: GameView }) {
       {!gameData.stageById.get(view.stage.id)?.lines && (
         <>
           <label className="search">
-            <Search size={15} strokeWidth={1.6} />
+            <Search size={15} strokeWidth={1.5} />
             <input type="search" placeholder="検索（例：人間・水・病原体）" value={filter.query} onChange={(e) => setLawFilter({ query: e.target.value })} data-testid="law-search" />
           </label>
           <div className="chips" role="listbox" aria-label="概念">
@@ -444,7 +446,7 @@ function LawsTab({ view }: { view: GameView }) {
                   )}
                   {l.voidLeft !== null && (
                     <span className="void-note" data-testid={`void-${l.id}`}>
-                      空白　
+                      消した行　
                       {l.voidLeft > 0 ? `あと${l.voidLeft}年で世界が埋める` : 'まもなく世界が埋める'}
                     </span>
                   )}

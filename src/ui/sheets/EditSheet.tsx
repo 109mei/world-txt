@@ -46,7 +46,7 @@ function planDelay(discoveries: readonly string[]): number {
 export function EditSheet({ target }: { target: EditTarget }) {
   const view = useGame((s) => s.view);
   const progress = useGame((s) => s.progress);
-  const allOpen = useGame((s) => s.settings.allOpen);
+  const allOpen = useGame((s) => s.everything);
   // 読まれ方の札は、「書き方と人の心」の段が開いてから（制度・条件つきと読まれた文の札は、開く前でも見せる）
   const modes = modesOpen(gameData, progress, allOpen);
   // 序章の手引き：書く画面は手引きの札を覆うので、いまの手順をここにも添える
@@ -156,7 +156,7 @@ export function EditSheet({ target }: { target: EditTarget }) {
         value={text}
         rows={3}
         maxLength={80}
-        placeholder={target.kind === 'new' ? '例：人間は空を飛べる' : '文章を消すとその法則は世界から消える'}
+        placeholder={target.kind === 'new' ? '例：人間は空を飛べる。' : '文章を消すとその法則は世界から消える'}
         onChange={(e) => setText(e.target.value)}
         data-testid="editor"
         spellCheck={false}
@@ -228,7 +228,7 @@ export function EditSheet({ target }: { target: EditTarget }) {
       </div>
       <div className="weight-row" data-testid="weight">
         <span>
-          <Icon name="capacity" size={13} /> <b>{chars}</b>字{concept > 0 && <span className="dim small">（＋新しい概念 {concept}字）</span>}
+          <Icon name="capacity" size={13} /> <b>{chars}</b>字{concept > 0 && <span className="dim small">（新しい概念の分 {concept}字も使う）</span>}
         </span>
         <span className={over ? 'tone-bad' : 'dim'}>
           使える文字数 {view.capacity.used} → <b>{after}</b> / {view.capacity.max}字

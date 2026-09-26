@@ -26,8 +26,8 @@ const shown = new Set<string>();
 /** 去年の絵からの塗り替えを見せ終えた世界と年 */
 const transited = new Set<string>();
 
-/** 飛び出す絵本の立ち上がりを見せ終えた世界（世界番号） */
-const popped = new Set<number>();
+/** 飛び出す絵本の立ち上がりを見せ終えた遊び（何回目の遊びと世界番号） */
+const popped = new Set<string>();
 
 /** 塗り替えと、そのあとの現れ方が終わるまで */
 const TRANSIT_MS = 2400;
@@ -73,7 +73,9 @@ export function WorldScene({
   testId?: string;
   viewBox?: string;
 }) {
-  const key = `${scene.seed}:${scene.year}`;
+  // 何回目の遊びとくり返しの何周目かも鍵に入れる（同じ世界番号と年でも、別の遊び・次の周では、もう一度見せる）
+  const key = `${scene.run ?? 0}.${scene.lap ?? 0}:${scene.seed}:${scene.year}`;
+  const play = `${scene.run ?? 0}:${scene.seed}`;
   const names = useGame((s) => s.settings.names);
   const focus = useGame((s) => s.sceneFocus);
   // 去年の絵から塗り替えるのは、その年を最初に見たときだけ
@@ -87,13 +89,13 @@ export function WorldScene({
 
   // 飛び出す絵本：その世界を開いて最初に情景を見たときだけ、切り絵が奥から順に立ち上がる（1年進めた塗り替えの年は出さない）
   const layered = !compact && !viewBox;
-  const [pop, setPop] = useState(() => layered && transitKey === null && !popped.has(scene.seed));
+  const [pop, setPop] = useState(() => layered && transitKey === null && !popped.has(play));
   useEffect(() => {
     if (!pop) return;
-    popped.add(scene.seed);
+    popped.add(play);
     const t = setTimeout(() => setPop(false), POP_MS);
     return () => clearTimeout(t);
-  }, [pop, scene.seed]);
+  }, [pop, play]);
   useEffect(() => {
     if (!transitKey) return;
     const t = setTimeout(() => {
@@ -145,20 +147,23 @@ export function WorldScene({
       <div className="scene-frame">
         {/* 年ごとに描き直す（1年進めたときだけ、飾りが1回動く）。世界のタブの情景は、層に分けた飛び出す絵本 */}
         {layered ? <LayeredSvg key={key} v={v} pop={pop} /> : <SceneSvg key={key} v={v} viewBox={viewBox} />}
-        {/* 情景の名前（施設の名前と、気がかりな状態の言葉）。切り替えられる */}
-        {!compact && names && !viewBox && (
+        {/* 情景の名前（施設の名前と、気がかりな状態の言葉）。切り替えられる。名前を出していないときも、
+            起きかけていることのカードを押した場所の札だけは、光らせるあいだ出す */}
+        {!compact && (names || focus) && !viewBox && (
           <div className="scene-labels" aria-hidden="true">
-            {v.labels.map((l) => (
-              <span
-                key={l.id}
-                className={['scene-label', `tone-${l.tone}`, focus === l.id ? 'scene-label-focus' : ''].filter(Boolean).join(' ')}
-                style={{ left: `${(l.x / W) * 100}%`, top: `${(l.y / H) * 100}%` }}
-                data-testid={`label-${l.id}`}
-              >
-                {l.name}
-                {l.word && <b>{l.word}</b>}
-              </span>
-            ))}
+            {v.labels
+              .filter((l) => names || l.id === focus)
+              .map((l) => (
+                <span
+                  key={l.id}
+                  className={['scene-label', `tone-${l.tone}`, focus === l.id ? 'scene-label-focus' : ''].filter(Boolean).join(' ')}
+                  style={{ left: `${(l.x / W) * 100}%`, top: `${(l.y / H) * 100}%` }}
+                  data-testid={`label-${l.id}`}
+                >
+                  {l.name}
+                  {l.word && <b>{l.word}</b>}
+                </span>
+              ))}
           </div>
         )}
       </div>
@@ -318,7 +323,10 @@ function SceneSvg({ v, viewBox, className }: { v: SceneView; viewBox?: string; c
           <Fragment key={l.id}>{l.draw(v)}</Fragment>
         ))}
       </g>
-      <Overlay v={v} />
+      {/* 重ね絵（世界異常の糸・空の亀裂・ゆがみの帯など）。止まった時間・逆さの時間には従わないが、動きを止める設定・画面の外・計算の演出の間は止める */}
+      <g className="scene-over">
+        <Overlay v={v} />
+      </g>
     </svg>
   );
 }
@@ -335,7 +343,11 @@ function LayeredSvg({ v, pop }: { v: SceneView; pop: boolean }) {
           <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid slice" role="presentation" aria-hidden="true">
             {i === 0 && <SceneDefs v={v} />}
             <g className="scene-world">{l.draw(v)}</g>
-            {l.id === 'cover' && <Overlay v={v} />}
+            {l.id === 'cover' && (
+              <g className="scene-over">
+                <Overlay v={v} />
+              </g>
+            )}
           </svg>
         </div>
       ))}

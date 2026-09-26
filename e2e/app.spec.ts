@@ -166,6 +166,26 @@ test.describe('390×844 のスマホ縦画面', () => {
     }
   });
 
+  test('起きかけていることのカードを押すと、情景の同じ場所の名前が光る（名前を出していないときも、その札だけ出す）', async ({ page }) => {
+    await startFood(page);
+    // 兆しは、年が進んで起きかけていることが出てから
+    await debug(page, 'advance(2)');
+    await page.getByTestId('report-ok').click();
+    const sign = page.getByTestId('sign').first();
+    await expect(sign).toBeVisible();
+    // 名前を出しているとき：同じ場所の札が光る
+    await sign.click();
+    await expect(page.locator('.scene-label-focus')).toHaveCount(1);
+    // 名前を出していないとき：ふだんは札を出さず、押した場所の札だけを出して光らせる
+    await page.getByTestId('scene-names').click();
+    await expect(page.locator('.scene-label-focus')).toHaveCount(0);
+    await page.waitForTimeout(4600);
+    await expect(page.locator('.scene-label')).toHaveCount(0);
+    await sign.click();
+    await expect(page.locator('.scene-label-focus')).toHaveCount(1);
+    await expect(page.locator('.scene-label')).toHaveCount(1);
+  });
+
   test('再読み込みしても、書き換えた世界の続きから遊べる', async ({ page }) => {
     await startFood(page, true);
     await page.getByTestId('tab-laws').click();
@@ -485,7 +505,7 @@ test.describe('390×844 のスマホ縦画面', () => {
     await page.getByTestId('add-line').click();
     await page.getByTestId('editor').fill('人間は空を飛べる');
     await page.getByTestId('write').click();
-    await expect(page.getByTestId('toast')).toContainText('重すぎて');
+    await expect(page.getByTestId('toast')).toContainText('願いが大きすぎて');
     // 書き足せる行は1つまで
     await page.getByTestId('editor').fill('ため池を作る');
     await page.getByTestId('write').click();
@@ -545,6 +565,32 @@ test.describe('390×844 のスマホ縦画面', () => {
     await expect(page.getByTestId('title')).toBeVisible();
     await expect(page.getByTestId('continue')).toHaveCount(0);
     await expect(page.getByTestId('start')).toContainText('はじめる');
+  });
+
+  test('押せる物は44px以上（文字の大きさを小・中・大のどれにしても、画面の上で44pxを保つ）', async ({ page }) => {
+    await startFood(page, true);
+    // 見えている押せる物のうち、縦か横が44pxに届かないもの
+    const tooSmall = () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll('button, a[href], [role="tab"], [role="switch"], [role="radio"], input, select, textarea, summary')]
+          .map((el) => ({ el: el as HTMLElement, r: el.getBoundingClientRect() }))
+          .filter(({ el, r }) => r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden' && (r.height < 43.5 || r.width < 43.5))
+          .map(({ el, r }) => `${el.getAttribute('data-testid') ?? el.tagName} ${Math.round(r.width)}x${Math.round(r.height)}`),
+      );
+    for (const size of ['small', 'medium', 'large'] as const) {
+      await page.getByTestId('menu').click();
+      await page.getByTestId(`text-${size}`).click();
+      await page.getByTestId('menu-about').click();
+      expect(await tooSmall(), `メニュー（${size}）`).toEqual([]);
+      await page.getByTestId('sheet-close').click();
+      expect(await tooSmall(), `世界（${size}）`).toEqual([]);
+      await page.getByTestId('tab-laws').click();
+      expect(await tooSmall(), `法則（${size}）`).toEqual([]);
+      await page.getByTestId('add-line').click();
+      expect(await tooSmall(), `書く（${size}）`).toEqual([]);
+      await page.getByTestId('sheet-close').click();
+      await page.getByTestId('tab-world').click();
+    }
   });
 
   test('序章の手引き：押す順に示し、押す所を枠で示す。手本どおりに書くと次の年に世界が変わり、結びの一文が出る', async ({ page }) => {

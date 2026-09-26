@@ -57,7 +57,8 @@ export function ReportSheet() {
   const surprises = rest.filter((n) => n.surprise && n.category !== 'CRISIS');
   const others = rest.filter((n) => !n.surprise && n.category !== 'CRISIS');
   const ended = view.status !== 'playing';
-  const years = rep.to - rep.from;
+  // 進めた年数（くり返す世界で巻き戻った年は YEAR 9 → 0 のように数字が戻るので、進めた年数で数える）
+  const years = rep.to >= rep.from ? rep.to - rep.from : rep.requested;
   const moves = rep.moves ?? [];
   const popFrom = rep.pop ? populationText(rep.pop.from) : null;
   const popTo = rep.pop ? populationText(rep.pop.to) : null;
@@ -85,7 +86,7 @@ export function ReportSheet() {
         }}
         data-testid="report-next"
       >
-        <Play size={16} strokeWidth={1.6} /> 次の1年
+        <Play size={16} strokeWidth={1.5} /> 次の1年
       </button>
     </div>
   );

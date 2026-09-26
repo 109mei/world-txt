@@ -336,15 +336,17 @@ export function People({ v }: { v: SceneView }) {
       )}
       {linked && heads.length > 1 && (
         <Motif v={v} id="linked">
-          <path
-            className="sc-pulse"
-            d={heads.map(([x, y], k) => `${k === 0 ? 'M' : 'L'}${x.toFixed(1)} ${(y - 3).toFixed(1)}`).join(' ')}
-            fill="none"
-            stroke={strokeOf(v, 'linked', INK)}
-            strokeWidth={0.5}
-            opacity={0.7 * m(v, 'linked')}
-            style={dur(2.6)}
-          />
+          {/* つながりの濃さは、つながりの強さ（ずっと続く動きは濃さも動かすので、状態で決まる濃さは外の枠に置いて掛け合わせる） */}
+          <g opacity={0.7 * m(v, 'linked')}>
+            <path
+              className="sc-pulse"
+              d={heads.map(([x, y], k) => `${k === 0 ? 'M' : 'L'}${x.toFixed(1)} ${(y - 3).toFixed(1)}`).join(' ')}
+              fill="none"
+              stroke={strokeOf(v, 'linked', INK)}
+              strokeWidth={0.5}
+              style={dur(2.6)}
+            />
+          </g>
         </Motif>
       )}
       {kids > 0 && (

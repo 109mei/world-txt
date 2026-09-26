@@ -164,9 +164,11 @@ export function MenuSheet() {
 
   const load = async (t: string) => {
     try {
-      await rt.importSave(t);
+      const { dropped } = await rt.importSave(t);
       refreshView();
-      showToast('読み込んだ');
+      // 読み込んだ設定の音楽（ON/OFF と音量）に合わせる（効果音は設定の写しに合わせて変わる）
+      syncBgm(rt.settings.bgm, rt.settings.volume);
+      showToast(dropped ? '読み込んだ。遊んでいた世界は壊れていたので手放した（記録は読み込んだ）' : '読み込んだ');
       goTitle();
     } catch (e) {
       showToast((e as Error).message);
@@ -370,11 +372,12 @@ export function MenuSheet() {
         </label>
 
         <div className="row2 menu-foot">
-          <button className="btn" onClick={() => openRecords('game')} data-testid="menu-records">
-            記録と実績
+          {/* ノートから戻る先は、メニューを開いた画面（世界の画面か結果の画面） */}
+          <button className="btn" onClick={() => openRecords(useGame.getState().screen)} data-testid="menu-records">
+            ノートと実績
           </button>
           <button className="btn" onClick={() => setTour(true)} data-testid="menu-tutorial">
-            遊び方をもう一度見る
+            あそびかたをもう一度見る
           </button>
         </div>
         <button className="menu-item" onClick={() => setAbout((v) => !v)} aria-expanded={about} data-testid="menu-about">

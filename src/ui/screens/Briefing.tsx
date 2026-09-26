@@ -35,7 +35,7 @@ export function Briefing() {
     <div className="page briefing" data-testid="briefing">
       <header className="page-head">
         <button className="icon-btn" onClick={goStages} aria-label="戻る">
-          <ChevronLeft size={22} strokeWidth={1.6} />
+          <ChevronLeft size={22} strokeWidth={1.5} />
         </button>
         <h2>
           <Icon name={stage.icon} size={20} /> {stage.title}
@@ -169,7 +169,7 @@ export function Briefing() {
           <li>時間を進めて何が起きたかを見る</li>
         </ol>
         <p className="dim small">
-          書き換えの残りは最初{stage.edits.start}回。{stage.edits.every}年ごとに1回戻る（最大{stage.edits.max}）。
+          書き換えの残りは最初{stage.edits.start}回。{stage.edits.every}年ごとに1回戻る（最大{stage.edits.max}回）。
           {stage.capacityDecay > 0 && 'この世界では使える文字数が毎年少しずつ減る。'}
         </p>
       </section>

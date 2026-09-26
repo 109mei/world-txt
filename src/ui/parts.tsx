@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { X } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import type { CauseRef, NewsItem } from '../core';
 import type { Tone } from '../data/schema';
 import type { LawLine, LimitView } from '../store/view';
@@ -89,7 +89,10 @@ function useKeyboardInset(): { inset: number; visible: number } {
     if (!vv) return;
     const update = () => {
       const inset = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
-      setState({ inset: inset > 40 ? inset : 0, visible: Math.round(vv.height) });
+      // 文字の大きさで画面をまとめて縮めたり広げたり（zoom）しているので、画面の上の px をその率で割り戻す
+      const app = document.querySelector('.app');
+      const z = (app && Number.parseFloat(getComputedStyle(app).zoom)) || 1;
+      setState({ inset: inset > 40 ? Math.round(inset / z) : 0, visible: Math.round(vv.height / z) });
     };
     update();
     vv.addEventListener('resize', update);
@@ -123,7 +126,7 @@ export function Sheet({ title, onClose, children, testId, footer }: { title: Rea
         <div className="sheet-head">
           <div className="sheet-title">{title}</div>
           <button className="icon-btn" onClick={onClose} aria-label="閉じる" data-testid="sheet-close">
-            <X size={20} strokeWidth={1.6} />
+            <X size={20} strokeWidth={1.5} />
           </button>
         </div>
         <div className="sheet-body">{children}</div>
@@ -149,18 +152,21 @@ export function CostPips({ cost }: { cost: number }) {
   );
 }
 
-/** 出来事がどの行から来たか（「← 書いた文章」）。プレイヤーの書いた文字なので、インクの色で見せる */
+/**
+ * 出来事がどの行から来たか（矢印のアイコン・書いた文章）。プレイヤーの書いた文字なので、インクの色で見せる。
+ * 矢印は文字の記号ではなく lucide のアイコンにし、読み上げでは「原因」と読む
+ */
 export function CauseLine({ cause }: { cause: CauseRef | null | undefined }) {
   if (!cause) return null;
   return (
     <div className="cause" data-testid="cause">
-      <span className="cause-arrow">←</span>
+      <ArrowLeft size={12} strokeWidth={1.5} className="cause-arrow" aria-label="原因" />
       {cause.via && (
         <>
           <span className="cause-via" data-testid="cause-via">
             {cause.via}
           </span>
-          <span className="cause-arrow">←</span>
+          <ArrowLeft size={12} strokeWidth={1.5} className="cause-arrow" aria-label="その原因" />
         </>
       )}
       <span className={cause.deleted ? 'cause-text deleted' : 'cause-text'}>

@@ -187,7 +187,7 @@ export const STRATEGIES: Record<StageId, Strategy[]> = {
   ],
   climate: [
     { name: 'baseline', edits: [] },
-    // 温室効果を打ち消す：すぐ涼しくなるが、やがて氷期（罠）。消すだけなら、4年で世界が元の文で埋める
+    // 温室効果を打ち消す：すぐ涼しくなるが、やがて氷期（罠）。消すだけなら、5年で世界が元の文で埋める
     { name: 'greenhouse_delete', role: 'one', clears: 2, edits: [{ year: 0, law: 'co2_heat', text: '二酸化炭素は熱を閉じ込めない。' }] },
     { name: 'sun_weaker', role: 'one', edits: [{ year: 0, law: 'sun_shine', text: '太陽は少し弱く地球を照らす。' }] },
     ...plansOf('climate'),
@@ -221,7 +221,7 @@ export const STRATEGIES: Record<StageId, Strategy[]> = {
         { year: 10, law: 'human_food', text: '人は毎日食べる。' },
       ],
     },
-    // 消すだけ（空白は4年で世界が埋め、あふれた容量が戻る）
+    // 消すだけ（消した行は5年で世界が埋め、あふれた容量が戻る）
     {
       name: 'cut_only',
       edits: [

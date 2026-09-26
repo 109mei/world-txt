@@ -27,8 +27,8 @@
     {"id": "cascade", "name": "一気に起きる", "field": "social", "text": "加わる人が増えるほど加わりやすくなり、暴動や戦争は一気に起きる。緊張の平均でなく、ばらつきを見る。", "found": [], "card": {"text": "加わる人の割合がある境目を超えると、集団の行動は一気に広がる（しきい値モデル）", "source": "Granovetter（1978年）"}}
   ],
   "steps": [
-    {"id": "prologue", "when": {}, "stage": "prologue", "idea": "書いてから効くまで：3つの操作と空白", "rules": ["delay"], "screen": "世界の画面（寿命・情景・4つの柱・起きかけていること）と法則の一覧", "meet": "遅れ"},
-    {"id": "food", "when": {"played": "prologue"}, "stage": "food", "idea": "兆しを読んで見立てる：原因の型と世界の読み", "rules": ["hoarding", "scarcity"], "screen": "ノートの因果の地図", "meet": "先行きの不安と買いだめ・乏しさ"},
+    {"id": "prologue", "when": {}, "stage": "prologue", "idea": "書いてから効くまで：3つの操作と消した行", "rules": ["delay"], "screen": "世界の画面（寿命・情景・4つの柱・起きかけていること）と法則の一覧", "meet": "遅れ"},
+    {"id": "food", "when": {"played": "prologue"}, "stage": "food", "idea": "兆しを読んで見立てる：何が原因かと世界の読み", "rules": ["hoarding", "scarcity"], "screen": "ノートの因果の地図", "meet": "先行きの不安と買いだめ・乏しさ"},
     {"id": "plague", "when": {"played": "food"}, "stage": "plague", "idea": "世界は慣れて変わる：効きが落ちる", "rules": ["caution", "fatigue"], "screen": "柱の中身", "meet": "用心の波・助け合いと疲れ"},
     {"id": "climate", "when": {"played": "food"}, "stage": "climate", "idea": "狭まる余裕と転換点：使える文字数が減る", "rules": ["slowing"], "screen": "起きかけていることの「戻りが遅い」", "meet": "転換点と戻りの遅さ"},
     {"id": "war", "when": {"clears": 1}, "stage": "war", "rank": 1, "idea": "つながりの連鎖：支えている行", "rules": ["dilemma", "cascade", "jcurve"], "screen": "ノートの仮説", "meet": "備えが脅威に見える・一気に起きる争い・上げてから落とす"},

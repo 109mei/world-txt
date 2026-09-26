@@ -16,7 +16,9 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # ubuntu-latest は 2026年10月19日から Ubuntu 26 に移る。Playwright のブラウザと依存（--with-deps）が
+    # 新しい版に対応するまで、今の版に留める（対応を確かめてから上げる）
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
         with:
@@ -66,7 +68,7 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

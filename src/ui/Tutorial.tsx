@@ -33,7 +33,7 @@ const STEPS: Step[] = [
   },
   {
     title: '兆しを読む',
-    text: '「世界」のタブで、悪くなっている所と起きかけていること（兆し）を読む。それが書き換える所の手がかりになる',
+    text: '「世界」のタブで、悪くなっている所と起きかけていること（兆し）を読む。それが書き換える所の手がかりになる。',
     art: (
       <div className="tut-signs">
         <div className="tut-tile">
@@ -72,7 +72,7 @@ const STEPS: Step[] = [
     art: (
       <div className="tut-time">
         <span className="tut-play">
-          <Play size={15} strokeWidth={1.6} /> 1年
+          <Play size={15} strokeWidth={1.5} /> 1年
         </span>
         <span className="tut-year">
           YEAR <b>0</b> → <b>1</b>
@@ -118,7 +118,7 @@ export function Tutorial({ onClose, onDone = onClose }: { onClose: () => void; o
             {i + 1} / {STEPS.length}
           </span>
           <button className="icon-btn" onClick={onClose} aria-label="とじる" data-testid="tutorial-close">
-            <X size={20} strokeWidth={1.6} />
+            <X size={20} strokeWidth={1.5} />
           </button>
         </div>
         <h3 className="tut-title">{step.title}</h3>
@@ -131,7 +131,7 @@ export function Tutorial({ onClose, onDone = onClose }: { onClose: () => void; o
         </div>
         <div className="tut-actions">
           <button className="btn" onClick={() => setI(i - 1)} disabled={i === 0} data-testid="tutorial-prev">
-            <ChevronLeft size={16} strokeWidth={1.6} /> もどる
+            <ChevronLeft size={16} strokeWidth={1.5} /> もどる
           </button>
           {lastStep ? (
             <button className="btn btn-primary" onClick={onDone} data-testid="tutorial-done">
@@ -139,7 +139,7 @@ export function Tutorial({ onClose, onDone = onClose }: { onClose: () => void; o
             </button>
           ) : (
             <button className="btn btn-primary" onClick={() => setI(i + 1)} data-testid="tutorial-next">
-              つぎへ <ChevronRight size={16} strokeWidth={1.6} />
+              つぎへ <ChevronRight size={16} strokeWidth={1.5} />
             </button>
           )}
         </div>

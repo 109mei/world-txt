@@ -73,6 +73,38 @@ describe('セーブ', () => {
     expect(back.settings.seVolume).toBe(DEFAULT_SETTINGS.seVolume);
   });
 
+  it('設定に読めない値（知らない選び方・範囲の外・null）があっても、その項目だけ既定の値にして、記録は読む', () => {
+    const data = sample() as unknown as { settings: Record<string, unknown>; progress: { worlds: number } };
+    data.progress.worlds = 5;
+    Object.assign(data.settings, { textSize: 'xl', seVolume: 1.2, volume: null, theme: 'sepia', bgm: 'はい' });
+    const back = deserialize(JSON.stringify(data));
+    expect(back.progress.worlds).toBe(5);
+    expect(back.settings.textSize).toBe('medium');
+    expect(back.settings.seVolume).toBe(DEFAULT_SETTINGS.seVolume);
+    expect(back.settings.volume).toBe(DEFAULT_SETTINGS.volume);
+    expect(back.settings.theme).toBe('auto');
+    expect(back.settings.bgm).toBe(true);
+    // 設定そのものが読めなくても、既定の設定で読む
+    const bare = sample() as unknown as { settings: unknown };
+    bare.settings = null;
+    expect(deserialize(JSON.stringify(bare)).settings).toEqual(DEFAULT_SETTINGS);
+  });
+
+  it('2回目に壊れたセーブも残し（はじめに壊れたものは残したまま）、すべて消すと控えも消える', async () => {
+    const storage = new MapStorage();
+    const store = new LocalStorageSaveStore(storage);
+    storage.setItem(SAVE_KEY, '{こわれた1');
+    await expect(store.load()).rejects.toThrow(SaveFormatError);
+    storage.setItem(SAVE_KEY, '{こわれた2');
+    await expect(store.load()).rejects.toThrow(SaveFormatError);
+    expect(storage.getItem(`${SAVE_KEY}.broken`)).toBe('{こわれた1');
+    expect(storage.getItem(`${SAVE_KEY}.broken2`)).toBe('{こわれた2');
+    await store.save(sample());
+    await store.save(sample());
+    await store.clear();
+    for (const k of [SAVE_KEY, `${SAVE_KEY}.prev`, `${SAVE_KEY}.broken`, `${SAVE_KEY}.broken2`]) expect(storage.getItem(k), k).toBeNull();
+  });
+
   it('すべての記録を消すと、進み具合・観測記録・実績・遊んでいる世界と控えが消え、設定は残る', async () => {
     const storage = new MapStorage();
     const store = new LocalStorageSaveStore(storage as unknown as KeyValueStorage);

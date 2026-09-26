@@ -30,6 +30,10 @@ function OpenByNumber({ open, onClose }: { open: { id: StageId; title: string }[
   const [stage, setStage] = useState<StageId>(open.find((s) => s.id !== 'prologue')?.id ?? open[0]!.id);
   const n = Number.parseInt(no.replace(/[^0-9]/gu, ''), 10);
   const valid = Number.isInteger(n) && n >= 1 && n <= WORLD_NUMBERS;
+  // 開ける世界は1つだけ：遊んでいる世界があれば、放棄してよいかを2度押しで確かめる（世界の説明の画面と同じ）
+  const now = playingWorld();
+  const [sure, setSure] = useState(false);
+  const label = `#${valid ? String(n).padStart(4, '0') : '----'} を開く`;
   return (
     <div className="by-number" data-testid="by-number">
       <label className="by-number-row">
@@ -58,12 +62,29 @@ function OpenByNumber({ open, onClose }: { open: { id: StageId; title: string }[
         </select>
       </label>
       <p className="dim small">同じ世界番号なら誰が遊んでも同じ世界になる。書いた文は番号に入らない。</p>
+      {now && (
+        <p className="abandon-note" data-testid="by-number-abandon">
+          いま進んでいる世界（<b>{now.title}</b>・YEAR {now.year}）がある。開ける世界は1つだけ。
+          {sure ? '本当に放棄するならもう一度押す。' : '新しい世界を開くとこの世界は放棄される。'}
+        </p>
+      )}
       <div className="by-number-actions">
         <button className="btn" onClick={onClose}>
           やめる
         </button>
-        <button className="btn btn-primary" disabled={!valid} onClick={() => startStage(stage, false, n, true)} data-testid="by-number-open">
-          #{valid ? String(n).padStart(4, '0') : '----'} を開く
+        <button
+          className={sure ? 'btn btn-primary danger' : 'btn btn-primary'}
+          disabled={!valid}
+          onClick={() => {
+            if (now && !sure) {
+              setSure(true);
+              return;
+            }
+            startStage(stage, false, n, true);
+          }}
+          data-testid="by-number-open"
+        >
+          {sure ? `前の世界を放棄して${label}` : label}
         </button>
       </div>
     </div>
