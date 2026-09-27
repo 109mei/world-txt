@@ -543,6 +543,7 @@ test.describe('390×844 のスマホ縦画面', () => {
     });
     await startFood(page, true);
     await expect(page.locator('meta[http-equiv="Content-Security-Policy"]')).toHaveAttribute('content', /script-src 'self'/);
+    await expect(page.locator('meta[http-equiv="Content-Security-Policy"]')).toHaveAttribute('content', /require-trusted-types-for 'script'/);
     await page.getByTestId('tab-laws').click();
     await page.getByTestId('add-line').click();
     await page.getByTestId('editor').fill('人間は空を飛べる。');
@@ -563,6 +564,32 @@ test.describe('390×844 のスマホ縦画面', () => {
     await Promise.all([page.waitForEvent('download'), page.getByTestId('save-image').click()]);
     const caught = await page.evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? []);
     expect([...violations, ...caught]).toEqual([]);
+  });
+
+  test('Trusted Types：文字列を HTML やスクリプトとして差し込む書き方は、ブラウザが止める（決まりを作る口もない）', async ({ page }) => {
+    await page.goto('./');
+    await expect(page.getByTestId('title')).toBeVisible();
+    const result = await page.evaluate(() => {
+      const tryIt = (f: () => void) => {
+        try {
+          f();
+          return 'allowed';
+        } catch {
+          return 'blocked';
+        }
+      };
+      const el = document.createElement('div');
+      return {
+        innerHTML: tryIt(() => {
+          el.innerHTML = '<img src=x>';
+        }),
+        policy: tryIt(() => {
+          (window as unknown as { trustedTypes: { createPolicy: (n: string, o: object) => unknown } }).trustedTypes.createPolicy('x', {});
+        }),
+      };
+    });
+    // eval は CSP（'unsafe-eval' を許していない）で止まる。テストの道具がページに流し込むコードは CSP の外で動くので、ここでは確かめない（tests/security.test.ts がコードに eval がないことを確かめる）
+    expect(result).toEqual({ innerHTML: 'blocked', policy: 'blocked' });
   });
 
   test('保存できない画面（プライベートブラウズなど）では、そう知らせる', async ({ page }) => {

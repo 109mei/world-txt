@@ -32,6 +32,10 @@ export interface Lexicon {
   gaVerbs?: string[];
   /** 言い切りの強さの言葉 */
   strength?: { strong: string[]; mild: string[] };
+  /** 程度の言葉（多さ・少なさ・向きを持たない強調）。量の読み取りに足し、世界が知っている言葉にする */
+  degree?: { more: string[]; less: string[]; intense: string[] };
+  /** 「ない」を含むが打ち消しではない言葉（きたない・はかない・仕方ない など） */
+  notNegation?: string[];
   /** 書き方の読み分けの語尾（制度・条件つき） */
   modes?: { rule: string[]; conditional: string[] };
 }
@@ -77,6 +81,13 @@ export function setLexicon(lex: Lexicon, vocabulary: Iterable<string>, nouns: It
   KNOWN = new Set();
   for (const w of vocabulary) for (const t of tokens(canonical(w))) KNOWN.add(t);
   COMMON = new Set((lex.common ?? []).flatMap((w) => tokens(canonical(w))));
+  // 程度の言葉（少々・若干・無限に など）：量の読み取りに足し、世界が知っている言葉にする
+  const degree = lex.degree ?? { more: [], less: [], intense: [] };
+  DEGREE_MORE = degree.more.map((w) => canonical(w));
+  DEGREE_LESS = degree.less.map((w) => canonical(w));
+  DEGREE_INTENSE = degree.intense.map((w) => canonical(w));
+  for (const w of [...degree.more, ...degree.less, ...degree.intense]) for (const t of tokens(canonical(w))) COMMON.add(t);
+  NOT_NEG_WORDS = [...(lex.notNegation ?? []), ...degree.more, ...degree.less, ...degree.intense].map((w) => canonical(w)).sort((a, b) => b.length - a.length);
   KIND = new Map();
   // 辞書の言葉は、まるごとと中心（後ろ）の言葉だけを種類に入れる（「量子コンピューター」は機械だが、「量子」は機械ではない）。
   // ひらがなの入った言葉（「天の川」「天ぷら」）は、まるごとだけ（「川」は天体ではなく、「天」は食べ物ではない）。
@@ -440,6 +451,12 @@ const MORE_WORDS = [
   '多く', '多い', 'たくさん', '沢山', '大量', '倍', '強く', '強い', '強め', '強ま', '速く', '早く', '速い', '激しく', '激しい', '大きく', '濃く', '増', '何度も',
   'ひどく', '高く', '上が', '長く', 'いっぱい', '大いに', '十分に',
 ];
+/** 言葉のデータ（lexicon.json の degree）で足す程度の言葉：多さ・少なさ・向きを持たない強調 */
+let DEGREE_MORE: string[] = [];
+let DEGREE_LESS: string[] = [];
+let DEGREE_INTENSE: string[] = [];
+/** 打ち消しかどうかを見る前に取り除く言葉（言葉のデータの notNegation と、程度の言葉。長いものから） */
+let NOT_NEG_WORDS: string[] = [];
 // 向きを持たない強調（「もっと少ない」は少ない、「とても強く」は強い。強調だけなら強める）。
 // 「ずっと」は「ずっと春だ」のように続くことを言うことが多いので、強調に数えない
 const INTENSIFIERS = ['もっと', 'とても', '非常に', 'さらに', 'すごく', 'かなり', '極めて', 'めちゃくちゃ', 'めっちゃ', '超', 'ものすごく', '一段と', '急に', '急速に', '一気に', 'どんどん'];
@@ -613,6 +630,8 @@ export function features(raw: string): TextFeatures {
   let except = split ? text.slice(split.index + split[0].length) : '';
   const exc = /([^、。]{1,8}?)(を除く|を除いて|以外)/u.exec(main);
   if (exc) except += exc[1];
+  // 「ただし人間は除かない」「ただし人間も含む」は例外ではない（除くことの打ち消し・含めること）
+  if (/(除かない|除かず|除外しない|除外せず|含む|含め)/u.test(except)) except = '';
 
   // 否定や量を読む前に、意味の決まった言い回しを取り出していく
   let work = main;
@@ -670,12 +689,13 @@ export function features(raw: string): TextFeatures {
   PERSIST_G.lastIndex = 0;
   work = work.replace(PERSIST_G, '、');
 
-  const plain = work.replace(NOT_NEG, '');
+  let plain = work.replace(NOT_NEG, '');
+  for (const w of NOT_NEG_WORDS) if (plain.includes(w)) plain = plain.split(w).join('、');
   const weak = WEAK_NEG.test(plain);
   const neg = !weak && NEG.test(plain);
-  const lessWord = LESS_WORDS.some((w) => work.includes(w)) || weak || HARD_RE.test(work);
-  const moreWord = MORE_WORDS.some((w) => work.includes(w)) || MORE_RE.test(work) || EASY_RE.test(work);
-  const intense = INTENSIFIERS.some((w) => main.includes(w));
+  const lessWord = LESS_WORDS.some((w) => work.includes(w)) || DEGREE_LESS.some((w) => work.includes(w)) || weak || HARD_RE.test(work);
+  const moreWord = MORE_WORDS.some((w) => work.includes(w)) || DEGREE_MORE.some((w) => work.includes(w)) || MORE_RE.test(work) || EASY_RE.test(work);
+  const intense = INTENSIFIERS.some((w) => main.includes(w)) || DEGREE_INTENSE.some((w) => main.includes(w));
   // 「〜に強い」を「とても」で強めたら、強さ（more）として読む。「もっと強い」は比べているだけ
   const strong = STRONG.some((w) => main.includes(w));
   const subj = /^([^、。]{1,12}?)(?:は|が)/u.exec(main);

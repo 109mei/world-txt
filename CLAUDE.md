@@ -24,7 +24,7 @@
 1. ゲームの状態の持ち主は src/core だけ。書き換えは命令（rewriteLaw・addLine・rewriteLine・advance）を core に渡して行う
 2. 遊んでいる間は乱数を使わない。世界の初期条件と出来事の起きる時期は、世界番号から決まる式（src/core/hash.ts の hash01・startCharge）と状態の変化だけで決める。同じ世界番号・同じ棋譜（書いた手の並び）なら、誰が作り直しても同じ世界になる（tests/kifu.test.ts と npm run fuzz が確かめる）。開く条件・印・実績にも乱数を使わない
 3. プレイヤーには選択肢も、書き換えの結果の予測も見せない。書き換えは自由な文章で行い、結果は時間を進めて初めてわかる。起きかけていること（兆し）と世界の寿命は、今の世界の動きをのばしただけで、書き換えの結果の予測ではない
-4. 文章の意味は src/core/interpret.ts が語彙の手がかりから読み取る。読み取りの規則は laws.json の match・subject・topic と phrases.json に置き、コードに言葉を増やさない（言葉の種類・語尾・英語・読み分けの語尾は lexicon.json）。書き足した文章が既存の行と同じものについての文なら、その行の書き換えとして読む。種類ごとの読み取り（generic）は、ほかに何も読めなかったときだけ当てる。意味が伝わらない文では、世界は何も変わらない
+4. 文章の意味は src/core/interpret.ts が語彙の手がかりから読み取る。読み取りの規則は laws.json の match・subject・topic と phrases.json に置き、コードに言葉を増やさない（言葉の種類・語尾・英語・読み分けの語尾・程度の言葉（degree：無限に・少々・けっこう など）・「ない」を含むが打ち消しではない言葉（notNegation：果てしない・きたない など）は lexicon.json）。書き足した文章が既存の行と同じものについての文なら、その行の書き換えとして読む。種類ごとの読み取り（generic）は、ほかに何も読めなかったときだけ当てる。意味が伝わらない文では、世界は何も変わらない
 5. 因果は現実の仕組みに沿わせる。想定外の変化（副作用・出来事）には、現実の根拠を「なぜ？」（why）として一文で添える。数字は「約」をつけ、確かなものだけを使い、出典を src/data/sources.json と docs/SOURCES.md に残す。どの行から来たか（cause）は core が付ける（敗因の振り返りと因果の連鎖は、この cause だけでつなぐ）
 6. 見つけたもの（読み取り・副作用・出来事・結末・初めて起きたこと h:・使った読まれ方 m: など）は core が GameState.found に残し、runtime が観測記録（progress.discovered）へ移す。新しい内容を足したら、観測記録にも自動で並ぶ
 7. 数値をコードに直接書かない。balance.json などのデータに置く
@@ -37,6 +37,8 @@
 ## 安全の決まり
 
 - 読み込めるものを絞る決まり（CSP）は vite.config.ts にあり、公開用のビルドだけに入る。外から読み込むもの（書体・画像・通信の先）を増やしたら、CSP も直す。e2e の CSP のテストで、決まりに触れていないことを確かめる
+- 公開用の CSP には Trusted Types（require-trusted-types-for 'script'・trusted-types 'none'）を入れ、文字列を HTML やスクリプトとして差し込む書き方をブラウザの側でも止める（tests/security.test.ts がコードに入っていないことも確かめる）
+- GitHub Actions は、外の手順をコミットの番号で留め、権限は役目ごとに最小にし、依存は npm ci --ignore-scripts で入れ、公開する依存の重い脆弱性（npm audit --omit=dev --audit-level=high）で止める
 - eval・new Function・innerHTML を使わない（Zod は jitless で動かす。PixiJS は 'pixi.js/unsafe-eval' を読み込み、使う部品だけで動かす（skipExtensionImports）。画像を読み込まず、worker も使わない）
 - テスト用の窓口（?debug=1）は、開発中とテスト用のビルド（--mode e2e）だけ。公開用のビルドに入れない
 - 読み込むセーブ（書き出したテキスト・ファイルも）は疑う：大きさ・長さ・数の上限と Zod の形で確かめ、__proto__ などの鍵は取り除く。セーブの項目を足したら、src/save/schema.ts にも上限つきで足す
@@ -61,7 +63,7 @@
 - src/store：Zustand と写し（view。世界の寿命 life・4つの柱 pillars・起きかけていること signs・世界の終わりまで limits を含む）、世界の情景の写し（scene）、筆の位（pen）、観測記録（records）、世界の辞書（dictionary）と因果の地図（causal）、図鑑と実績（codex）、開いていく順番の写し（journey）、因果の連鎖（chain）、再生（replay）、共有文（share）、無限の世界の記録簿（ranking）
 - src/ui：React の部品と CSS、タイトルの絵、世界の情景（WorldScene と scene/ の層。開発用の一覧は ?gallery=1）、計算の演出（Passing）、因果の連鎖（Chain）、音楽（audio）と効果音（se）、PixiJS の演出（fx。散り方の式は pattern、描き手は stage）、画面の明るさ（theme）、共有画像（shareImage）、入力の補助（wording）、あそびかた（Tutorial）、序章の手引き（Coach）、筆の位（PenPanel）、画面の言葉（terms）、画面を描けなかったときの受け止め役（ErrorBoundary）、共通の部品（parts・icons・Curve・touch）、シート（書く・結果・柱の中身と世界の寿命・メニュー など）
 - src/save：SaveStore・セーブの形・版の変換
-- tests：Vitest（決定性・棋譜・セーブ・読み取り・無茶な書き換え・総当たり・ルール・無限の世界・くり返す十年・結末・実績・印と試練（marks）・開いていく順番（unlocks）・人々の心・読み分け・情景・序章の手引き（prologue）・世界の終わりまで・筆の位・明るさの比・画面の言葉・手触りの目安・ルール本体の純粋さ（core-purity）・内容のデータ（data）・画面の呼び名（names）・言い切りの強さ（roles）・消した行（voids）・入力の補助（wording）・ノートの辞書と地図と前回の線（notes）・演出の散り方（fx）・更新のお知らせ（updates））
+- tests：Vitest（決定性・棋譜・セーブ・読み取り・無茶な書き換え・総当たり・ルール・無限の世界・くり返す十年・結末・実績・印と試練（marks）・開いていく順番（unlocks）・人々の心・読み分け・情景・序章の手引き（prologue）・世界の終わりまで・筆の位・明るさの比・画面の言葉・手触りの目安・ルール本体の純粋さ（core-purity）・内容のデータ（data）・画面の呼び名（names）・言い切りの強さ（roles）・消した行（voids）・入力の補助（wording）・ノートの辞書と地図と前回の線（notes）・演出の散り方（fx）・更新のお知らせ（updates）・程度の言葉と打ち消しに見える言葉（degree）・安全の決まり（security））
 - e2e：Playwright（app.spec.ts・screens.spec.ts・演出中のコマ数 perf.spec.ts）
 - scripts：シミュレーター（npm run sim）と作戦・ボット（strategies.ts・bots.ts・run.ts。無限の世界のボットは endless.ts）、結末の筋書き（worlds.ts）、読み取りの総当たり（fuzz.ts）、筆の位で遊べるかの確かめ（ranks.ts）、作り手の解（par.ts・designer.ts）、組み合わせの総当たり（combos.ts）、読み取りの穴（corpus.ts）と逆の読み取り（polarity.ts）、紹介用の PV（pv/：撮影 record.ts・舞台 stage.html・書き出し encode.ts と mp4.ts・コマの取り出し frames.ts・BGM の小節 beats.ts）
 - docs：SPEC.md、PLAN.md（企画書）、ANALYSIS.md、IMPROVE.md、PROMPTS.md、BASELINE.md（直す前の数字）、WORKPLAN.md（作業計画）、TERMS.md、SOURCES.md、design/（画面設計の見本）、screens/（スクリーンショット）

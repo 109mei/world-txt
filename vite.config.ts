@@ -6,9 +6,10 @@ import { defineConfig } from 'vitest/config';
 /**
  * 読み込めるものを絞る決まり（Content Security Policy）。
  * スクリプトはこのサイトのものだけ、書体は Google Fonts だけ、通信はこのサイトだけ。
- * GitHub Pages では応答の見出しを設定できないので、index.html の meta に書く
+ * Trusted Types：文字列を HTML やスクリプトとして差し込む書き方（innerHTML・eval など）を、ブラウザの側でも禁じる（決まりを作る口もなし）。
+ * GitHub Pages では応答の見出しを設定できないので、index.html の meta に書く（frame-ancestors は meta では効かない）
  */
-const CONTENT_SECURITY_POLICY = [
+export const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' https://fonts.googleapis.com",
@@ -22,6 +23,9 @@ const CONTENT_SECURITY_POLICY = [
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'none'",
+  "require-trusted-types-for 'script'",
+  "trusted-types 'none'",
+  'upgrade-insecure-requests',
 ].join('; ');
 
 /** 公開用のビルドにだけ CSP を入れる（開発中の Vite は、その場でスクリプトを差し込むため） */

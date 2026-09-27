@@ -676,6 +676,13 @@ export const LexiconSchema = z.object({
   suffixes: z.record(z.string(), z.string()).default({}),
   /** すぐ後ろの「が」が送りがなになる1文字の漢字（泳がない・防がない）。助詞のゆれをそろえるときに変えない */
   gaVerbs: z.array(z.string().length(1)).default([]),
+  /**
+   * 程度の言葉（読み取りのコードにある「多く」「少し」「とても」などに足す）：more は多さ（無限に・たっぷり）、
+   * less は少なさ（少々・若干）、intense は向きを持たない強調（けっこう・だいぶ）。どれも世界が知っている言葉にする
+   */
+  degree: z.object({ more: z.array(z.string()), less: z.array(z.string()), intense: z.array(z.string()) }).default({ more: [], less: [], intense: [] }),
+  /** 「ない」を含むが打ち消しではない言葉（きたない・はかない・仕方ない など）。打ち消しかどうかを見る前に取り除く */
+  notNegation: z.array(z.string()).default([]),
   /** 言い切りの強さの言葉：strong は効きも反動も大きい（すべて・決して）、mild は絞る（少し・ときどき） */
   strength: z.object({ strong: z.array(z.string()), mild: z.array(z.string()) }).default({ strong: [], mild: [] }),
   /**

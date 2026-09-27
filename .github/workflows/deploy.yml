@@ -5,10 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# 権限は役目ごとに最小にする（組み立てるだけの build は読むだけ。公開する deploy だけが Pages に書く）
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
@@ -16,11 +15,14 @@ concurrency:
 
 jobs:
   build:
+    permissions:
+      contents: read
     # ubuntu-latest は 2026年10月19日から Ubuntu 26 に移る。Playwright のブラウザと依存（--with-deps）が
     # 新しい版に対応するまで、今の版に留める（対応を確かめてから上げる）
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
+      # 外の手順は、中身の決まったコミットの番号で留める（版の札が差し替えられても、知らない中身を走らせない）
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           # 取り出したあとの手順に、リポジトリの鍵（GITHUB_TOKEN）を残さない
           persist-credentials: false
@@ -38,13 +40,18 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
           cache: npm
 
+      # 依存の入れ方で、依存のスクリプト（postinstall など）を走らせない（入れるだけで知らないコードが動かないように）
       - name: 依存を入れる
-        run: npm ci
+        run: npm ci --ignore-scripts
+
+      # 公開するゲームに入る依存（devDependencies を除く）に、重い脆弱性が知られていたら止める
+      - name: 公開する依存の脆弱性を確かめる
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Vitest
         run: npm test
@@ -57,7 +64,7 @@ jobs:
 
       - name: e2e の結果を残す
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: playwright-report
           path: |
@@ -68,19 +75,23 @@ jobs:
       - name: ビルド
         run: npm run build
 
-      - name: 公開用のビルドを確かめる（テスト用の窓口がなく、CSP が入っている）
+      - name: 公開用のビルドを確かめる（テスト用の窓口がなく、CSP と Trusted Types が入っている）
         run: |
           if grep -q "__wtxt" dist/assets/*.js; then echo "テスト用の窓口（__wtxt）が公開用のビルドに入っている"; exit 1; fi
           grep -q 'http-equiv="Content-Security-Policy"' dist/index.html
+          grep -q "require-trusted-types-for 'script'" dist/index.html
 
-      - uses: actions/configure-pages@v6
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
 
-      - uses: actions/upload-pages-artifact@v5
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: dist
 
   deploy:
     needs: build
+    permissions:
+      pages: write
+      id-token: write
     runs-on: ubuntu-24.04
     environment:
       name: github-pages
@@ -88,4 +99,4 @@ jobs:
     steps:
       - name: GitHub Pages へ公開
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
