@@ -70,6 +70,30 @@ describe('安全の決まり', () => {
     ])
       expect(csp, d).toContain(d);
     expect(csp).not.toMatch(/unsafe-inline|unsafe-eval|\*/);
+    // 書体もこのサイトのもの（よそのサイトを CSP で許さない）
+    expect(csp).toContain(`"style-src 'self'"`);
+    expect(csp).toContain(`"font-src 'self'"`);
+    expect(csp).not.toMatch(/https?:\/\//);
+  });
+
+  it('書体はこのサイトに置き、よそのサイト（Google Fonts）から読み込まない', () => {
+    const html = readFileSync(join(root, 'index.html'), 'utf8');
+    expect(html).not.toMatch(/fonts\.googleapis|fonts\.gstatic/);
+    const main = readFileSync(join(root, 'src/main.tsx'), 'utf8');
+    expect(main).toContain("import '@fontsource/shippori-mincho/400.css';");
+    expect(main).toContain("import '@fontsource/cormorant-garamond/500.css';");
+  });
+
+  it('書体をこのサイトから配るので、ライセンス（SIL Open Font License 1.1）の全文を書体といっしょに置き、「このゲームについて」からたどれる', () => {
+    for (const [file, authors] of [
+      ['shippori-mincho.txt', 'The Shippori Mincho Project Authors'],
+      ['cormorant-garamond.txt', 'The Cormorant Project Authors'],
+    ]) {
+      const text = readFileSync(join(root, 'public/licenses', file), 'utf8');
+      expect(text, file).toMatch(new RegExp(`^Copyright \\d{4} ${authors}`));
+      expect(text, file).toContain('SIL OPEN FONT LICENSE Version 1.1');
+    }
+    expect(readFileSync(join(root, 'src/ui/sheets/MenuSheet.tsx'), 'utf8')).toContain('licenses/${file}');
   });
 
   it('よそのサイトへ、このページの住所を伝えない（referrer）', () => {

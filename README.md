@@ -76,5 +76,5 @@ npm run build     # 公開用ビルド（dist/）
 - BGM：The Unfolded Manuscript（`public/audio/bgm.mp3`）。効果音はその場で合成する
 - 共有用画像（OGP）：`public/og.jpg`（1731×909）
 - ホーム画面のアイコン：`public/apple-touch-icon.png`・`icon-192.png`・`icon-512.png`・`icon-maskable-512.png` と `public/manifest.webmanifest`
-- 書体：Cormorant Garamond、しっぽり明朝（Google Fonts）
+- 書体：Cormorant Garamond、しっぽり明朝（SIL Open Font License 1.1。@fontsource で npm から入れ、このサイトに置く。ライセンスの全文は `public/licenses/`）
 - アイコン：lucide

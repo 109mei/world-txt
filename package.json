@@ -17,6 +17,8 @@
     "ranks": "tsx scripts/ranks.ts"
   },
   "dependencies": {
+    "@fontsource/cormorant-garamond": "5.3.0",
+    "@fontsource/shippori-mincho": "5.3.0",
     "lucide-react": "^1.48.0",
     "pixi.js": "8.21.0",
     "react": "^19.3.0",

@@ -65,6 +65,12 @@ export function HomePrompt({ onClose }: { onClose: () => void }) {
   );
 }
 
+/** 書体のライセンスの全文（public/licenses。書体をこのサイトから配るので、書体といっしょに置く） */
+const FONT_LICENSES: readonly [string, string][] = [
+  ['しっぽり明朝', 'shippori-mincho.txt'],
+  ['Cormorant Garamond ', 'cormorant-garamond.txt'],
+];
+
 /** このゲームについて：版・作り手・音楽と絵の作り方・書体とアイコンのライセンス・出典・ソースコード */
 function About() {
   return (
@@ -78,7 +84,16 @@ function About() {
       <dt>絵</dt>
       <dd>共有の画像とホーム画面のアイコンは、ChatGPT の画像生成（gpt-image）で作った絵。タイトルの絵はその絵を手本にコード（SVG）で描き、世界の情景もコードで描いている。</dd>
       <dt>書体</dt>
-      <dd>しっぽり明朝・Cormorant Garamond（SIL Open Font License 1.1）</dd>
+      <dd>
+        しっぽり明朝・Cormorant Garamond（SIL Open Font License 1.1。このサイトに置いている）
+        <span className="about-links">
+          {FONT_LICENSES.map(([name, file]) => (
+            <a key={file} href={`${import.meta.env.BASE_URL}licenses/${file}`} target="_blank" rel="noopener noreferrer" data-testid={`license-${file}`}>
+              {name}のライセンス
+            </a>
+          ))}
+        </span>
+      </dd>
       <dt>アイコン</dt>
       <dd>Lucide（ISC License）</dd>
       <dt>現実の数字</dt>

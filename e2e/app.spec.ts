@@ -530,8 +530,13 @@ test.describe('390×844 のスマホ縦画面', () => {
     await expect(page.getByTestId('ending')).toContainText('なぜ？');
   });
 
-  test('読み込めるものを絞る決まり（CSP）が入っていて、遊んでもそれに触れない', async ({ page }) => {
+  test('読み込めるものを絞る決まり（CSP）が入っていて、遊んでもそれに触れない。よそのサイトへは何も問い合わせない（書体もこのサイトから）', async ({ page }) => {
     const violations: string[] = [];
+    const elsewhere: string[] = [];
+    page.on('request', (r) => {
+      const u = new URL(r.url());
+      if ((u.protocol === 'http:' || u.protocol === 'https:') && u.hostname !== 'localhost' && u.hostname !== '127.0.0.1') elsewhere.push(r.url());
+    });
     page.on('console', (m) => {
       if (/Content Security Policy|Refused to (load|apply|execute|connect)/i.test(m.text())) violations.push(m.text());
     });
@@ -551,8 +556,9 @@ test.describe('390×844 のスマホ縦画面', () => {
     await page.getByTestId('advance').click();
     await expect(page.getByTestId('report-sheet')).toBeVisible();
     await page.getByTestId('report-ok').click();
-    // 書体（Google Fonts）も読み込めている
+    // 書体（このサイトに置いたもの）も読み込めている
     expect(await page.evaluate(() => document.fonts.check('16px "Shippori Mincho"'))).toBe(true);
+    expect(await page.evaluate(() => document.fonts.check('16px "Cormorant Garamond"'))).toBe(true);
     // 世界の終わりまで進め、共有用の画像（その場で描いて保存する）も作る
     for (let i = 0; i < 20; i += 1) {
       const st = await debug<{ status: string }>(page, 'state()');
@@ -564,6 +570,7 @@ test.describe('390×844 のスマホ縦画面', () => {
     await Promise.all([page.waitForEvent('download'), page.getByTestId('save-image').click()]);
     const caught = await page.evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? []);
     expect([...violations, ...caught]).toEqual([]);
+    expect(elsewhere.length, [...new Set(elsewhere.map((u) => new URL(u).origin))].join(' ') + ' ' + elsewhere.slice(0, 2).join(' ')).toBe(0);
   });
 
   test('Trusted Types：文字列を HTML やスクリプトとして差し込む書き方は、ブラウザが止める（決まりを作る口もない）', async ({ page }) => {
@@ -734,6 +741,13 @@ test.describe('390×844 のスマホ縦画面', () => {
     await expect(about).toContainText('ISC License');
     await expect(about).toContainText('Gemini');
     await expect(about).toContainText('gpt-image');
+    // 書体のライセンスの全文は、このサイトに置いてある（書体をこのサイトから配るので）
+    for (const file of ['shippori-mincho.txt', 'cormorant-garamond.txt']) {
+      const href = await page.getByTestId(`license-${file}`).getAttribute('href');
+      const res = await page.request.get(new URL(href!, page.url()).href);
+      expect(res.status(), file).toBe(200);
+      expect(await res.text(), file).toContain('SIL OPEN FONT LICENSE Version 1.1');
+    }
     // すべての記録を消す：2度押しで確かめ、タイトルへ戻る（はじめから）
     await page.getByTestId('menu-reset').click();
     await expect(page.getByTestId('reset-note')).toContainText('元に戻せない');

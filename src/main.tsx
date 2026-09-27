@@ -11,6 +11,13 @@ import { onVisibility } from './ui/audio';
 import { syncSe } from './ui/se';
 import { WORLD_NUMBERS } from './store/runtime';
 import { guardLongPress } from './ui/touch';
+// 書体はこのサイトに置く（Google Fonts へ問い合わせない）。使う太さだけ：欧文と数字は Cormorant Garamond、和文はしっぽり明朝
+import '@fontsource/cormorant-garamond/500.css';
+import '@fontsource/cormorant-garamond/600.css';
+import '@fontsource/cormorant-garamond/700.css';
+import '@fontsource/shippori-mincho/400.css';
+import '@fontsource/shippori-mincho/600.css';
+import '@fontsource/shippori-mincho/700.css';
 import './ui/styles.css';
 
 const params = new URLSearchParams(window.location.search);
